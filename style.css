@@ -94,9 +94,7 @@
 }
 #allInOneOverlay .land-layout{
   width:100%;height:100%;
-  display:flex;flex-direction:row;align-items:center;justify-content:center;
-  gap:clamp(8px,1.6vw,18px);
-  padding:clamp(6px,1.2vh,14px) clamp(8px,1.5vw,16px);
+  position:relative;
   box-sizing:border-box;
   transform:translateY(14px) scale(.97);
   opacity:0;
@@ -106,19 +104,27 @@
   transform:translateY(0) scale(1);
   opacity:1;
 }
+/* 两个正方形改为绝对定位，贴左右两侧，边长＝横屏能做到的最大边长
+   (受屏幕高度 90vh 或 两个正方形并排不重叠的半屏宽 45vw 两者中较小值限制) 的 90%，
+   即 min(81vh, 40.5vw)。观音像作为居中背景层(z-index更低+不接收点击)，
+   正方形叠在它上面、盖住它的一部分是预期效果。 */
 #allInOneOverlay .land-sq{
-  flex:0 0 auto;
-  width:min(32vw, min(46vh, 320px));
-  height:min(32vw, min(46vh, 320px));
+  position:absolute;
+  top:50%;
+  transform:translateY(-50%);
+  z-index:3;
+  width:min(81vh, 40.5vw);
+  height:min(81vh, 40.5vw);
   aspect-ratio:1/1;
   border-radius:14px;
   border:2px solid rgba(201,162,39,.55);
   background:linear-gradient(165deg,#fffdf6 0%,#f3e8cf 55%,#ebe0c0 100%);
   box-shadow:0 10px 28px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.65);
   overflow:hidden;
-  position:relative;
   display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;
 }
+#allInOneOverlay #landFortuneSq{ left:clamp(6px,1.5vw,16px); }
+#allInOneOverlay #landWesternSq{ right:clamp(6px,1.5vw,16px); }
 #allInOneOverlay .land-sq-label{
   position:absolute;top:6px;left:50%;transform:translateX(-50%);
   z-index:6;font-size:10px;letter-spacing:1px;color:#6b4e10;
@@ -181,14 +187,18 @@
   min-height:166.666%;
 }
 #allInOneOverlay .land-guanyin{
-  flex:0 1 auto;
-  height:min(92vh, 100%);
-  max-width:min(42vw, 380px);
+  position:absolute;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  height:min(94vh, 100%);
+  width:auto;
+  max-width:100%;
   display:flex;align-items:center;justify-content:center;
-  position:relative;
+  z-index:1;
+  pointer-events:none;
 }
 #allInOneOverlay .land-guanyin img{
-  max-height:92vh;max-width:100%;width:auto;height:auto;
+  max-height:100%;max-width:100%;width:auto;height:auto;
   display:block;object-fit:contain;
   filter:drop-shadow(0 8px 20px rgba(0,0,0,.5));
   -webkit-user-drag:none;user-select:none;pointer-events:none;
