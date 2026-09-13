@@ -29,15 +29,15 @@
   </div><div class="bazi-form" id="zodiacForm"><div class="bazi-row"><label>生日（滚动选择）</label><div class="wheel-row" id="zodiacDateWheel"><div class="wheel-col" id="zodiacMonthWheel" data-field="month"></div><div class="wheel-col" id="zodiacDayWheel" data-field="day"></div><div class="wheel-mask"></div><div class="wheel-center-line"></div></div><input type="hidden" id="zodiacMonth" value="6"><input type="hidden" id="zodiacDay" value="15"></div><div class="bazi-row"><label>快捷地点 <span class="bazi-optional">（供与八字/星盘共用，星座判定不依赖地点）</span></label><div class="city-preset-row"><label><input type="checkbox" id="zodiacCityShenyang" onchange="applyZodiacCityPreset('shenyang')"> 沈阳</label><label><input type="checkbox" id="zodiacCityToronto" onchange="applyZodiacCityPreset('toronto')"> 多伦多</label></div></div><div class="mbti-quick-result show" id="zodiacPreview" style="margin-top:8px;"><div class="mbti-type" id="zodiacPreviewName">—</div></div><button class="bazi-submit" onclick="submitZodiacForm()">确认星座 · 掷筊</button></div><div class="mbti-reveal" id="zodiacReveal" style="display:none;"><div class="jiao-display" id="zodiacJiaoDisplay"></div><div class="mbti-jiao-label" id="zodiacJiaoLabel"></div><div class="mbti-report" id="zodiacReport"></div><div class="mbti-reveal-actions"><button class="mbti-reset" id="zodiacRecast" onclick="castZodiacJiao()" style="display:none;">再次掷筊</button><button class="mbti-reset" onclick="backToZodiacForm()">重新选择</button><button class="mbti-cast-btn" onclick="openZodiacDict()">星座词典</button></div></div></div><div class="mbti-backdrop" id="westernBackdrop" onclick="closeWesternPanel()"></div><div class="mbti-modal" id="westernModal"><div class="mbti-head"><h3>西方星盘 · Natal Chart</h3><button class="mbti-close" onclick="closeWesternPanel()" aria-label="关闭">×</button></div><div class="western-chart-wrap" id="westernChartWrap"><img id="westernChartImg" class="western-chart-img" alt="西方星盘图" src="western-chart-placeholder.webp"></div><button class="western-input-cta" id="westernInputCta" type="button" onclick="showWesternInputForm()">
     请输入星盘所需信息
   </button><div class="bazi-form" id="westernForm" style="display:none;"><div class="bazi-row"><label>出生日期（滚动选择）</label><div class="wheel-row" id="westernDateWheel"><div class="wheel-col" id="westernYearWheel" data-field="year"></div><div class="wheel-col" id="westernMonthWheel" data-field="month"></div><div class="wheel-col" id="westernDayWheel" data-field="day"></div><div class="wheel-mask"></div><div class="wheel-center-line"></div></div><input type="hidden" id="westernYear" value="1990"><input type="hidden" id="westernMonth" value="7"><input type="hidden" id="westernDay" value="15"></div><div class="bazi-row"><label>出生时间（24小时制 · 滚动）</label><div class="wheel-row" id="westernTimeWheel"><div class="wheel-col" id="westernHourWheel" data-field="hour"></div><div class="wheel-col" id="westernMinuteWheel" data-field="minute"></div><div class="wheel-mask"></div><div class="wheel-center-line"></div></div><input type="hidden" id="westernHour" value="12"><input type="hidden" id="westernMinute" value="0"></div><div class="bazi-row"><label>快捷地点</label><div class="city-preset-row"><label><input type="checkbox" id="westernCityShenyang" onchange="applyWesternCityPreset('shenyang')"> 沈阳</label><label><input type="checkbox" id="westernCityToronto" onchange="applyWesternCityPreset('toronto')"> 多伦多</label></div></div><div class="bazi-row"><label>出生地坐标 <span class="bazi-optional">（可手填或勾选上方城市）</span></label><div class="bazi-inline"><input type="number" id="westernLat" placeholder="纬度 沈阳41.8 / 多伦多43.7" step="0.0001" value=""><input type="number" id="westernLng" placeholder="经度 沈阳123.4 / 多伦多-79.4" step="0.0001" value=""></div></div><div class="bazi-row"><label>时区 <span class="bazi-optional">（可手填或勾选上方城市）</span></label><div class="bazi-inline"><input type="text" id="westernTz" placeholder="沈阳 Asia/Shanghai · 多伦多 America/Toronto" value=""></div></div><div class="bazi-error" id="westernError"></div><button class="bazi-submit" onclick="submitWesternForm()">开始分析</button></div><div class="mbti-reveal" id="westernReveal" style="display:none;"><div id="westernChartViz" class="western-chart-viz" aria-label="星盘可视化"></div><div class="mbti-report" id="westernReport"></div><div class="mbti-report" id="westernDictBox"></div><div class="mbti-reveal-actions" id="westernActions"><button class="mbti-reset" onclick="backToWesternForm()">重新填写</button><button class="mbti-cast-btn" type="button" onclick="toggleWesternDict()">星盘小词典</button><button class="bazi-submit" onclick="closeWesternPanel()">知道了</button></div></div></div>
-<script src="01-jiao-core.js"></script>
-<script src="02-mbti-engine.js"></script>
-<script src="03-bazi-engine.js"></script>
-<script src="04-mbti-ui.js"></script>
-<script src="05-bazi-ui.js"></script>
-<script src="06-zodiac.js"></script>
-<script src="07-error-monitoring.js"></script>
-<script src="08-western-astrology.js"></script>
-<script src="09-fortune-wheel.js"></script>
+<script src="js/01-jiao-core.js"></script>
+<script src="js/02-mbti-engine.js"></script>
+<script src="js/03-bazi-engine.js"></script>
+<script src="js/04-mbti-ui.js"></script>
+<script src="js/05-bazi-ui.js"></script>
+<script src="js/06-zodiac.js"></script>
+<script src="js/07-error-monitoring.js"></script>
+<script src="js/08-western-astrology.js"></script>
+<script src="js/09-fortune-wheel.js"></script>
 
 <div id="allInOneOverlay" aria-hidden="true">
   <div class="land-layout">
@@ -46,9 +46,6 @@
       <div class="land-host" id="landFortuneHost">
         <div class="land-host-inner scale-50" id="landFortuneInner"></div>
       </div>
-    </div>
-    <div class="land-guanyin">
-      <img src="guanyin.webp" alt="观音" draggable="false">
     </div>
     <div class="land-sq" id="landWesternSq">
       <div class="land-sq-label">西方星盘 · 输入</div>
