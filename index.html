@@ -1,5 +1,5 @@
-<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><meta name="theme-color" content="#c9a227"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="format-detection" content="telephone=no"><title>御猫灵局 · 掷筊</title><link rel="stylesheet" href="style.css"></head><body><div class="rotate-overlay" id="rotateOverlay" aria-hidden="true"><div class="rotate-icon">🔔</div><p>横屏观看不适合本程序<br>请旋转至竖屏以获得最佳体验</p></div><div class="shrine-frame"><div class="box-wrap"><img class="box-img" src="box.webp" alt="御猫灵局" draggable="false"><div class="jade-zone dragon" data-beast="dragon" tabindex="0" role="button" aria-label="唤醒天龙" onclick="selectBeast(this)" onkeydown="handleBeastKey(event, this)" title="唤醒天龙"></div><div class="jade-zone tiger"  data-beast="tiger"  tabindex="0" role="button" aria-label="平定四方" onclick="selectBeast(this)" onkeydown="handleBeastKey(event, this)" title="平定四方"></div><div class="jade-zone lion"   data-beast="lion"   tabindex="0" role="button" aria-label="瑞兽祈福" onclick="selectBeast(this)" onkeydown="handleBeastKey(event, this)" title="瑞兽祈福"></div></div><div class="panel"><div class="divider"><span class="divider-mark"></span></div><div class="question-wrap"><div class="selected-line" id="selectedLine">1️⃣选🐲🐯🦁问卜，不选则随机</div><textarea class="question-box" id="question" rows="2" readonly inputmode="text" enterkeyhint="done" placeholder="2️⃣➡️MBTI／八字／星座／常见108问💡
-3️⃣手动输入🆗（星盘为隐藏功能🪎）" oninput="autoGrowQuestion(this); onQuestionInput()" onblur="hideQuestionMenuDelayed()"></textarea><div class="question-cta" id="questionCta">🆗请点击 👇掷茭 开始选择</div><div class="question-menu" id="questionMenu"><div class="question-menu-title">请选择问卜方式</div><div class="question-menu-grid method-grid"><div class="question-menu-cell method-cell" data-method="mbti" onmousedown="event.preventDefault()" onclick="armOrSelectMethod(this,'mbti')"><span class="method-icon">🧭</span><span>MBTI 性格测试</span></div><div class="question-menu-cell method-cell" data-method="bazi" onmousedown="event.preventDefault()" onclick="armOrSelectMethod(this,'bazi')"><span class="method-icon">🎴</span><span>八字运程</span></div><div class="question-menu-cell method-cell" data-method="zodiac" onmousedown="event.preventDefault()" onclick="armOrSelectMethod(this,'zodiac')"><span class="method-icon">✨</span><span>星座运势</span></div><div class="question-menu-cell method-cell" data-method="casual" onmousedown="event.preventDefault()" onclick="armOrSelectMethod(this,'casual')"><span class="method-icon">💬</span><span>常见 108 问</span></div><div class="question-menu-cell manual-input-cell" style="grid-column: 1 / -1;"><div class="manual-input-row"><span class="method-icon">✍️</span><input type="text" id="manualQuestionInput" class="manual-input-field" placeholder="手动输入你的问题…" enterkeyhint="done" autocomplete="off"><button type="button" class="manual-input-confirm" onmousedown="event.preventDefault()" onclick="confirmManualQuestion(true, true)" aria-label="确认问题">✓</button></div></div></div></div><div class="question-reminder" id="questionReminder">✍️ 请直接输入你的具体问题，然后点掷筊</div><div class="question-menu" id="casualMenu"><div class="question-menu-title">常见 108 问 · 点击选择（滑到底自动循环）</div><div class="question-menu-custom" onmousedown="event.preventDefault()" onclick="closeCasualMenu()"><span class="qm-num">←</span><span>返回上级菜单</span></div><div id="casualMenuGrid" role="listbox" aria-label="常见一百零八问"></div><div class="casual-scroll-hint">↕ 滑动浏览全部问题，到底自动循环</div></div></div><div class="btn-row"><button class="side-btn" id="recordBtn" onclick="toggleHistory()">记录</button><button class="cast-btn" id="castBtn" onclick="castJiao()">✦ 掷 筊 ✦</button><button class="side-btn" id="resetBtn" onclick="resetAll()">重置</button></div><div class="ritual-area" id="ritualArea"><img id="sealImg" class="seal-img" title="长按打开西方星盘" aria-label="长按打开西方星盘" draggable="false" src="seal.webp" alt="第51州多伦多Tiger猫授权答疑平台"><div class="seal-hit" id="sealHit" title="长按打开西方星盘" aria-label="长按打开西方星盘" role="button"></div><div class="jiao-display" id="jiaoDisplay"></div><div class="result-area" id="resultArea"><div class="result-title" id="resultTitle"></div><div class="result-desc" id="resultDesc"></div><div class="result-beast" id="resultBeast"></div></div></div></div><div class="hint">🙏 诚心求问 · 掷筊问兆 🪷</div></div><div class="fortune-backdrop" id="fortuneBackdrop" onclick="closeFortuneWheel()"></div>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><meta name="theme-color" content="#c9a227"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="format-detection" content="telephone=no"><title>御猫灵局 · 掷筊</title><link rel="stylesheet" href="style.css"></head><body><div class="rotate-overlay" id="rotateOverlay" aria-hidden="true"><div class="rotate-icon">🔔</div><p>横屏观看不适合本程序<br>请旋转至竖屏以获得最佳体验</p></div><div class="shrine-frame"><div class="box-wrap"><img class="box-img" src="pics/box.webp" alt="御猫灵局" draggable="false"><div class="jade-zone dragon" data-beast="dragon" tabindex="0" role="button" aria-label="唤醒天龙" onclick="selectBeast(this)" onkeydown="handleBeastKey(event, this)" title="唤醒天龙"></div><div class="jade-zone tiger"  data-beast="tiger"  tabindex="0" role="button" aria-label="平定四方" onclick="selectBeast(this)" onkeydown="handleBeastKey(event, this)" title="平定四方"></div><div class="jade-zone lion"   data-beast="lion"   tabindex="0" role="button" aria-label="瑞兽祈福" onclick="selectBeast(this)" onkeydown="handleBeastKey(event, this)" title="瑞兽祈福"></div></div><div class="panel"><div class="divider"><span class="divider-mark"></span></div><div class="question-wrap"><div class="selected-line" id="selectedLine">1️⃣选🐲🐯🦁问卜，不选则随机</div><textarea class="question-box" id="question" rows="2" readonly inputmode="text" enterkeyhint="done" placeholder="2️⃣➡️MBTI／八字／星座／常见108问💡
+3️⃣手动输入🆗（星盘为隐藏功能🪎）" oninput="autoGrowQuestion(this); onQuestionInput()" onblur="hideQuestionMenuDelayed()"></textarea><div class="question-cta" id="questionCta">🆗请点击 👇掷茭 开始选择</div><div class="question-menu" id="questionMenu"><div class="question-menu-title">请选择问卜方式</div><div class="question-menu-grid method-grid"><div class="question-menu-cell method-cell" data-method="mbti" onmousedown="event.preventDefault()" onclick="armOrSelectMethod(this,'mbti')"><span class="method-icon">🧭</span><span>MBTI 性格测试</span></div><div class="question-menu-cell method-cell" data-method="bazi" onmousedown="event.preventDefault()" onclick="armOrSelectMethod(this,'bazi')"><span class="method-icon">🎴</span><span>八字运程</span></div><div class="question-menu-cell method-cell" data-method="zodiac" onmousedown="event.preventDefault()" onclick="armOrSelectMethod(this,'zodiac')"><span class="method-icon">✨</span><span>星座运势</span></div><div class="question-menu-cell method-cell" data-method="casual" onmousedown="event.preventDefault()" onclick="armOrSelectMethod(this,'casual')"><span class="method-icon">💬</span><span>常见 108 问</span></div><div class="question-menu-cell manual-input-cell" style="grid-column: 1 / -1;"><div class="manual-input-row"><span class="method-icon">✍️</span><input type="text" id="manualQuestionInput" class="manual-input-field" placeholder="手动输入你的问题…" enterkeyhint="done" autocomplete="off"><button type="button" class="manual-input-confirm" onmousedown="event.preventDefault()" onclick="confirmManualQuestion(true, true)" aria-label="确认问题">✓</button></div></div></div></div><div class="question-reminder" id="questionReminder">✍️ 请直接输入你的具体问题，然后点掷筊</div><div class="question-menu" id="casualMenu"><div class="question-menu-title">常见 108 问 · 点击选择（滑到底自动循环）</div><div class="question-menu-custom" onmousedown="event.preventDefault()" onclick="closeCasualMenu()"><span class="qm-num">←</span><span>返回上级菜单</span></div><div id="casualMenuGrid" role="listbox" aria-label="常见一百零八问"></div><div class="casual-scroll-hint">↕ 滑动浏览全部问题，到底自动循环</div></div></div><div class="btn-row"><button class="side-btn" id="recordBtn" onclick="toggleHistory()">记录</button><button class="cast-btn" id="castBtn" onclick="castJiao()">✦ 掷 筊 ✦</button><button class="side-btn" id="resetBtn" onclick="resetAll()">重置</button></div><div class="ritual-area" id="ritualArea"><img id="sealImg" class="seal-img" title="长按打开西方星盘" aria-label="长按打开西方星盘" draggable="false" src="pics/seal.webp" alt="第51州多伦多Tiger猫授权答疑平台"><div class="seal-hit" id="sealHit" title="长按打开西方星盘" aria-label="长按打开西方星盘" role="button"></div><div class="jiao-display" id="jiaoDisplay"></div><div class="result-area" id="resultArea"><div class="result-title" id="resultTitle"></div><div class="result-desc" id="resultDesc"></div><div class="result-beast" id="resultBeast"></div></div></div></div><div class="hint">🙏 诚心求问 · 掷筊问兆 🪷</div></div><div class="fortune-backdrop" id="fortuneBackdrop" onclick="closeFortuneWheel()"></div>
 <div class="fortune-modal" id="fortuneModal" role="dialog" aria-label="命运圆盘">
   <div class="fortune-head"><h3>命运圆盘</h3><button type="button" class="fortune-close" onclick="closeFortuneWheel()" aria-label="关闭">×</button></div>
   <div class="fortune-layout">
@@ -9,7 +9,7 @@
     <div class="fortune-hub" id="fortuneHub">🐈</div>
   </div>
   <div class="fortune-zen">
-    <img src="zen-cat.webp" alt="禅猫" draggable="false">
+    <img src="pics/zen-cat.webp" alt="禅猫" draggable="false">
     <div class="fortune-zen-cap">禅猫观盘<br>心不动，盘自转</div>
   </div>
 </div>
@@ -26,18 +26,215 @@
         使用真太阳时
       </label><div class="bazi-inline" id="baziLonRow" style="display:none; margin-top:6px;"><input type="number" id="baziLongitude" placeholder="经度 沈阳123.4 / 多伦多-79.4" value="" step="0.1" min="-180" max="180"></div></div><div class="bazi-error" id="baziError"></div><button class="bazi-submit" id="baziSubmitBtn" onclick="submitBaziForm()">排 盘 · 掷筊</button></div><div class="mbti-reveal" id="baziReveal"><div class="jiao-display" id="baziJiaoDisplay"></div><div class="mbti-jiao-label" id="baziJiaoLabel"></div><div class="mbti-report" id="baziReport"></div><div class="mbti-reveal-actions"><button class="mbti-reset" id="baziRecast" onclick="castBaziJiao()" style="display:none;">再次掷筊</button><button class="mbti-reset" onclick="backToBaziForm()">重新填写</button></div></div></div><div class="mbti-backdrop" id="zodiacBackdrop" onclick="closeZodiacPanel()"></div><div class="mbti-modal" id="zodiacModal"><div class="mbti-head"><h3>星座 · 运势与性格</h3><button class="mbti-close" onclick="closeZodiacPanel()" aria-label="关闭">×</button></div><div class="mbti-intro">
     滚动选择生日，判定西方星座。确认后自动掷筊——聖筊详版，笑筊简版，陰筊仅示星座。
-  </div><div class="bazi-form" id="zodiacForm"><div class="bazi-row"><label>生日（滚动选择）</label><div class="wheel-row" id="zodiacDateWheel"><div class="wheel-col" id="zodiacMonthWheel" data-field="month"></div><div class="wheel-col" id="zodiacDayWheel" data-field="day"></div><div class="wheel-mask"></div><div class="wheel-center-line"></div></div><input type="hidden" id="zodiacMonth" value="6"><input type="hidden" id="zodiacDay" value="15"></div><div class="bazi-row"><label>快捷地点 <span class="bazi-optional">（供与八字/星盘共用，星座判定不依赖地点）</span></label><div class="city-preset-row"><label><input type="checkbox" id="zodiacCityShenyang" onchange="applyZodiacCityPreset('shenyang')"> 沈阳</label><label><input type="checkbox" id="zodiacCityToronto" onchange="applyZodiacCityPreset('toronto')"> 多伦多</label></div></div><div class="mbti-quick-result show" id="zodiacPreview" style="margin-top:8px;"><div class="mbti-type" id="zodiacPreviewName">—</div></div><button class="bazi-submit" onclick="submitZodiacForm()">确认星座 · 掷筊</button></div><div class="mbti-reveal" id="zodiacReveal" style="display:none;"><div class="jiao-display" id="zodiacJiaoDisplay"></div><div class="mbti-jiao-label" id="zodiacJiaoLabel"></div><div class="mbti-report" id="zodiacReport"></div><div class="mbti-reveal-actions"><button class="mbti-reset" id="zodiacRecast" onclick="castZodiacJiao()" style="display:none;">再次掷筊</button><button class="mbti-reset" onclick="backToZodiacForm()">重新选择</button><button class="mbti-cast-btn" onclick="openZodiacDict()">星座词典</button></div></div></div><div class="mbti-backdrop" id="westernBackdrop" onclick="closeWesternPanel()"></div><div class="mbti-modal" id="westernModal"><div class="mbti-head"><h3>西方星盘 · Natal Chart</h3><button class="mbti-close" onclick="closeWesternPanel()" aria-label="关闭">×</button></div><div class="western-chart-wrap" id="westernChartWrap"><img id="westernChartImg" class="western-chart-img" alt="西方星盘图" src="western-chart-placeholder.webp"></div><button class="western-input-cta" id="westernInputCta" type="button" onclick="showWesternInputForm()">
+  </div><div class="bazi-form" id="zodiacForm"><div class="bazi-row"><label>生日（滚动选择）</label><div class="wheel-row" id="zodiacDateWheel"><div class="wheel-col" id="zodiacMonthWheel" data-field="month"></div><div class="wheel-col" id="zodiacDayWheel" data-field="day"></div><div class="wheel-mask"></div><div class="wheel-center-line"></div></div><input type="hidden" id="zodiacMonth" value="6"><input type="hidden" id="zodiacDay" value="15"></div><div class="bazi-row"><label>快捷地点 <span class="bazi-optional">（供与八字/星盘共用，星座判定不依赖地点）</span></label><div class="city-preset-row"><label><input type="checkbox" id="zodiacCityShenyang" onchange="applyZodiacCityPreset('shenyang')"> 沈阳</label><label><input type="checkbox" id="zodiacCityToronto" onchange="applyZodiacCityPreset('toronto')"> 多伦多</label></div></div><div class="mbti-quick-result show" id="zodiacPreview" style="margin-top:8px;"><div class="mbti-type" id="zodiacPreviewName">—</div></div><button class="bazi-submit" onclick="submitZodiacForm()">确认星座 · 掷筊</button></div><div class="mbti-reveal" id="zodiacReveal" style="display:none;"><div class="jiao-display" id="zodiacJiaoDisplay"></div><div class="mbti-jiao-label" id="zodiacJiaoLabel"></div><div class="mbti-report" id="zodiacReport"></div><div class="mbti-reveal-actions"><button class="mbti-reset" id="zodiacRecast" onclick="castZodiacJiao()" style="display:none;">再次掷筊</button><button class="mbti-reset" onclick="backToZodiacForm()">重新选择</button><button class="mbti-cast-btn" onclick="openZodiacDict()">星座词典</button></div></div></div><div class="mbti-backdrop" id="westernBackdrop" onclick="closeWesternPanel()"></div><div class="mbti-modal" id="westernModal"><div class="mbti-head"><h3>西方星盘 · Natal Chart</h3><button class="mbti-close" onclick="closeWesternPanel()" aria-label="关闭">×</button></div><div class="western-chart-wrap" id="westernChartWrap"><img id="westernChartImg" class="western-chart-img" alt="西方星盘图" src="pics/western-chart-placeholder.webp"></div><button class="western-input-cta" id="westernInputCta" type="button" onclick="showWesternInputForm()">
     请输入星盘所需信息
   </button><div class="bazi-form" id="westernForm" style="display:none;"><div class="bazi-row"><label>出生日期（滚动选择）</label><div class="wheel-row" id="westernDateWheel"><div class="wheel-col" id="westernYearWheel" data-field="year"></div><div class="wheel-col" id="westernMonthWheel" data-field="month"></div><div class="wheel-col" id="westernDayWheel" data-field="day"></div><div class="wheel-mask"></div><div class="wheel-center-line"></div></div><input type="hidden" id="westernYear" value="1990"><input type="hidden" id="westernMonth" value="7"><input type="hidden" id="westernDay" value="15"></div><div class="bazi-row"><label>出生时间（24小时制 · 滚动）</label><div class="wheel-row" id="westernTimeWheel"><div class="wheel-col" id="westernHourWheel" data-field="hour"></div><div class="wheel-col" id="westernMinuteWheel" data-field="minute"></div><div class="wheel-mask"></div><div class="wheel-center-line"></div></div><input type="hidden" id="westernHour" value="12"><input type="hidden" id="westernMinute" value="0"></div><div class="bazi-row"><label>快捷地点</label><div class="city-preset-row"><label><input type="checkbox" id="westernCityShenyang" onchange="applyWesternCityPreset('shenyang')"> 沈阳</label><label><input type="checkbox" id="westernCityToronto" onchange="applyWesternCityPreset('toronto')"> 多伦多</label></div></div><div class="bazi-row"><label>出生地坐标 <span class="bazi-optional">（可手填或勾选上方城市）</span></label><div class="bazi-inline"><input type="number" id="westernLat" placeholder="纬度 沈阳41.8 / 多伦多43.7" step="0.0001" value=""><input type="number" id="westernLng" placeholder="经度 沈阳123.4 / 多伦多-79.4" step="0.0001" value=""></div></div><div class="bazi-row"><label>时区 <span class="bazi-optional">（可手填或勾选上方城市）</span></label><div class="bazi-inline"><input type="text" id="westernTz" placeholder="沈阳 Asia/Shanghai · 多伦多 America/Toronto" value=""></div></div><div class="bazi-error" id="westernError"></div><button class="bazi-submit" onclick="submitWesternForm()">开始分析</button></div><div class="mbti-reveal" id="westernReveal" style="display:none;"><div id="westernChartViz" class="western-chart-viz" aria-label="星盘可视化"></div><div class="mbti-report" id="westernReport"></div><div class="mbti-report" id="westernDictBox"></div><div class="mbti-reveal-actions" id="westernActions"><button class="mbti-reset" onclick="backToWesternForm()">重新填写</button><button class="mbti-cast-btn" type="button" onclick="toggleWesternDict()">星盘小词典</button><button class="bazi-submit" onclick="closeWesternPanel()">知道了</button></div></div></div>
-<script src="js/01-jiao-core.js"></script>
-<script src="js/02-mbti-engine.js"></script>
-<script src="js/03-bazi-engine.js"></script>
-<script src="js/04-mbti-ui.js"></script>
-<script src="js/05-bazi-ui.js"></script>
-<script src="js/06-zodiac.js"></script>
-<script src="js/07-error-monitoring.js"></script>
-<script src="js/08-western-astrology.js"></script>
-<script src="js/09-fortune-wheel.js"></script>
+<!-- 首屏：仅掷筊核心（01 判词/菜单 + 05 主流程/历史/瑞兽） -->
+<script defer src="js/01-jiao-core.js"></script>
+<script defer src="js/05-bazi-ui.js"></script>
+<script>
+/**
+ * 懒加载：MBTI / 八字引擎 / 星座 / 星盘 / 命运盘 / Sentry
+ * 保持原全局函数名，业务模块加载后覆盖同名函数。
+ */
+(function () {
+  var loading = Object.create(null);
+  var loaded = Object.create(null);
+
+  function loadScript(src) {
+    if (loaded[src]) return Promise.resolve();
+    if (loading[src]) return loading[src];
+    loading[src] = new Promise(function (resolve, reject) {
+      var s = document.createElement('script');
+      s.src = src;
+      s.async = false;
+      s.onload = function () {
+        loaded[src] = true;
+        loading[src] = null;
+        resolve();
+      };
+      s.onerror = function () {
+        loading[src] = null;
+        reject(new Error('load fail: ' + src));
+      };
+      document.head.appendChild(s);
+    });
+    return loading[src];
+  }
+
+  function loadAll(list) {
+    return list.reduce(function (p, src) {
+      return p.then(function () { return loadScript(src); });
+    }, Promise.resolve());
+  }
+
+  /** 加载依赖后调用「当前」全局函数（模块脚本会覆盖 stub） */
+  function lazy(name, deps) {
+    window[name] = function () {
+      var args = arguments;
+      return loadAll(deps).then(function () {
+        var fn = window[name];
+        if (typeof fn !== 'function') throw new Error(name + ' unavailable');
+        return fn.apply(window, args);
+      });
+    };
+  }
+
+  function afterCore(fn) {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', fn);
+    } else {
+      fn();
+    }
+  }
+
+  afterCore(function () {
+    // —— 入口：菜单 / 面板（01 会调用这些名字）——
+    lazy('openMbtiQuiz', ['js/02-mbti-engine.js', 'js/04-mbti-ui.js']);
+    lazy('openZodiacPanel', ['js/06-zodiac.js']);
+    // 八字面板在 05；排盘引擎 03 延后到真正需要计算时
+    if (typeof window.openBaziPanel === 'function') {
+      var _openBazi = window.openBaziPanel;
+      window.openBaziPanel = function () {
+        var args = arguments;
+        return loadScript('js/03-bazi-engine.js').then(function () {
+          return _openBazi.apply(window, args);
+        });
+      };
+    }
+    if (typeof window.submitBaziForm === 'function') {
+      var _submitBazi = window.submitBaziForm;
+      window.submitBaziForm = function () {
+        var args = arguments;
+        return loadScript('js/03-bazi-engine.js').then(function () {
+          return _submitBazi.apply(window, args);
+        });
+      };
+    }
+    if (typeof window.castBaziJiao === 'function') {
+      var _castBazi = window.castBaziJiao;
+      window.castBaziJiao = function () {
+        var args = arguments;
+        return loadScript('js/03-bazi-engine.js').then(function () {
+          return _castBazi.apply(window, args);
+        });
+      };
+    }
+
+    // 城市预设 / 星盘 API 在 08
+    lazy('applyBaziCityPreset', ['js/08-western-astrology.js']);
+    lazy('applyZodiacCityPreset', ['js/08-western-astrology.js']);
+    lazy('applyWesternCityPreset', ['js/08-western-astrology.js']);
+    lazy('openWesternPanel', ['js/08-western-astrology.js']);
+    lazy('closeWesternPanel', ['js/08-western-astrology.js']);
+    lazy('showWesternInputForm', ['js/08-western-astrology.js']);
+    lazy('submitWesternForm', ['js/08-western-astrology.js']);
+    lazy('backToWesternForm', ['js/08-western-astrology.js']);
+    lazy('toggleWesternDict', ['js/08-western-astrology.js']);
+
+    // 命运圆盘在 09
+    lazy('openFortuneWheel', ['js/09-fortune-wheel.js']);
+    lazy('closeFortuneWheel', ['js/09-fortune-wheel.js']);
+    lazy('spinFortuneWheel', ['js/09-fortune-wheel.js']);
+
+    // MBTI 相关（打开后按钮会用到；加载 04 后会被实函数覆盖，此处兜底）
+    lazy('closeMbtiQuiz', ['js/02-mbti-engine.js', 'js/04-mbti-ui.js']);
+    lazy('castMbtiJiao', ['js/02-mbti-engine.js', 'js/04-mbti-ui.js']);
+    lazy('resetMbtiQuiz', ['js/02-mbti-engine.js', 'js/04-mbti-ui.js']);
+    lazy('startMbtiExtra', ['js/02-mbti-engine.js', 'js/04-mbti-ui.js']);
+    lazy('backToMbtiQuiz', ['js/02-mbti-engine.js', 'js/04-mbti-ui.js']);
+    lazy('openMbtiDict', ['js/02-mbti-engine.js', 'js/04-mbti-ui.js']);
+    lazy('closeMbtiDict', ['js/02-mbti-engine.js', 'js/04-mbti-ui.js']);
+
+    lazy('closeZodiacPanel', ['js/06-zodiac.js']);
+    lazy('submitZodiacForm', ['js/06-zodiac.js']);
+    lazy('castZodiacJiao', ['js/06-zodiac.js']);
+    lazy('backToZodiacForm', ['js/06-zodiac.js']);
+    lazy('openZodiacDict', ['js/06-zodiac.js']);
+    lazy('closeZodiacDict', ['js/06-zodiac.js']);
+
+    // 印章长按：08 内绑定；此处补一层，未加载 08 时仍能打开星盘
+    (function bindSealLazy() {
+      var hit = document.getElementById('sealHit');
+      if (!hit || hit._lazyBound) return;
+      hit._lazyBound = true;
+      var timer = null;
+      var LONG_MS = 550;
+      function clear() { if (timer) { clearTimeout(timer); timer = null; } }
+      function start(e) {
+        if (e && e.target && e.target.closest && e.target.closest('.jade-zone')) return;
+        var seal = document.getElementById('sealImg');
+        if (seal && seal.classList.contains('watermark')) return;
+        if (hit.classList.contains('disabled')) return;
+        clear();
+        timer = setTimeout(function () {
+          timer = null;
+          loadScript('js/08-western-astrology.js').then(function () {
+            if (typeof window.openWesternPanel === 'function') window.openWesternPanel();
+          });
+        }, LONG_MS);
+      }
+      hit.addEventListener('touchstart', start, { passive: true });
+      hit.addEventListener('touchend', clear);
+      hit.addEventListener('touchcancel', clear);
+      hit.addEventListener('touchmove', clear);
+      hit.addEventListener('mousedown', function (e) { if (e.button === 0) start(e); });
+      hit.addEventListener('mouseup', clear);
+      hit.addEventListener('mouseleave', clear);
+      hit.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    })();
+
+    // 箱图长按：09 内绑定；未加载时先拉 09 再打开
+    (function bindBoxLazy() {
+      var wrap = document.querySelector('.box-wrap') || document.querySelector('.box-img');
+      if (!wrap || wrap._lazyBound) return;
+      wrap._lazyBound = true;
+      var timer = null;
+      var LONG_MS = 560;
+      function clear() { if (timer) { clearTimeout(timer); timer = null; } }
+      function start(e) {
+        if (e.target && e.target.classList && e.target.classList.contains('jade-zone')) return;
+        clear();
+        timer = setTimeout(function () {
+          timer = null;
+          loadScript('js/09-fortune-wheel.js').then(function () {
+            if (typeof window.openFortuneWheel === 'function') window.openFortuneWheel();
+          });
+        }, LONG_MS);
+      }
+      wrap.addEventListener('touchstart', start, { passive: true });
+      wrap.addEventListener('touchend', clear);
+      wrap.addEventListener('touchcancel', clear);
+      wrap.addEventListener('touchmove', clear);
+      wrap.addEventListener('mousedown', function (e) { if (e.button === 0) start(e); });
+      wrap.addEventListener('mouseup', clear);
+      wrap.addEventListener('mouseleave', clear);
+    })();
+
+    // 横屏 All-in-one 依赖 09：进入横屏或空闲时预加载
+    function preferFortune() {
+      loadScript('js/09-fortune-wheel.js');
+    }
+    if (window.matchMedia) {
+      var mq = window.matchMedia('(orientation: landscape)');
+      if (mq.matches) preferFortune();
+      if (mq.addEventListener) mq.addEventListener('change', function (e) { if (e.matches) preferFortune(); });
+      else if (mq.addListener) mq.addListener(function () { if (mq.matches) preferFortune(); });
+    }
+
+    // 空闲预加载次要模块（不阻塞首屏）
+    function idlePreload() {
+      loadScript('js/07-error-monitoring.js');
+      loadScript('js/09-fortune-wheel.js');
+    }
+    if (window.requestIdleCallback) {
+      requestIdleCallback(idlePreload, { timeout: 4000 });
+    } else {
+      setTimeout(idlePreload, 2500);
+    }
+  });
+})();
+</script>
 
 <div id="allInOneOverlay" aria-hidden="true">
   <div class="land-layout">
