@@ -94,7 +94,6 @@
   // 9 不同情境表现可并存→否；10-12 虚构术语/文献→否
   const MBTI_TRAP_EXPECTED = ['no', 'yes', 'no', 'no', 'no', 'no', 'no', 'yes', 'no', 'no', 'no', 'no'];
   let mbtiExtraMode = false; // 是否进入加测 24 题（12 题深度加测 + 12 题真实性核验）
-  let mbtiTargetTotal = 48;
   let mbtiAnswers = {};
   let mbtiListRendered = false;
   function loadMbtiAnswers() {
@@ -224,7 +223,6 @@
   }
   function startMbtiExtra() {
     mbtiExtraMode = true;
-    mbtiTargetTotal = 72;
     mbtiListRendered = false;
     renderMbtiList();
     applyMbtiAnswersToUI();
@@ -288,7 +286,6 @@
   function resetMbtiQuiz() {
     mbtiAnswers = {};
     mbtiExtraMode = false;
-    mbtiTargetTotal = 48;
     mbtiListRendered = false;
     saveMbtiAnswers();
     renderMbtiList();

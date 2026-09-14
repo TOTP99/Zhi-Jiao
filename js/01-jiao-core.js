@@ -194,12 +194,6 @@
     xiao:  { title: '笑 筊', class: 'xiao',  label: '笑筊', meaning: '两筊皆阳，神明含笑未决' },
     yin:   { title: '陰 筊', class: 'yin',   label: '陰筊', meaning: '两筊皆阴，神明未允' }
   };
-  // 静态备用文案，仅在 AI 神谕生成失败时使用
-  const fallbackOracles = {
-    sheng: { 神意: '时机已至，顺势而行，此事可成。', 宜: '主动争取', 忌: '犹豫不决' },
-    xiao:  { 神意: '天机未明，此事尚在变化之中。', 宜: '静观其变', 忌: '仓促决断' },
-    yin:   { 神意: '时机未到，强行推进恐有阻碍。', 宜: '韬光养晦', 忌: '强求硬闯' }
-  };
   // 分类判词库（约 537 条神意，覆盖常见人生议题）
   const judgmentBank = {
     marriage: {
@@ -495,13 +489,6 @@
       }
     };
   }
-  function sanitizeOracle(o, type, category, source) {
-    const t = normalizeJiaoType(type);
-    if (isValidOracle(o)) {
-      return makeOracle(o, t, category, source || (o.meta && o.meta.source) || 'unknown');
-    }
-    return pickGuardianOracle(t, category);
-  }
   function detectCategory(question) {
     const q = String(question || '');
     if (!q.trim()) return 'general';
@@ -752,12 +739,6 @@
     } catch (_) {}
     return pickGuardianOracle(t, cat);
   }
-  // AI 神谕已关闭：保留函数名以免旧引用报错，直接失败以走本地库
-  const USE_AI_ORACLE = false;
-  async function generateOracle(/* question, typeKey, beastKey */) {
-    if (!USE_AI_ORACLE) throw new Error('AI_ORACLE_DISABLED');
-    throw new Error('AI_ORACLE_DISABLED');
-  }
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, c => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -889,15 +870,6 @@
     { q: '人工智能的发展会给人类社会带来更多福祉还是风险？' },
     { q: '未来人类与人工智能会形成怎样的关系？' },
   ];
-  // 预设快捷问句（选 4–8 直接填入；选 9 打开一百零八问菜单）
-  const PRESET_QUESTIONS = {
-    4: '此事现在做与否？',
-    5: '今日运气与手气如何？',
-    6: '今明两天天气是否利于出行？',
-    7: '这笔冲动消费该不该买？',
-    8: '此次出行是否平安顺利？',
-    9: '无事随便问问，神明有何示下？'
-  };
   // ---- 菜单状态：main | casual | none ----
   // 交互原则：
   // 1) 只读输入框聚焦 → 打开主菜单

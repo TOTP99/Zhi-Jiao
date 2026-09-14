@@ -567,11 +567,6 @@
       <div class="oracle-shenyi">${escapeHtml(safe['神意'])}</div><div class="oracle-yiji"><div class="oracle-pill yi"><span class="oracle-tag">宜</span>${escapeHtml(safe['宜'])}</div><div class="oracle-pill ji"><span class="oracle-tag">忌</span>${escapeHtml(safe['忌'])}</div></div>
     `;
   }
-  const categoryLabels = {
-    marriage: '婚姻情感', job: '工作职场', wealth: '财运钱财', career: '事业发展',
-    children: '子女生育', dream: '梦境解析', life: '日常生活', abroad: '出国移民',
-    travel: '旅行出游', weather: '天气气候', sports: '运动竞技'
-  };
   async function castJiao() {
     const btn = document.getElementById('castBtn');
     if (btn.disabled) return;
