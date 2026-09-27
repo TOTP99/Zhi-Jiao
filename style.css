@@ -82,8 +82,6 @@ input,textarea{font-family:inherit}
 }
 .btn-ghost:active{background:rgba(201,162,39,.14)}
 .btn-ghost.btn-sm{padding:8px 14px;font-size:12.5px}
-.link-btn{display:block;margin:10px auto 0;font-size:12.5px;color:var(--faint);letter-spacing:2px;padding:8px}
-.link-btn:active{color:var(--muted)}
 .kicker{font-size:11px;letter-spacing:3px;color:var(--gold-soft);font-weight:500}
 .foot-note{margin:18px 0 6px;text-align:center;font-size:11.5px;color:var(--faint);letter-spacing:1px;line-height:1.8}
 .dim{color:var(--muted)}
@@ -196,10 +194,16 @@ input,textarea{font-family:inherit}
 .hero{text-align:center;margin-bottom:6px}
 .box-wrap{position:relative;width:100%;max-width:420px;margin:0 auto}
 .box-img{width:100%;display:block;border-radius:var(--r-md);filter:drop-shadow(0 16px 30px rgba(0,0,0,.5))}
-.jade-zone{position:absolute;top:64%;height:18%;width:17%;border-radius:50%;cursor:pointer;transition:box-shadow .3s}
+.jade-zone{position:absolute;top:64%;height:18%;width:17%;border-radius:50%;cursor:pointer}
 .jade-zone.dragon{left:21%}.jade-zone.tiger{left:41.5%}.jade-zone.lion{left:62%}
-.jade-zone.active{animation:jadeGlow 2.1s ease-in-out infinite}
-@keyframes jadeGlow{0%,100%{box-shadow:0 0 18px rgba(232,199,102,.4)}50%{box-shadow:0 0 34px rgba(232,199,102,.75)}}
+/* 瑞兽覆影：点选龙 / 虎 / 狮后，瑞兽像覆于宝盒之上 */
+.beast-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.beast-overlay img{width:74%;aspect-ratio:1/1;border-radius:50%;object-fit:cover;
+  border:2px solid rgba(232,199,102,.85);
+  box-shadow:0 0 26px rgba(232,199,102,.55),0 0 64px rgba(201,162,39,.28);
+  animation:haloIn .45s ease}
+.beast-overlay.watermark{opacity:.35}
+@keyframes haloIn{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:scale(1)}}
 .beast-labels{display:flex;justify-content:center;gap:8px;margin-top:8px}
 .beast-labels button{flex:1;max-width:112px;padding:7px 4px;border:1px solid var(--line-soft);border-radius:var(--r-sm);
   background:var(--card);display:flex;flex-direction:column;gap:1px;transition:all .2s}
@@ -226,23 +230,20 @@ input,textarea{font-family:inherit}
 .question-box:focus{border-color:var(--gold)}
 .question-box:not([readonly]){background:#211c13}
 
-.cast-btn{width:100%;margin-top:2px}
-#resetBtn{color:var(--faint)}
+/* 掷筊主按键：全页最醒目 */
+.cast-btn{width:100%;margin-top:6px;padding:15px 0;font-size:18px;font-weight:700;letter-spacing:14px;text-indent:14px;
+  color:#241a06;background:linear-gradient(180deg,#f4dc96,#d9ab3c 58%,#b8891e);
+  border:1px solid #8a6a12;border-radius:14px;cursor:pointer;
+  box-shadow:0 6px 22px rgba(201,162,39,.38),inset 0 1px 0 rgba(255,255,255,.55)}
+.cast-btn:active{transform:translateY(1px);box-shadow:0 3px 12px rgba(201,162,39,.3)}
+.cast-btn:disabled{opacity:.55;transform:none}
+/* 主按键下一行：重置 / 存入 / 分享，统一小字风格 */
+.cast-subrow{display:flex;gap:8px;margin-top:10px}
+.btn-sub{flex:1;padding:8px 4px;font-size:12.5px;letter-spacing:5px;text-indent:5px;color:var(--gold-soft);
+  background:rgba(201,162,39,.07);border:1px solid var(--line-soft);border-radius:10px;cursor:pointer;transition:background .2s}
+.btn-sub:active{background:rgba(201,162,39,.18)}
 
 .ritual-area{margin-top:12px;text-align:center}
-/* 瑞兽光圈：点选龙 / 虎 / 狮后，瑞兽像现于光圈之内 */
-.beast-halo{margin:0 auto 4px;position:relative;width:104px;height:104px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;flex:0 0 auto;
-  border:1.5px solid rgba(201,162,39,.55);
-  background:radial-gradient(circle,rgba(201,162,39,.10) 0%,rgba(201,162,39,.03) 55%,transparent 72%);
-  box-shadow:0 0 18px rgba(201,162,39,.28),0 0 44px rgba(201,162,39,.12),inset 0 0 18px rgba(201,162,39,.12);
-  transition:box-shadow .4s,border-color .4s}
-.beast-halo.lit{border-color:rgba(232,199,102,.85);
-  box-shadow:0 0 28px rgba(232,199,102,.5),0 0 64px rgba(201,162,39,.2),inset 0 0 24px rgba(201,162,39,.2)}
-.beast-halo-img{position:absolute;inset:6px;width:calc(100% - 12px);height:calc(100% - 12px);
-  border-radius:50%;object-fit:cover;animation:haloIn .45s ease}
-.beast-halo-empty{font-size:20px;color:rgba(201,162,39,.38);line-height:1;user-select:none}
-.beast-halo.watermark{opacity:.35}
 @keyframes haloIn{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:scale(1)}}
 
 /* 筊 */
@@ -278,8 +279,6 @@ input,textarea{font-family:inherit}
   font-size:11px;font-weight:700;color:#0b0906;flex:0 0 auto}
 .oracle-pill.yi .oracle-tag{background:var(--jade)}.oracle-pill.ji .oracle-tag{background:var(--cinnabar)}
 .result-beast{margin-top:10px;font-size:12px;color:var(--muted);letter-spacing:1px}
-.result-actions{display:flex;gap:10px;justify-content:center;margin-top:14px}
-
 /* ══════════ 功能卡片 ══════════ */
 .profile-card{
   display:flex;align-items:center;gap:12px;
@@ -321,12 +320,12 @@ input,textarea{font-family:inherit}
 .zen-strip p span{font-size:12px;color:var(--faint)}
 
 /* ══════════ 底部抽屉 ══════════ */
-.sheet-backdrop,.mbti-backdrop,.fortune-backdrop,.history-backdrop{
+.sheet-backdrop{
   position:fixed;inset:0;z-index:80;background:rgba(5,4,2,.62);
   backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);
   opacity:0;pointer-events:none;transition:opacity .28s ease}
-.sheet-backdrop.show,.mbti-backdrop.show,.fortune-backdrop.show,.history-backdrop.show{opacity:1;pointer-events:auto}
-.sheet,.mbti-modal,.fortune-modal,.history{
+.sheet-backdrop.show{opacity:1;pointer-events:auto}
+.sheet{
   position:fixed;left:0;right:0;bottom:0;z-index:81;max-width:560px;margin:0 auto;
   max-height:88vh;max-height:88dvh;display:flex;flex-direction:column;
   background:linear-gradient(180deg,#1e1a13 0%,#14110b 100%);
@@ -337,18 +336,18 @@ input,textarea{font-family:inherit}
   overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
   scrollbar-width:none;
 }
-.sheet::-webkit-scrollbar,.mbti-modal::-webkit-scrollbar,.fortune-modal::-webkit-scrollbar,.history::-webkit-scrollbar{display:none}
-.sheet.show,.mbti-modal.show,.fortune-modal.show,.history.show{transform:translateY(0)}
+.sheet::-webkit-scrollbar{display:none}
+.sheet.show{transform:translateY(0)}
 .sheet-handle{width:44px;height:4px;border-radius:2px;background:var(--ink-700);margin:6px auto 10px;flex:0 0 auto}
 .sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex:0 0 auto;
   position:sticky;top:-8px;z-index:5;margin-left:-18px;margin-right:-18px;padding:10px 18px 10px;
   background:linear-gradient(180deg,#1e1a13 0%,#1b1712 100%);border-bottom:1px solid var(--line-soft)}
-.sheet-head h3,.mbti-head h3,.fortune-head h3,.history-head h3{
+.sheet-head h3{
   font-family:var(--serif);font-size:17px;letter-spacing:4px;color:var(--cream);font-weight:600}
-.sheet-close,.mbti-close,.fortune-close,.history-close{
+.sheet-close{
   width:36px;height:36px;border-radius:50%;font-size:20px;color:var(--muted);
   border:1px solid var(--line-soft);display:inline-flex;align-items:center;justify-content:center}
-.sheet-close:active,.mbti-close:active,.fortune-close:active,.history-close:active{background:rgba(201,162,39,.12)}
+.sheet-close:active{background:rgba(201,162,39,.12)}
 .mbti-head,.fortune-head,.history-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex:0 0 auto}
 .mbti-intro{font-size:12.5px;color:var(--muted);line-height:1.8;padding-bottom:10px;margin-bottom:10px;
   border-bottom:1px solid var(--line-soft);flex:0 0 auto}
@@ -390,15 +389,9 @@ input,textarea{font-family:inherit}
 .bazi-row{margin-bottom:14px}
 .bazi-row>label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:8px;letter-spacing:2px}
 .bazi-optional{color:var(--faint);font-size:11px}
-.bazi-inline{display:flex;gap:8px}
-.bazi-inline input{flex:1;min-width:0;font-size:14px;color:var(--cream);background:var(--ink-800);
-  border:1px solid var(--line-soft);border-radius:var(--r-sm);padding:10px 12px;outline:none}
-.bazi-inline input:focus{border-color:var(--gold)}
-.bazi-sex{display:flex;gap:8px}
-.bazi-sex-btn{flex:1;font-size:14px;color:var(--muted);background:rgba(243,234,211,.05);
-  border:1px solid var(--line-soft);border-radius:var(--r-sm);padding:10px 0}
-.bazi-sex-btn.selected{background:linear-gradient(180deg,var(--gold-bright),var(--gold));border-color:var(--gold-deep);
-  color:#241a06;font-weight:700}
+
+
+
 .bazi-checkbox{display:flex !important;align-items:center;gap:8px;font-size:13px !important;color:var(--muted) !important;cursor:pointer}
 .bazi-checkbox input{accent-color:var(--gold);width:17px;height:17px}
 /* ── 统一生辰档案条：一次录入，全部分支共用 ── */
@@ -420,25 +413,11 @@ input,textarea{font-family:inherit}
 .ob-optional{color:var(--faint);font-size:11px;letter-spacing:1px}
 .bazi-row-tight{margin-bottom:12px}
 .bazi-error{font-size:12.5px;color:var(--cinnabar);min-height:18px;text-align:center;margin:6px 0}
-.city-preset-row{display:flex;gap:16px;align-items:center}
-.city-preset-row label{display:inline-flex;align-items:center;gap:8px;font-size:14px;color:var(--cream-dim);cursor:pointer}
-.city-preset-row input{accent-color:var(--gold);width:17px;height:17px}
+
+
 
 /* 滚轮 */
-.wheel-row{display:flex;gap:6px;justify-content:center;height:120px;position:relative}
-.wheel-col{flex:1;min-width:0;height:120px;overflow-y:auto;overscroll-behavior:contain;scroll-snap-type:y mandatory;
-  -webkit-overflow-scrolling:touch;border-radius:var(--r-md);
-  background:linear-gradient(180deg,rgba(243,234,211,.06),rgba(243,234,211,.02));
-  border:1px solid var(--line-soft);scrollbar-width:none}
-.wheel-col::-webkit-scrollbar{display:none}
-.wheel-item{height:40px;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--faint);
-  scroll-snap-align:center;user-select:none;opacity:.5;transform:scale(.9);transition:all .18s}
-.wheel-item.active{color:var(--gold-bright);font-weight:700;font-size:15px;transform:scale(1.05);opacity:1}
-.wheel-mask{pointer-events:none;position:absolute;left:0;right:0;top:0;bottom:0;border-radius:var(--r-md);
-  background:linear-gradient(180deg,rgba(20,17,11,.92) 0%,rgba(20,17,11,.5) 20%,transparent 36%,transparent 64%,rgba(20,17,11,.5) 80%,rgba(20,17,11,.92) 100%)}
-.wheel-center-line{pointer-events:none;position:absolute;left:4px;right:4px;top:50%;height:40px;margin-top:-20px;
-  border-top:1px solid var(--gold);border-bottom:1px solid var(--gold);border-radius:6px;
-  background:rgba(201,162,39,.08)}
+
 
 /* 历史 */
 #historyList{overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1 1 auto;min-height:0}
@@ -593,10 +572,10 @@ input,textarea{font-family:inherit}
 /* 桌面端 */
 @media (min-width:600px){
   #views{padding:24px 24px calc(var(--tabbar-h) + 28px)}
-  .sheet,.mbti-modal,.fortune-modal,.history{
+  .sheet{
     left:50%;right:auto;width:min(520px,94vw);transform:translateX(-50%) translateY(103%);
     border-bottom:1px solid var(--line);border-radius:20px;margin-bottom:24px;max-height:84vh}
-  .sheet.show,.mbti-modal.show,.fortune-modal.show,.history.show{transform:translateX(-50%) translateY(0)}
+  .sheet.show{transform:translateX(-50%) translateY(0)}
   #tabbar{border-radius:18px 18px 0 0}
 }
 @media (prefers-reduced-motion:reduce){
@@ -632,27 +611,25 @@ input,textarea{font-family:inherit}
 .btn-ghost{padding:9px 16px;font-size:12.5px}
 .btn-ghost.btn-sm{padding:7px 12px;font-size:11.5px}
 .cast-btn{font-size:17px;padding:13px 0;letter-spacing:14px;text-indent:14px}
-.link-btn{font-size:11.5px;margin-top:8px}
+.btn-sub{font-size:11.5px;letter-spacing:4px;text-indent:4px}
 .kicker{font-size:10px;letter-spacing:2.5px}
 .mbti-q{font-size:13.5px;margin-bottom:8px}
 .mbti-item{padding:10px 2px}
-.beast-halo{width:92px;height:92px}
+.beast-overlay img{width:70%}
 #views{padding:12px 14px calc(var(--tabbar-h) + 16px)}
 .question-reminder{font-size:11.5px}
 .method-cell{font-size:12px}
 
-/* ── 2) 横滑条组件（hstrip）：功能卡横向滑动 ── */
-.hstrip{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;
-  -webkit-overflow-scrolling:touch;scrollbar-width:none;
-  padding:2px 2px 10px;margin:0 -2px}
-.hstrip::-webkit-scrollbar{display:none}
-.hstrip .feature-card{flex:0 0 128px;width:128px;flex-direction:column;align-items:flex-start;
-  gap:8px;padding:12px 11px;scroll-snap-align:start;text-align:left}
-.hstrip .f-text{gap:4px}
-.hstrip .f-text strong{font-size:13px}
-.hstrip .f-text span{font-size:10.5px;line-height:1.6}
-.hstrip .f-go{display:none}
-.hstrip .f-icon{width:34px;height:34px;border-radius:10px}
+/* ── 三联卡：一行三卡，无需滑动 ── */
+.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.trio .feature-card{flex-direction:column;align-items:center;text-align:center;
+  gap:8px;padding:14px 6px 12px;border-radius:14px}
+.trio .f-icon{width:38px;height:38px;border-radius:12px}
+.trio .f-icon svg{width:20px;height:20px}
+.trio .f-text{align-items:center;gap:3px}
+.trio .f-text strong{font-size:13px;letter-spacing:1px}
+.trio .f-text span{font-size:10px;color:var(--faint);line-height:1.5}
+.trio .f-go{display:none}
 
 /* ── 3) 滑杆组件（yslider）：鎏金细滑杆 ── */
 input[type=range].yslider{-webkit-appearance:none;appearance:none;width:100%;height:28px;
@@ -681,26 +658,74 @@ input[type=range].yslider::-moz-range-thumb{width:20px;height:20px;border-radius
 
 /* ═══════════ 横屏：上下结构 → 左右结构 ═══════════ */
 @media (orientation:landscape) and (max-height:600px){
-  /* 子页面：标题通栏，下方左右双列 */
-  .sheet{max-width:min(920px,96vw);max-height:94dvh;flex-direction:row;flex-wrap:wrap;
-    overflow:hidden;padding:8px 16px 12px}
+  /* iPhone 14 横屏（844×390pt）：安全区留白，四边呼吸 */
+  :root{--tabbar-h:calc(56px + env(safe-area-inset-bottom))}
+  #views{padding:10px max(22px,env(safe-area-inset-right)) calc(var(--tabbar-h) + 8px) max(22px,env(safe-area-inset-left))}
+  .tabbar{padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
+  .tab{padding:4px 0;font-size:10px;gap:2px}
+  .tab svg{width:20px;height:20px}
+  .kicker{font-size:10px;letter-spacing:2px}
+  .foot-note{margin:8px 0 2px;font-size:10.5px}
+  .profile-card{padding:10px 14px;margin-bottom:10px;gap:10px}
+  .profile-info p{font-size:12px}
+  .btn-ghost.btn-sm{padding:6px 12px;font-size:11px}
+
+  /* ── 问卜主页：左（宝盒＋掷筊）右（问＋判）两栏，内部留白 ── */
+  #view-divine.on{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);
+    gap:6px 26px;align-items:start}
+  #view-divine .hero{grid-column:1;grid-row:1;margin-bottom:0}
+  #view-divine .cast-btn{grid-column:1;grid-row:2;font-size:16px;padding:10px 0;
+    letter-spacing:12px;text-indent:12px;margin-top:4px}
+  #view-divine .cast-subrow{grid-column:1;grid-row:3;margin-top:6px}
+  #view-divine .daily-card{grid-column:2;grid-row:1;margin-bottom:8px;padding:9px 14px}
+  #view-divine .method-chips{grid-column:2;grid-row:2;margin:8px 0}
+  #view-divine .question-wrap{grid-column:2;grid-row:3}
+  #view-divine .ritual-area{grid-column:2;grid-row:4;margin-top:6px;
+    display:flex;align-items:flex-start;gap:18px;text-align:left}
+  #view-divine .foot-note{grid-column:1/-1}
+  #view-divine .box-wrap{max-width:200px}
+  #view-divine .beast-labels{margin-top:6px;gap:8px}
+  #view-divine .beast-labels button{padding:5px 2px;font-size:11px}
+  #view-divine .beast-labels strong{font-size:12px}
+  #view-divine .hero-tip{margin-top:3px;font-size:10.5px}
+  #view-divine .jiao-display{flex:0 0 104px;margin:2px 0;min-height:70px}
+  #view-divine .result-area{flex:1 1 auto;min-width:0;padding:0}
+  #view-divine .result-title{font-size:16px;letter-spacing:5px;text-indent:5px}
+  #view-divine .result-desc{font-size:12.5px}
+  #view-divine .result-beast{font-size:11px}
+  .daily-verse{font-size:12.5px;-webkit-line-clamp:1}
+  .daily-kicker{font-size:10px}
+  .mchip{padding:6px 4px;font-size:11.5px}
+  .question-box{font-size:12.5px;min-height:34px;padding:8px 10px}
+
+  /* ── 命盘 / 发现 / 我的：并排收紧 ── */
+  .trio{gap:12px}
+  .trio .feature-card{padding:14px 8px}
+  #view-discover.on{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);
+    gap:16px;align-items:start}
+  #view-discover .zen-strip{margin-top:0;flex-direction:column;align-items:flex-start;
+    gap:10px;padding:14px}
+  #view-discover .zen-strip img{width:100%;height:76px}
+  #view-discover .zen-strip p{font-size:12px}
+  #view-me .feature-list{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  #view-me .feature-card{padding:10px 12px;gap:10px}
+  #view-me .member-card{margin-bottom:10px;padding:12px 14px}
+
+  /* ── 子页面：居中浮窗，标题通栏，下方左右双列 ── */
+  .sheet{max-width:min(880px,94vw);max-height:94dvh;flex-direction:row;flex-wrap:wrap;
+    overflow:hidden;padding:12px 20px 16px;font-size:13px;
+    left:50%;right:auto;bottom:auto;top:50%;width:min(880px,94vw);margin-bottom:0;
+    transform:translate(-50%,110%);
+    border:1px solid var(--line);border-radius:18px}
+  .sheet.show{transform:translate(-50%,-50%)}
   .sheet-handle{display:none}
-  .sheet-head{flex:1 1 100%;position:static;margin:0 0 6px;padding:4px 2px 8px}
+  .sheet-head{flex:1 1 100%;position:static;margin:0 0 8px;padding:4px 2px 10px}
+  .sheet-head h3{font-size:14px}
   .sheet:not(#mbtiModal)>*:not(.sheet-head):not(.sheet-handle){
-    flex:1 1 300px;min-width:0;min-height:0;max-height:calc(94dvh - 84px);
+    flex:1 1 300px;min-width:0;min-height:0;max-height:calc(94dvh - 92px);
     overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
   /* MBTI 答题：题目双列排布 */
   #mbtiModal{flex-direction:column;flex-wrap:nowrap;overflow-y:auto}
-  #mbtiModal .mbti-list{columns:2;column-gap:18px;overflow:visible;flex:0 0 auto}
+  #mbtiModal .mbti-list{columns:2;column-gap:20px;overflow:visible;flex:0 0 auto}
   #mbtiModal .mbti-item{break-inside:avoid}
-  /* 问卜主页：光圈 | 筊 | 判词 三列 */
-  .ritual-area{display:flex;align-items:flex-start;gap:20px;text-align:left}
-  .beast-halo{flex:0 0 120px;margin:0}
-  .jiao-display{flex:0 0 120px;margin:8px 0;min-height:80px}
-  .result-area{flex:1 1 auto;min-width:0;padding:0}
-  .result-title{letter-spacing:6px;text-indent:6px}
-  /* 功能卡横滑条在横屏下放宽 */
-  .hstrip .feature-card{flex-basis:150px;width:150px}
-  #views{padding:10px 18px calc(var(--tabbar-h) + 12px)}
-  .foot-note{margin:8px 0 2px}
 }
