@@ -200,23 +200,23 @@ input,textarea{font-family:inherit}
 .jade-zone.dragon{left:21%}.jade-zone.tiger{left:41.5%}.jade-zone.lion{left:62%}
 .jade-zone.active{animation:jadeGlow 2.1s ease-in-out infinite}
 @keyframes jadeGlow{0%,100%{box-shadow:0 0 18px rgba(232,199,102,.4)}50%{box-shadow:0 0 34px rgba(232,199,102,.75)}}
-.beast-labels{display:flex;justify-content:center;gap:10px;margin-top:10px}
-.beast-labels button{flex:1;max-width:120px;padding:9px 4px;border:1px solid var(--line-soft);border-radius:var(--r-sm);
-  background:var(--card);display:flex;flex-direction:column;gap:2px;transition:all .2s}
-.beast-labels button strong{font-family:var(--serif);font-size:14px;letter-spacing:3px;color:var(--cream)}
-.beast-labels button span{font-size:11px;color:var(--muted);letter-spacing:1px}
+.beast-labels{display:flex;justify-content:center;gap:8px;margin-top:8px}
+.beast-labels button{flex:1;max-width:112px;padding:7px 4px;border:1px solid var(--line-soft);border-radius:var(--r-sm);
+  background:var(--card);display:flex;flex-direction:column;gap:1px;transition:all .2s}
+.beast-labels button strong{font-family:var(--serif);font-size:13px;letter-spacing:3px;color:var(--cream)}
+.beast-labels button span{font-size:10.5px;color:var(--muted);letter-spacing:1px}
 .beast-labels button.picked{border-color:var(--gold);background:rgba(201,162,39,.12);box-shadow:0 0 14px rgba(201,162,39,.2)}
 .beast-labels button.picked strong{color:var(--gold-bright)}
-.hero-tip{margin-top:10px;font-size:12.5px;color:var(--muted);letter-spacing:1px;min-height:20px}
+.hero-tip{margin-top:8px;font-size:12.5px;color:var(--muted);letter-spacing:1px;min-height:20px}
 .hero-tip span{color:var(--gold-bright);font-weight:600}
 
-.method-chips{display:flex;gap:8px;margin:14px 0;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.method-chips{display:flex;gap:6px;margin:10px 0;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
 .method-chips::-webkit-scrollbar{display:none}
-.mchip{flex:0 0 auto;padding:9px 18px;font-size:13.5px;letter-spacing:2px;color:var(--muted);
+.mchip{flex:0 0 auto;padding:7px 14px;font-size:12.5px;letter-spacing:2px;color:var(--muted);
   border:1px solid var(--line-soft);border-radius:999px;background:var(--card);transition:all .2s}
 .mchip.on{color:#241a06;font-weight:700;background:linear-gradient(180deg,var(--gold-bright),var(--gold));border-color:var(--gold-deep)}
 
-.question-wrap{position:relative;margin-bottom:14px}
+.question-wrap{position:relative;margin-bottom:10px}
 .question-box{
   width:100%;min-height:76px;padding:14px 16px;font-size:15px;line-height:1.7;color:var(--cream);
   background:var(--ink-800);border:1px solid var(--line);border-radius:var(--r-md);
@@ -229,16 +229,24 @@ input,textarea{font-family:inherit}
 .cast-btn{width:100%;margin-top:2px}
 #resetBtn{color:var(--faint)}
 
-.ritual-area{margin-top:18px;text-align:center}
-.seal-fig{margin:0 auto 6px;position:relative;width:120px}
-.seal-img{width:120px;height:120px;border-radius:50%;object-fit:cover;opacity:.92;
-  border:2px solid rgba(201,162,39,.5);box-shadow:0 8px 24px rgba(0,0,0,.5);transition:opacity .9s}
-.seal-img.watermark{opacity:.12}
-.seal-hit{position:absolute;inset:0;border-radius:50%;cursor:default}
-.seal-fig figcaption{margin-top:6px;font-size:11px;letter-spacing:2px;color:var(--faint)}
+.ritual-area{margin-top:12px;text-align:center}
+/* 瑞兽光圈：点选龙 / 虎 / 狮后，瑞兽像现于光圈之内 */
+.beast-halo{margin:0 auto 4px;position:relative;width:104px;height:104px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;flex:0 0 auto;
+  border:1.5px solid rgba(201,162,39,.55);
+  background:radial-gradient(circle,rgba(201,162,39,.10) 0%,rgba(201,162,39,.03) 55%,transparent 72%);
+  box-shadow:0 0 18px rgba(201,162,39,.28),0 0 44px rgba(201,162,39,.12),inset 0 0 18px rgba(201,162,39,.12);
+  transition:box-shadow .4s,border-color .4s}
+.beast-halo.lit{border-color:rgba(232,199,102,.85);
+  box-shadow:0 0 28px rgba(232,199,102,.5),0 0 64px rgba(201,162,39,.2),inset 0 0 24px rgba(201,162,39,.2)}
+.beast-halo-img{position:absolute;inset:6px;width:calc(100% - 12px);height:calc(100% - 12px);
+  border-radius:50%;object-fit:cover;animation:haloIn .45s ease}
+.beast-halo-empty{font-size:20px;color:rgba(201,162,39,.38);line-height:1;user-select:none}
+.beast-halo.watermark{opacity:.35}
+@keyframes haloIn{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:scale(1)}}
 
 /* 筊 */
-.jiao-display{display:flex;justify-content:center;gap:36px;margin:14px 0 8px;min-height:60px;align-items:center;perspective:600px}
+.jiao-display{display:flex;justify-content:center;gap:32px;margin:10px 0 6px;min-height:56px;align-items:center;perspective:600px}
 .jiao{width:62px;height:44px;position:relative;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;
   transform-style:preserve-3d;transition:transform .45s cubic-bezier(.34,1.4,.64,1);
   filter:drop-shadow(0 10px 14px rgba(0,0,0,.5))}
@@ -484,9 +492,14 @@ input,textarea{font-family:inherit}
 .question-menu-title{font-size:11.5px;color:var(--gold-soft);letter-spacing:3px;padding:6px 10px}
 .question-menu-custom{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);
   padding:10px;margin:0 4px 6px;border-radius:var(--r-sm);background:rgba(201,162,39,.08)}
-.question-menu-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:2px 4px 4px}
+.question-menu-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:2px 4px 4px}
 .question-menu-cell{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--cream-dim);
   padding:12px;border-radius:var(--r-sm);background:rgba(243,234,211,.04);border:1px solid transparent;transition:all .2s}
+/* 问卜方式四个入口：一行四个，图标在上文字在下，更紧凑 */
+#questionMenu .question-menu-grid{grid-template-columns:repeat(4,1fr)}
+#questionMenu .method-cell{flex-direction:column;gap:6px;padding:10px 2px;font-size:11.5px;text-align:center;letter-spacing:1px}
+#questionMenu .method-cell .method-icon{width:30px;height:30px;border-radius:9px}
+#questionMenu .method-cell .method-icon svg{width:16px;height:16px}
 .question-menu-cell .method-icon{width:34px;height:34px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
   color:var(--gold-bright);background:rgba(201,162,39,.1);border-radius:10px}
 .question-menu-cell .method-icon svg{width:19px;height:19px}
@@ -504,7 +517,8 @@ input,textarea{font-family:inherit}
 .manual-input-confirm{flex:0 0 auto;width:30px;height:30px;border-radius:50%;border:1px solid var(--gold);
   background:rgba(201,162,39,.14);color:var(--gold-bright);font-size:14px}
 #casualMenu{max-height:min(64vh,440px);display:flex;flex-direction:column}
-#casualMenuGrid{flex:1 1 auto;display:flex;flex-direction:column;gap:2px;overflow-y:auto;padding:0 4px 8px}
+#casualMenuGrid{flex:1 1 auto;display:grid;grid-template-columns:repeat(2,1fr);gap:4px;overflow-y:auto;padding:0 4px 8px;align-content:start}
+#casualMenuGrid .casual-item .qm-num{font-size:10.5px}
 .casual-scroll-hint{font-size:11px;color:var(--gold-soft);text-align:center;letter-spacing:1px;padding-top:6px;flex:0 0 auto}
 .question-reminder{position:absolute;top:calc(100% + 8px);left:0;right:0;text-align:center;font-size:13px;color:var(--gold-bright);
   background:rgba(30,25,14,.97);border:1px solid var(--gold);border-radius:var(--r-sm);padding:10px;
@@ -622,7 +636,7 @@ input,textarea{font-family:inherit}
 .kicker{font-size:10px;letter-spacing:2.5px}
 .mbti-q{font-size:13.5px;margin-bottom:8px}
 .mbti-item{padding:10px 2px}
-.seal-fig{width:104px}
+.beast-halo{width:92px;height:92px}
 #views{padding:12px 14px calc(var(--tabbar-h) + 16px)}
 .question-reminder{font-size:11.5px}
 .method-cell{font-size:12px}
@@ -679,9 +693,9 @@ input[type=range].yslider::-moz-range-thumb{width:20px;height:20px;border-radius
   #mbtiModal{flex-direction:column;flex-wrap:nowrap;overflow-y:auto}
   #mbtiModal .mbti-list{columns:2;column-gap:18px;overflow:visible;flex:0 0 auto}
   #mbtiModal .mbti-item{break-inside:avoid}
-  /* 问卜主页：印信 | 筊 | 判词 三列 */
+  /* 问卜主页：光圈 | 筊 | 判词 三列 */
   .ritual-area{display:flex;align-items:flex-start;gap:20px;text-align:left}
-  .seal-fig{flex:0 0 132px;margin:0}
+  .beast-halo{flex:0 0 120px;margin:0}
   .jiao-display{flex:0 0 120px;margin:8px 0;min-height:80px}
   .result-area{flex:1 1 auto;min-width:0;padding:0}
   .result-title{letter-spacing:6px;text-indent:6px}

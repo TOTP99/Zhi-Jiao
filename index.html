@@ -172,11 +172,10 @@
       <button class="link-btn" id="resetBtn" type="button" onclick="resetAll()">重置本次问卜</button>
 
       <div class="ritual-area" id="ritualArea">
-        <figure class="seal-fig">
-          <img id="sealImg" class="seal-img" src="pics/seal.webp" alt="御猫灵局印信" draggable="false">
-          <div class="seal-hit" id="sealHit" aria-label="御猫灵局印信"></div>
-          <figcaption>御猫灵局印信</figcaption>
-        </figure>
+        <div class="beast-halo" id="beastHalo" aria-label="护法瑞兽">
+          <img id="beastHaloImg" class="beast-halo-img" alt="" draggable="false" hidden>
+          <span class="beast-halo-empty" id="beastHaloEmpty">✦</span>
+        </div>
         <div class="jiao-display" id="jiaoDisplay"></div>
         <div class="result-area" id="resultArea">
           <div class="result-title" id="resultTitle"></div>
@@ -283,7 +282,7 @@
         </button>
       </div>
       <button type="button" id="recordBtn" class="hidden-anchor" onclick="toggleHistory()" aria-hidden="true" tabindex="-1"></button>
-      <p class="foot-note">御猫灵局 v2.4 · 数据仅存于本机</p>
+      <p class="foot-note">御猫灵局 v2.5 · 数据仅存于本机</p>
     </section>
   </main>
 
@@ -311,7 +310,7 @@
 <div class="sheet-backdrop" id="fortuneBackdrop" onclick="closeFortuneWheel()"></div>
 <div class="sheet" id="fortuneModal" role="dialog" aria-label="命运圆盘">
   <div class="sheet-handle"></div>
-  <div class="sheet-head"><h3>命运圆盘</h3><button type="button" class="sheet-close" onclick="closeFortuneWheel()" aria-label="关闭">×</button></div>
+  <div class="sheet-head"><h3>命运圆盘</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
   <div class="fortune-layout">
     <div class="fortune-stage">
       <div class="fortune-pointer" aria-hidden="true"></div>
@@ -333,7 +332,7 @@
 <div class="sheet-backdrop" id="historyBackdrop" onclick="toggleHistory()"></div>
 <div class="sheet" id="historyBox" role="dialog" aria-label="请示记录">
   <div class="sheet-handle"></div>
-  <div class="sheet-head"><h3>请示记录</h3><button type="button" class="sheet-close" onclick="toggleHistory()" aria-label="关闭">×</button></div>
+  <div class="sheet-head"><h3>请示记录</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
   <div id="historyList"></div>
 </div>
 
@@ -341,7 +340,7 @@
 <div class="sheet-backdrop" id="mbtiBackdrop" onclick="closeMbtiQuiz()"></div>
 <div class="sheet" id="mbtiModal" role="dialog" aria-label="MBTI 人格快测">
   <div class="sheet-handle"></div>
-  <div class="sheet-head"><h3>MBTI 人格快测</h3><button type="button" class="sheet-close" onclick="closeMbtiQuiz()" aria-label="关闭">×</button></div>
+  <div class="sheet-head"><h3>MBTI 人格快测</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
   <div class="mbti-intro">凭第一反应拖动滑杆：偏左为「否」，偏右为「是」。不必揣测题目意图，取更贴近日常自然反应的一边。</div>
   <div class="mbti-progress" id="mbtiProgress">已完成 0/48</div>
   <div class="mbti-quick-result" id="mbtiQuickResult"></div>
@@ -365,7 +364,7 @@
 <div class="sheet-backdrop" id="baziBackdrop" onclick="closeBaziPanel()"></div>
 <div class="sheet" id="baziModal" role="dialog" aria-label="八字排盘">
   <div class="sheet-handle"></div>
-  <div class="sheet-head"><h3>八字排盘</h3><button type="button" class="sheet-close" onclick="closeBaziPanel()" aria-label="关闭">×</button></div>
+  <div class="sheet-head"><h3>八字排盘</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
   <div class="bazi-form" id="baziForm">
     <p class="mbti-intro">四柱 · 五行 · 十神 · 神煞。排盘既毕自动掷筊请示——聖筊详示，笑筊略示，陰筊守静。</p>
     <div class="profile-bar" id="baziProfileBar" data-bar="bazi"></div>
@@ -388,7 +387,7 @@
 <div class="sheet-backdrop" id="zodiacBackdrop" onclick="closeZodiacPanel()"></div>
 <div class="sheet" id="zodiacModal" role="dialog" aria-label="星座运势">
   <div class="sheet-handle"></div>
-  <div class="sheet-head"><h3>星座运势</h3><button type="button" class="sheet-close" onclick="closeZodiacPanel()" aria-label="关闭">×</button></div>
+  <div class="sheet-head"><h3>星座运势</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
   <div class="bazi-form" id="zodiacForm">
     <p class="mbti-intro">以生辰档案判定星座。确认后自动掷筊——聖筊详版，笑筊简版，陰筊仅示星座。</p>
     <div class="profile-bar" id="zodiacProfileBar" data-bar="zodiac"></div>
@@ -411,7 +410,7 @@
 <div class="sheet-backdrop" id="westernBackdrop" onclick="closeWesternPanel()"></div>
 <div class="sheet" id="westernModal" role="dialog" aria-label="西方星盘">
   <div class="sheet-handle"></div>
-  <div class="sheet-head"><h3>西方星盘</h3><button type="button" class="sheet-close" onclick="closeWesternPanel()" aria-label="关闭">×</button></div>
+  <div class="sheet-head"><h3>西方星盘</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
   <div class="western-chart-wrap" id="westernChartWrap"><img id="westernChartImg" class="western-chart-img" alt="西方星盘图" src="pics/western-chart-placeholder.webp"></div>
   <div class="bazi-form" id="westernForm">
     <div class="profile-bar" id="westernProfileBar" data-bar="western"></div>
@@ -435,7 +434,7 @@
 <div class="sheet-backdrop" id="dailyBackdrop" onclick="closeDailySheet()"></div>
 <div class="sheet" id="dailySheet" role="dialog" aria-label="每日签文">
   <div class="sheet-handle"></div>
-  <div class="sheet-head"><h3>每日一签</h3><button type="button" class="sheet-close" onclick="closeDailySheet()" aria-label="关闭">×</button></div>
+  <div class="sheet-head"><h3>每日一签</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
   <div class="daily-sheet-body">
     <p class="daily-date" id="dailyDate"></p>
     <div class="daily-verse-full" id="dailyVerseFull"></div>
@@ -448,7 +447,7 @@
 <div class="sheet-backdrop" id="memberBackdrop" onclick="closeMemberSheet()"></div>
 <div class="sheet" id="memberSheet" role="dialog" aria-label="灵局会员">
   <div class="sheet-handle"></div>
-  <div class="sheet-head"><h3>灵局会员</h3><button type="button" class="sheet-close" onclick="closeMemberSheet()" aria-label="关闭">×</button></div>
+  <div class="sheet-head"><h3>灵局会员</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
   <ul class="member-perks">
     <li><strong>完整报告</strong><span>八字 / 星盘 / MBTI 解读不再因筊型受限</span></li>
     <li><strong>专属签文</strong><span>每日一签解锁典藏签文库</span></li>
@@ -462,9 +461,9 @@
 <div class="sheet-backdrop" id="disclaimerBackdrop" onclick="closeDisclaimer()"></div>
 <div class="sheet" id="disclaimerSheet" role="dialog" aria-label="关于与声明">
   <div class="sheet-handle"></div>
-  <div class="sheet-head"><h3>关于与声明</h3><button type="button" class="sheet-close" onclick="closeDisclaimer()" aria-label="关闭">×</button></div>
+  <div class="sheet-head"><h3>关于与声明</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
   <div class="disclaimer-body">
-    <p><strong>御猫灵局 v2.4</strong><br>传统掷筊问卜 · 八字排盘 · 星座运势 · 西方星盘 · MBTI 人格快测</p>
+    <p><strong>御猫灵局 v2.5</strong><br>传统掷筊问卜 · 八字排盘 · 星座运势 · 西方星盘 · MBTI 人格快测</p>
     <p><strong>隐私</strong><br>生辰档案、问卜记录等所有数据仅保存在本机浏览器，不上传任何服务器。</p>
     <p><strong>免责声明</strong><br>签文、排盘、运势等内容源自传统民俗与娱乐化演算，仅供娱乐与怡情，不构成医疗、法律、投资或人生决策建议。重要事项请咨询专业人士。</p>
   </div>
@@ -546,20 +545,6 @@
     lazy('backToZodiacForm', ['js/06-zodiac.js']);
     lazy('openZodiacDict', ['js/06-zodiac.js']);
     lazy('closeZodiacDict', ['js/06-zodiac.js']);
-    /* 印信保护：仅禁止系统长按菜单 / 保存图片（长按开星盘已移除） */
-    (function protectSealLazy() {
-      var hit = document.getElementById('sealHit');
-      var seal = document.getElementById('sealImg');
-      if (!hit || hit._sealProtected) return;
-      hit._sealProtected = true;
-      function block(e) { e.preventDefault(); }
-      hit.addEventListener('contextmenu', block);
-      hit.addEventListener('dragstart', block);
-      if (seal) {
-        seal.addEventListener('contextmenu', block);
-        seal.addEventListener('dragstart', block);
-      }
-    })();
     /* 箱图长按：09 未加载时先拉取再打开；09 就位后撤掉 stub，交给模块自己的绑定 */
     (function bindBoxLazy() {
       var wrap = document.querySelector('.box-wrap') || document.querySelector('.box-img');
