@@ -140,7 +140,6 @@
       </div>
 
       <div class="method-chips" role="tablist" aria-label="问卜方式">
-        <button type="button" class="mchip on" data-m="manual" onclick="pickMethod('manual', this)"><span>直接问</span></button>
         <button type="button" class="mchip" data-m="mbti" onclick="pickMethod('mbti', this)"><span>MBTI</span></button>
         <button type="button" class="mchip" data-m="bazi" onclick="pickMethod('bazi', this)"><span>八字</span></button>
         <button type="button" class="mchip" data-m="zodiac" onclick="pickMethod('zodiac', this)"><span>星座</span></button>
@@ -148,24 +147,11 @@
       </div>
 
       <div class="question-wrap">
-        <textarea class="question-box" id="question" rows="2" readonly inputmode="text" enterkeyhint="done"
-          placeholder="写下你心中的疑问，或点选上方问卜方式" oninput="autoGrowQuestion(this); onQuestionInput()" onblur="hideQuestionMenuDelayed()"></textarea>
-        <div class="question-menu" id="questionMenu">
-          <div class="question-menu-title">请选择问卜方式</div>
-          <div class="question-menu-grid method-grid">
-            <div class="question-menu-cell method-cell" data-method="mbti" onmousedown="event.preventDefault()" onclick="armOrSelectMethod(this,'mbti')"><span class="method-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg></span><span>MBTI 性格测试</span></div>
-            <div class="question-menu-cell method-cell" data-method="bazi" onmousedown="event.preventDefault()" onclick="armOrSelectMethod(this,'bazi')"><span class="method-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg></span><span>八字运程</span></div>
-            <div class="question-menu-cell method-cell" data-method="zodiac" onmousedown="event.preventDefault()" onclick="armOrSelectMethod(this,'zodiac')"><span class="method-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3l1.8 4.6L18 9l-4.2 1.4L12 15l-1.8-4.6L6 9l4.2-1.4z"/><path d="M19 15l.9 2.1 2.1.9-2.1.9L19 21l-.9-2.1-2.1-.9 2.1-.9z"/></svg></span><span>星座运势</span></div>
-            <div class="question-menu-cell method-cell" data-method="casual" onmousedown="event.preventDefault()" onclick="armOrSelectMethod(this,'casual')"><span class="method-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16v10H9l-5 4z"/><path d="M8 10h8M8 13h5"/></svg></span><span>常见 108 问</span></div>
-            <div class="question-menu-cell manual-input-cell" style="grid-column: 1 / -1;">
-              <div class="manual-input-row"><span class="method-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M13 7l3 3"/></svg></span><input type="text" id="manualQuestionInput" class="manual-input-field" placeholder="手动输入你的问题…" enterkeyhint="done" autocomplete="off"><button type="button" class="manual-input-confirm" onmousedown="event.preventDefault()" onclick="confirmManualQuestion(true, true)" aria-label="确认问题">✓</button></div>
-            </div>
-          </div>
-        </div>
-        <div class="question-reminder" id="questionReminder">问题越具体，签文越应验；不写则按今日运势起卦</div>
+        <input type="text" class="question-box" id="question" maxlength="56" inputmode="text" enterkeyhint="done"
+          placeholder="手动输入直接问" autocomplete="off" oninput="onQuestionInput()">
         <div class="question-menu" id="casualMenu">
           <div class="question-menu-title">常见 108 问 · 点击选择</div>
-          <div class="question-menu-custom" onmousedown="event.preventDefault()" onclick="closeCasualMenu()"><span class="qm-num">←</span><span>返回上级菜单</span></div>
+          <div class="question-menu-custom" onmousedown="event.preventDefault()" onclick="closeCasualMenu()"><span class="qm-num">←</span><span>关闭</span></div>
           <div id="casualMenuGrid" role="listbox" aria-label="常见一百零八问"></div>
           <div class="casual-scroll-hint">滑动浏览全部问题，到底自动循环</div>
         </div>
@@ -202,17 +188,17 @@
       <div class="feature-list trio">
         <button type="button" class="feature-card" onclick="openBaziPanel()">
           <span class="f-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg></span>
-          <span class="f-text"><strong>八字排盘</strong><span>四柱 · 五行 · 十神 · 神煞</span></span>
+          <span class="f-text"><strong>八字排盘</strong><span>四柱五行十神</span></span>
           <span class="f-go">›</span>
         </button>
         <button type="button" class="feature-card" onclick="openZodiacPanel()">
           <span class="f-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3l1.8 4.6L18 9l-4.2 1.4L12 15l-1.8-4.6L6 9l4.2-1.4z"/><path d="M19 15l.9 2.1 2.1.9-2.1.9L19 21l-.9-2.1-2.1-.9 2.1-.9z"/></svg></span>
-          <span class="f-text"><strong>星座运势</strong><span>性格解析 · 今日运势</span></span>
+          <span class="f-text"><strong>星座运势</strong><span>性格 · 今日运势</span></span>
           <span class="f-go">›</span>
         </button>
         <button type="button" class="feature-card" onclick="openWesternPanel()">
           <span class="f-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><ellipse cx="12" cy="12" rx="11" ry="4.5" transform="rotate(-20 12 12)"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/></svg></span>
-          <span class="f-text"><strong>西方星盘</strong><span>行星 · 宫位 · 相位</span></span>
+          <span class="f-text"><strong>西方星盘</strong><span>行星宫位相位</span></span>
           <span class="f-go">›</span>
         </button>
       </div>
@@ -229,7 +215,7 @@
         </button>
         <button type="button" class="feature-card" onclick="openFortuneWheel()">
           <span class="f-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17M3.5 12h17M6 6l12 12M18 6L6 18"/></svg></span>
-          <span class="f-text"><strong>命运圆盘</strong><span>禅猫转盘 · 纯属娱乐</span></span>
+          <span class="f-text"><strong>命运圆盘</strong><span>转盘 · 纯娱乐</span></span>
           <span class="f-go">›</span>
         </button>
         <button type="button" class="feature-card" onclick="openCasualFromDiscover()">
@@ -281,7 +267,7 @@
         </button>
       </div>
       <button type="button" id="recordBtn" class="hidden-anchor" onclick="toggleHistory()" aria-hidden="true" tabindex="-1"></button>
-      <p class="foot-note">御猫灵局 v2.8 · 数据仅存于本机</p>
+      <p class="foot-note">御猫灵局 v2.10 · 数据仅存于本机</p>
     </section>
   </main>
 
@@ -462,7 +448,7 @@
   <div class="sheet-handle"></div>
   <div class="sheet-head"><h3>关于与声明</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
   <div class="disclaimer-body">
-    <p><strong>御猫灵局 v2.8</strong><br>传统掷筊问卜 · 八字排盘 · 星座运势 · 西方星盘 · MBTI 人格快测</p>
+    <p><strong>御猫灵局 v2.10</strong><br>传统掷筊问卜 · 八字排盘 · 星座运势 · 西方星盘 · MBTI 人格快测</p>
     <p><strong>隐私</strong><br>生辰档案、问卜记录等所有数据仅保存在本机浏览器，不上传任何服务器。</p>
     <p><strong>免责声明</strong><br>签文、排盘、运势等内容源自传统民俗与娱乐化演算，仅供娱乐与怡情，不构成医疗、法律、投资或人生决策建议。重要事项请咨询专业人士。</p>
   </div>

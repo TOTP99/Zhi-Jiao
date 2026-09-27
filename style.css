@@ -193,17 +193,29 @@ input,textarea{font-family:inherit}
 
 .hero{text-align:center;margin-bottom:6px}
 .box-wrap{position:relative;width:100%;max-width:420px;margin:0 auto}
-.box-img{width:100%;display:block;border-radius:var(--r-md);filter:drop-shadow(0 16px 30px rgba(0,0,0,.5))}
+/* 宝盒鎏金底光：缓慢呼吸，托出主体 */
+.box-wrap::before{content:"";position:absolute;inset:-10% -8%;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse at 50% 58%,rgba(232,199,102,.22),rgba(232,199,102,.07) 46%,transparent 70%);
+  animation:boxGlow 5.2s ease-in-out infinite}
+@keyframes boxGlow{0%,100%{opacity:.7}50%{opacity:1}}
+.box-img{position:relative;z-index:1;width:100%;display:block;border-radius:var(--r-md);filter:drop-shadow(0 16px 30px rgba(0,0,0,.5))}
 .jade-zone{position:absolute;top:64%;height:18%;width:17%;border-radius:50%;cursor:pointer}
 .jade-zone.dragon{left:21%}.jade-zone.tiger{left:41.5%}.jade-zone.lion{left:62%}
 /* 瑞兽覆影：点选龙 / 虎 / 狮后，瑞兽像覆于宝盒之上 */
 .beast-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
 .beast-overlay img{width:74%;aspect-ratio:1/1;border-radius:50%;object-fit:cover;
-  border:2px solid rgba(232,199,102,.85);
+  border:2px solid rgba(232,199,102,.85);outline:1px solid rgba(232,199,102,.4);outline-offset:5px;
   box-shadow:0 0 26px rgba(232,199,102,.55),0 0 64px rgba(201,162,39,.28);
   animation:haloIn .45s ease}
 .beast-overlay.watermark{opacity:.35}
 @keyframes haloIn{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:scale(1)}}
+/* 瑞兽行内小图标（替代 emoji）：结果行 / 已请示 / 历史记录内使用 */
+.beast-ico{width:22px;height:22px;border-radius:50%;object-fit:cover;vertical-align:-5px;margin-right:5px;
+  border:1px solid rgba(232,199,102,.6);background:#141009}
+.beast-ico.sm{width:14px;height:14px;vertical-align:-2px;margin-right:3px}
+/* 防孤字：段落类文本避免第二行只剩一字；菜单格用 balance 均衡断行 */
+.result-desc,.daily-verse,.hero-tip,.foot-note,.fortune-result,.fr-catline,.sheet p,.mbti-q,.mbti-report p{text-wrap:pretty}
+.question-menu-cell{text-wrap:balance}
 .beast-labels{display:flex;justify-content:center;gap:8px;margin-top:8px}
 .beast-labels button{flex:1;max-width:112px;padding:7px 4px;border:1px solid var(--line-soft);border-radius:var(--r-sm);
   background:var(--card);display:flex;flex-direction:column;gap:1px;transition:all .2s}
@@ -222,13 +234,12 @@ input,textarea{font-family:inherit}
 
 .question-wrap{position:relative;margin-bottom:10px}
 .question-box{
-  width:100%;min-height:76px;padding:14px 16px;font-size:15px;line-height:1.7;color:var(--cream);
+  width:100%;height:48px;padding:0 16px;font-size:15px;color:var(--cream);
   background:var(--ink-800);border:1px solid var(--line);border-radius:var(--r-md);
-  outline:none;resize:none;transition:border-color .2s;
+  outline:none;transition:border-color .2s;
 }
 .question-box::placeholder{color:var(--faint)}
 .question-box:focus{border-color:var(--gold)}
-.question-box:not([readonly]){background:#211c13}
 
 /* 掷筊主按键：全页最醒目 */
 .cast-btn{width:100%;margin-top:6px;padding:15px 0;font-size:18px;font-weight:700;letter-spacing:14px;text-indent:14px;
@@ -246,17 +257,15 @@ input,textarea{font-family:inherit}
 .ritual-area{margin-top:12px;text-align:center}
 @keyframes haloIn{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:scale(1)}}
 
-/* 筊 */
-.jiao-display{display:flex;justify-content:center;gap:32px;margin:10px 0 6px;min-height:56px;align-items:center;perspective:600px}
-.jiao{width:62px;height:44px;position:relative;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;
+/* 筊：新月形筊杯，阳面金穹 / 阴面墨弦 */
+.jiao-display{display:flex;justify-content:center;gap:28px;margin:10px 0 6px;min-height:64px;align-items:center;perspective:600px}
+.jiao{width:68px;height:46px;position:relative;background-repeat:no-repeat;background-position:center;background-size:contain;
   transform-style:preserve-3d;transition:transform .45s cubic-bezier(.34,1.4,.64,1);
-  filter:drop-shadow(0 10px 14px rgba(0,0,0,.5))}
-.jiao.yang{background:radial-gradient(ellipse at 32% 28%,rgba(255,245,210,.5),transparent 50%),
-  linear-gradient(160deg,#f0d78a 0%,#d4a83a 42%,#b8891e 78%,#8a6a12 100%);border:1.5px solid #8a6810}
-.jiao.yin{background:radial-gradient(ellipse at 40% 30%,rgba(120,100,70,.3),transparent 55%),
-  linear-gradient(160deg,#5a4a38 0%,#3a2c1e 50%,#241a10 100%);border:1.5px solid #171008}
-.jiao.spinning{animation:tossJiao .9s cubic-bezier(.4,0,.2,1) forwards}
+  filter:drop-shadow(0 10px 12px rgba(0,0,0,.55))}
+.jiao.spinning{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20viewBox%3D'0%200%2072%2048'%3E%3Cdefs%3E%3ClinearGradient%20id%3D'g'%20x1%3D'0'%20y1%3D'0'%20x2%3D'0'%20y2%3D'1'%3E%3Cstop%20offset%3D'0'%20stop-color%3D'%23f6e2a0'/%3E%3Cstop%20offset%3D'.55'%20stop-color%3D'%23d9ac3c'/%3E%3Cstop%20offset%3D'1'%20stop-color%3D'%2396700f'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath%20d%3D'M10%2038%20C12%2019%2024%209%2036%209%20C48%209%2060%2019%2062%2038%20C50%2042.5%2022%2042.5%2010%2038%20Z'%20fill%3D'url(%23g)'%20stroke%3D'%236f520b'%20stroke-width%3D'1.6'/%3E%3Cellipse%20cx%3D'36'%20cy%3D'19'%20rx%3D'13'%20ry%3D'5.5'%20fill%3D'%23ffffff'%20opacity%3D'.28'/%3E%3Cpath%20d%3D'M14%2036%20C26%2039.5%2046%2039.5%2058%2036'%20stroke%3D'%236f520b'%20stroke-width%3D'1'%20fill%3D'none'%20opacity%3D'.55'/%3E%3C/svg%3E");animation:tossJiao .9s cubic-bezier(.4,0,.2,1) forwards}
 .jiao.spinning:nth-child(2){animation-delay:.06s}
+.jiao.yang{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20viewBox%3D'0%200%2072%2048'%3E%3Cdefs%3E%3ClinearGradient%20id%3D'g'%20x1%3D'0'%20y1%3D'0'%20x2%3D'0'%20y2%3D'1'%3E%3Cstop%20offset%3D'0'%20stop-color%3D'%23f6e2a0'/%3E%3Cstop%20offset%3D'.55'%20stop-color%3D'%23d9ac3c'/%3E%3Cstop%20offset%3D'1'%20stop-color%3D'%2396700f'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath%20d%3D'M10%2038%20C12%2019%2024%209%2036%209%20C48%209%2060%2019%2062%2038%20C50%2042.5%2022%2042.5%2010%2038%20Z'%20fill%3D'url(%23g)'%20stroke%3D'%236f520b'%20stroke-width%3D'1.6'/%3E%3Cellipse%20cx%3D'36'%20cy%3D'19'%20rx%3D'13'%20ry%3D'5.5'%20fill%3D'%23ffffff'%20opacity%3D'.28'/%3E%3Cpath%20d%3D'M14%2036%20C26%2039.5%2046%2039.5%2058%2036'%20stroke%3D'%236f520b'%20stroke-width%3D'1'%20fill%3D'none'%20opacity%3D'.55'/%3E%3C/svg%3E")}
+.jiao.yin{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20viewBox%3D'0%200%2072%2048'%3E%3Cdefs%3E%3ClinearGradient%20id%3D'd'%20x1%3D'0'%20y1%3D'0'%20x2%3D'0'%20y2%3D'1'%3E%3Cstop%20offset%3D'0'%20stop-color%3D'%235c4a34'/%3E%3Cstop%20offset%3D'.55'%20stop-color%3D'%233a2c1c'/%3E%3Cstop%20offset%3D'1'%20stop-color%3D'%231d1409'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath%20d%3D'M10%2022%20C24%2032%2048%2032%2062%2022%20L62%2030%20C48%2040%2024%2040%2010%2030%20Z'%20fill%3D'url(%23d)'%20stroke%3D'%23100a04'%20stroke-width%3D'1.6'/%3E%3Cpath%20d%3D'M14%2023.5%20C26%2031.5%2046%2031.5%2058%2023.5'%20stroke%3D'%23c9a227'%20stroke-width%3D'1.1'%20fill%3D'none'%20opacity%3D'.5'/%3E%3C/svg%3E")}
 @keyframes tossJiao{0%{transform:translateY(0) rotateY(0) scale(1)}25%{transform:translateY(-30px) rotateY(140deg) scale(1.12)}
   55%{transform:translateY(-38px) rotateY(300deg) scale(1.06)}80%{transform:translateY(-4px) rotateY(460deg) scale(1)}
   100%{transform:translateY(0) rotateY(540deg) scale(1)}}
@@ -358,6 +367,10 @@ input,textarea{font-family:inherit}
   background:rgba(201,162,39,.1);border:1px solid var(--line);border-radius:var(--r-md);text-align:center}
 .mbti-quick-result.show{display:block}
 .mbti-quick-note{font-size:12px;color:var(--muted);margin-top:4px}
+/* 核验徽标：替代 emoji */
+.tag-ok,.tag-warn{display:inline-block;font-size:10.5px;letter-spacing:2px;text-indent:2px;padding:2px 8px;border-radius:20px;margin-right:6px;vertical-align:1px}
+.tag-ok{color:#0f0d08;background:linear-gradient(180deg,#e8c766,#c9a227);font-weight:700}
+.tag-warn{color:#e8c766;border:1px solid rgba(201,162,39,.55);background:rgba(201,162,39,.1)}
 .mbti-list{overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;flex:1 1 auto;min-height:0;padding-right:2px}
 .mbti-item{padding:12px 2px;border-bottom:1px solid var(--line-soft)}
 .mbti-item:last-child{border-bottom:none}
@@ -471,38 +484,10 @@ input,textarea{font-family:inherit}
 .question-menu-title{font-size:11.5px;color:var(--gold-soft);letter-spacing:3px;padding:6px 10px}
 .question-menu-custom{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);
   padding:10px;margin:0 4px 6px;border-radius:var(--r-sm);background:rgba(201,162,39,.08)}
-.question-menu-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:2px 4px 4px}
-.question-menu-cell{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--cream-dim);
-  padding:12px;border-radius:var(--r-sm);background:rgba(243,234,211,.04);border:1px solid transparent;transition:all .2s}
-/* 问卜方式四个入口：一行四个，图标在上文字在下，更紧凑 */
-#questionMenu .question-menu-grid{grid-template-columns:repeat(4,1fr)}
-#questionMenu .method-cell{flex-direction:column;gap:6px;padding:10px 2px;font-size:11.5px;text-align:center;letter-spacing:1px}
-#questionMenu .method-cell .method-icon{width:30px;height:30px;border-radius:9px}
-#questionMenu .method-cell .method-icon svg{width:16px;height:16px}
-.question-menu-cell .method-icon{width:34px;height:34px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
-  color:var(--gold-bright);background:rgba(201,162,39,.1);border-radius:10px}
-.question-menu-cell .method-icon svg{width:19px;height:19px}
-.question-menu-cell.armed{background:rgba(201,162,39,.16);border-color:var(--gold);color:var(--cream)}
-.question-menu-cell.entering,.method-cell.entering{animation:methodEnter .35s cubic-bezier(.34,1.4,.64,1)}
-@keyframes methodEnter{0%{transform:scale(.92);opacity:.6}100%{transform:scale(1);opacity:1}}
-.manual-input-cell{grid-column:1/-1}
-.manual-input-row{display:flex;align-items:center;gap:8px;width:100%;background:var(--ink-800);
-  border:1px solid var(--line-soft);border-radius:var(--r-sm);padding:8px 10px}
-.manual-input-row:focus-within{border-color:var(--gold)}
-.manual-input-row .method-icon{width:28px;height:28px;color:var(--gold-soft)}
-.manual-input-row .method-icon svg{width:17px;height:17px}
-.manual-input-field{flex:1;min-width:0;border:none;outline:none;background:transparent;font-size:15px;color:var(--cream)}
-.manual-input-field::placeholder{color:var(--faint)}
-.manual-input-confirm{flex:0 0 auto;width:30px;height:30px;border-radius:50%;border:1px solid var(--gold);
-  background:rgba(201,162,39,.14);color:var(--gold-bright);font-size:14px}
 #casualMenu{max-height:min(64vh,440px);display:flex;flex-direction:column}
 #casualMenuGrid{flex:1 1 auto;display:grid;grid-template-columns:repeat(2,1fr);gap:4px;overflow-y:auto;padding:0 4px 8px;align-content:start}
 #casualMenuGrid .casual-item .qm-num{font-size:10.5px}
 .casual-scroll-hint{font-size:11px;color:var(--gold-soft);text-align:center;letter-spacing:1px;padding-top:6px;flex:0 0 auto}
-.question-reminder{position:absolute;top:calc(100% + 8px);left:0;right:0;text-align:center;font-size:13px;color:var(--gold-bright);
-  background:rgba(30,25,14,.97);border:1px solid var(--gold);border-radius:var(--r-sm);padding:10px;
-  box-shadow:var(--shadow);opacity:0;transform:translateY(-4px);pointer-events:none;transition:all .2s;z-index:29}
-.question-reminder.show{opacity:1;transform:none}
 
 /* 西方星盘 */
 .western-chart-wrap{text-align:center;padding:4px 6px;margin-bottom:8px;max-height:640px;overflow:hidden;
@@ -617,8 +602,6 @@ input,textarea{font-family:inherit}
 .mbti-item{padding:10px 2px}
 .beast-overlay img{width:70%}
 #views{padding:12px 14px calc(var(--tabbar-h) + 16px)}
-.question-reminder{font-size:11.5px}
-.method-cell{font-size:12px}
 
 /* ── 三联卡：一行三卡，无需滑动 ── */
 .trio{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
