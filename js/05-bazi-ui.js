@@ -3,56 +3,7 @@
 // 原始行号（拆分前单文件 script.js 中的位置）: 2435-3211
 // ============================================================
   // ---- 八字 & 神煞：表单收集 -> 排盘 -> 掷筊请示，依筊型决定详细/简版/不显示 ----
-  const BAZI_STORAGE_KEY = 'yumiao_bazi_form_v1';
-  let baziSelectedSex = 'M';
   let baziResult = null;
-  function saveBaziForm() {
-    try {
-      const data = {
-        year: document.getElementById('baziYear')?.value || '',
-        month: document.getElementById('baziMonth')?.value || '',
-        day: document.getElementById('baziDay')?.value || '',
-        hour: document.getElementById('baziHour')?.value || '',
-        minute: document.getElementById('baziMinute')?.value || '',
-        timezone: document.getElementById('baziTimezone')?.value || '',
-        sex: baziSelectedSex,
-        trueSolar: !!(document.getElementById('baziTrueSolar')?.checked),
-        longitude: document.getElementById('baziLongitude')?.value || ''
-      };
-      writeStorageJSON(BAZI_STORAGE_KEY, data);
-    } catch (_) { /* ignore */ }
-  }
-  function loadBaziForm() {
-    try {
-      const data = readStorageJSON(BAZI_STORAGE_KEY, null);
-      if (!data) return;
-      const set = (id, v) => { const el = document.getElementById(id); if (el && v != null && v !== '') el.value = v; };
-      set('baziYear', data.year);
-      set('baziMonth', data.month);
-      set('baziDay', data.day);
-      set('baziHour', data.hour);
-      set('baziMinute', data.minute);
-      if (data.timezone != null && data.timezone !== '') set('baziTimezone', data.timezone);
-      if (data.longitude != null && data.longitude !== '') set('baziLongitude', data.longitude);
-      if (data.sex) selectBaziSex(data.sex);
-      const cb = document.getElementById('baziTrueSolar');
-      if (cb) {
-        cb.checked = !!data.trueSolar;
-        toggleTrueSolarUI();
-      }
-    } catch (_) { /* ignore */ }
-  }
-  function selectBaziSex(sex) {
-    baziSelectedSex = sex;
-    document.querySelectorAll('.bazi-sex-btn').forEach(btn => {
-      btn.classList.toggle('selected', btn.dataset.sex === sex);
-    });
-    saveBaziForm();
-  }
-  // ---- 通用滚动轮选择器 ----
-  function daysInMonth(y, m) {
-    return new Date(y, m, 0).getDate();
-  }
   // ============================================================
   // 共用出生信息（八字 / 星座 / 西方星盘自动对齐）
   // ============================================================
@@ -64,219 +15,13 @@
     const next = Object.assign({}, loadSharedBirth() || {}, partial || {});
     writeStorageJSON(SHARED_BIRTH_KEY, next);
   }
-  function setInputValue(id, value) {
-    const el = document.getElementById(id);
-    if (el && value != null && value !== '') el.value = value;
-  }
-  function syncCityCheckboxes(prefix, city) {
-    if (city !== 'shenyang' && city !== 'toronto') return;
-    const sy = document.getElementById(prefix + 'CityShenyang');
-    const to = document.getElementById(prefix + 'CityToronto');
-    if (sy) sy.checked = city === 'shenyang';
-    if (to) to.checked = city === 'toronto';
-  }
-  function applySharedToBazi() {
-    const s = loadSharedBirth();
-    if (!s) return;
-    setInputValue('baziYear', s.year);
-    setInputValue('baziMonth', s.month);
-    setInputValue('baziDay', s.day);
-    setInputValue('baziHour', s.hour);
-    setInputValue('baziMinute', s.minute);
-    setInputValue('baziTimezone', s.tzOffset);
-    setInputValue('baziLongitude', s.lng);
-    syncCityCheckboxes('bazi', s.city);
-  }
-  function applySharedToZodiac() {
-    const s = loadSharedBirth();
-    if (!s) return;
-    if (s.month != null) zodiacMonthVal = +s.month;
-    if (s.day != null) zodiacDayVal = +s.day;
-    setInputValue('zodiacMonth', zodiacMonthVal);
-    setInputValue('zodiacDay', zodiacDayVal);
-    syncCityCheckboxes('zodiac', s.city);
-  }
+  // 统一档案桥：旧的各面板表单同步入口保留为档案条刷新（供命运圆盘嵌入等调用）
   function applySharedToWestern() {
-    const s = loadSharedBirth();
-    if (!s) return;
-    if (s.year != null) westernYearVal = +s.year;
-    if (s.month != null) westernMonthVal = +s.month;
-    if (s.day != null) westernDayVal = +s.day;
-    if (s.hour != null) westernHourVal = +s.hour;
-    if (s.minute != null) westernMinuteVal = +s.minute;
-    setInputValue('westernYear', westernYearVal);
-    setInputValue('westernMonth', westernMonthVal);
-    setInputValue('westernDay', westernDayVal);
-    setInputValue('westernHour', westernHourVal);
-    setInputValue('westernMinute', westernMinuteVal);
-    setInputValue('westernLat', s.lat);
-    setInputValue('westernLng', s.lng);
-    setInputValue('westernTz', s.tz);
-    syncCityCheckboxes('western', s.city);
-  }
-  function pushBaziToShared() {
-    saveSharedBirth({
-      year: document.getElementById('baziYear')?.value,
-      month: document.getElementById('baziMonth')?.value,
-      day: document.getElementById('baziDay')?.value,
-      hour: document.getElementById('baziHour')?.value,
-      minute: document.getElementById('baziMinute')?.value,
-      tzOffset: document.getElementById('baziTimezone')?.value,
-      lng: document.getElementById('baziLongitude')?.value,
-      city: document.getElementById('baziCityShenyang')?.checked ? 'shenyang'
-        : (document.getElementById('baziCityToronto')?.checked ? 'toronto' : undefined)
-    });
-  }
-  // ===== 共用出生日期/时间滚轮 =====
-  // 只抽取“范围、日期联动、滚轮构建”这类纯 UI 重复逻辑；
-  // 八字/西方星盘仍保留各自的状态、存储和业务回调。
-  function initDateTimeWheelSet(cfg) {
-    if (!cfg || !cfg.ids || !cfg.state) return;
-    const ids = cfg.ids, s = cfg.state;
-    const get = id => document.getElementById(id);
-    const yearEl=get(ids.yearWheel), monthEl=get(ids.monthWheel), dayEl=get(ids.dayWheel);
-    if (!yearEl || !monthEl || !dayEl) return;
-
-    const readNum = (id, fallback) => {
-      const el=get(id), n=el ? Number(el.value) : NaN;
-      return Number.isFinite(n) ? n : fallback;
-    };
-    const write = (field, value) => {
-      const el=get(ids[field]);
-      if (el) el.value=value;
-    };
-    const notify = field => {
-      if (cfg.onChange) cfg.onChange(field, s);
-    };
-
-    s.year=readNum(ids.year, s.year);
-    s.month=readNum(ids.month, s.month);
-    s.day=readNum(ids.day, s.day);
-    if (ids.hour) s.hour=readNum(ids.hour, s.hour);
-    if (ids.minute) s.minute=readNum(ids.minute, s.minute);
-
-    const years=[];
-    for(let y=cfg.yearMin ?? 1920;y<= (cfg.yearMax ?? 2030);y++) years.push(y);
-    const months=[1,2,3,4,5,6,7,8,9,10,11,12];
-    const hours=[];
-    const minutes=[];
-    if(ids.hourWheel) for(let h=0;h<=23;h++) hours.push(h);
-    if(ids.minuteWheel) for(let m=0;m<=59;m++) minutes.push(m);
-
-    const rebuildDays=()=>{
-      const maxd=daysInMonth(s.year,s.month);
-      if(s.day>maxd) s.day=maxd;
-      const days=[];
-      for(let d=1;d<=maxd;d++) days.push(d);
-      buildWheel(dayEl,days,days.map(d=>d+'日'),s.day,v=>{
-        s.day=v; write('day',v); notify('day');
-      });
-      write('day',s.day);
-    };
-
-    buildWheel(yearEl,years,years.map(y=>y+'年'),s.year,v=>{
-      s.year=v; write('year',v); rebuildDays(); notify('year');
-    });
-    buildWheel(monthEl,months,months.map(m=>m+'月'),s.month,v=>{
-      s.month=v; write('month',v); rebuildDays(); notify('month');
-    });
-    rebuildDays();
-
-    if(ids.hourWheel){
-      const el=get(ids.hourWheel);
-      buildWheel(el,hours,hours.map(h=>String(h).padStart(2,'0')+'时'),s.hour,v=>{
-        s.hour=v; write('hour',v); notify('hour');
-      });
-      write('hour',s.hour);
-    }
-    if(ids.minuteWheel){
-      const el=get(ids.minuteWheel);
-      buildWheel(el,minutes,minutes.map(m=>String(m).padStart(2,'0')+'分'),s.minute,v=>{
-        s.minute=v; write('minute',v); notify('minute');
-      });
-      write('minute',s.minute);
-    }
-  }
-  function playWheelTick() {
-    try {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return;
-      if (!window._yumiaoWheelAC) window._yumiaoWheelAC = new AC();
-      const ctx = window._yumiaoWheelAC;
-      if (ctx.state === 'suspended') ctx.resume();
-      const t0 = ctx.currentTime;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(980, t0);
-      osc.frequency.exponentialRampToValueAtTime(420, t0 + 0.045);
-      gain.gain.setValueAtTime(0.0001, t0);
-      gain.gain.exponentialRampToValueAtTime(0.09, t0 + 0.006);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.05);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(t0);
-      osc.stop(t0 + 0.055);
-    } catch (_) {}
-  }
-  function buildWheel(colEl, values, labels, selected, onChange) {
-    if (!colEl) return;
-    colEl.innerHTML = '';
-    const pad = document.createElement('div');
-    pad.className = 'wheel-item';
-    pad.style.visibility = 'hidden';
-    colEl.appendChild(pad.cloneNode(true));
-    values.forEach((v, i) => {
-      const item = document.createElement('div');
-      item.className = 'wheel-item' + (v === selected ? ' active' : '');
-      item.dataset.value = v;
-      item.textContent = labels ? labels[i] : String(v);
-      colEl.appendChild(item);
-    });
-    colEl.appendChild(pad.cloneNode(true));
-    const itemH = 36;
-    let lastIdx = values.indexOf(selected);
-    const scrollToSelected = () => {
-      const idx = values.indexOf(selected);
-      if (idx >= 0) colEl.scrollTop = idx * itemH;
-    };
-    requestAnimationFrame(scrollToSelected);
-    let scrollTimer = null;
-    colEl.onscroll = () => {
-      clearTimeout(scrollTimer);
-      const liveIdx = Math.round(colEl.scrollTop / itemH);
-      const liveClamped = Math.max(0, Math.min(values.length - 1, liveIdx));
-      colEl.querySelectorAll('.wheel-item').forEach((el, i) => {
-        el.classList.toggle('active', i === liveClamped + 1);
-      });
-      if (liveClamped !== lastIdx) { lastIdx = liveClamped; playWheelTick(); }
-      scrollTimer = setTimeout(() => {
-        const idx = Math.round(colEl.scrollTop / itemH);
-        const clamped = Math.max(0, Math.min(values.length - 1, idx));
-        colEl.scrollTo({ top: clamped * itemH, behavior: 'smooth' });
-        colEl.querySelectorAll('.wheel-item').forEach((el, i) => {
-          el.classList.toggle('active', i === clamped + 1);
-        });
-        selected = values[clamped];
-        if (onChange) onChange(selected);
-      }, 80);
-    };
-  }
-    function initBaziDateWheels() {
-    const state = { year:1990, month:6, day:15, hour:12, minute:0 };
-    initDateTimeWheelSet({
-      state,
-      ids:{
-        yearWheel:'baziYearWheel', monthWheel:'baziMonthWheel', dayWheel:'baziDayWheel',
-        hourWheel:'baziHourWheel', minuteWheel:'baziMinuteWheel',
-        year:'baziYear', month:'baziMonth', day:'baziDay', hour:'baziHour', minute:'baziMinute'
-      },
-      onChange: () => pushBaziToShared()
-    });
+    if (typeof window.renderProfileBar === 'function') window.renderProfileBar('westernProfileBar');
   }
   function openBaziPanel() {
-    loadBaziForm();
-    initBaziDateWheels();
+    backToBaziForm();
+    if (typeof window.renderProfileBar === 'function') window.renderProfileBar('baziProfileBar');
     ModalUI.open('bazi');
   }
   function closeBaziPanel() {
@@ -289,38 +34,29 @@
     if (reveal) reveal.style.display = 'none';
     if (form) form.style.display = '';
   }
-  function toggleTrueSolarUI() {
-    const cb = document.getElementById('baziTrueSolar');
-    const row = document.getElementById('baziLonRow');
-    if (row) row.style.display = (cb && cb.checked) ? 'flex' : 'none';
-  }
   function readBaziInput() {
-    const year = parseInt(document.getElementById('baziYear').value, 10);
-    const month = parseInt(document.getElementById('baziMonth').value, 10);
-    const day = parseInt(document.getElementById('baziDay').value, 10);
-    const hour = parseInt(document.getElementById('baziHour').value, 10);
-    const minuteRaw = document.getElementById('baziMinute').value;
-    const minute = minuteRaw === '' ? 0 : parseInt(minuteRaw, 10);
-    const tzRaw = document.getElementById('baziTimezone').value;
-    const timezone = tzRaw === '' ? 8 : Number(tzRaw);
-    const trueSolar = !!(document.getElementById('baziTrueSolar') && document.getElementById('baziTrueSolar').checked);
-    const lonRaw = document.getElementById('baziLongitude') ? document.getElementById('baziLongitude').value : '';
-    const longitude = lonRaw === '' ? null : Number(lonRaw);
-    if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day) || !Number.isFinite(hour)) {
-      return { error: '请完整填写出生年、月、日、时。' };
+    const b = (typeof loadSharedBirth === 'function') ? loadSharedBirth() : null;
+    if (!b || !b.year || !b.month || !b.day) {
+      return { error: '请先录入生辰档案，再来排盘。' };
     }
-    if (month < 1 || month > 12) return { error: '月份需在 1-12 之间。' };
-    if (day < 1 || day > 31) return { error: '日期需在 1-31 之间。' };
-    if (hour < 0 || hour > 23) return { error: '小时需在 0-23 之间（24小时制）。' };
-    if (trueSolar && (longitude == null || !Number.isFinite(longitude) || longitude < -180 || longitude > 180)) {
-      return { error: '启用真太阳时时请填写有效出生地经度（-180~180）。' };
+    const year = +b.year, month = +b.month, day = +b.day;
+    const hour = (b.hour == null || b.hour === '') ? 12 : +b.hour;
+    const minute = (b.minute == null || b.minute === '') ? 0 : +b.minute;
+    const timezone = (b.tzOffset == null || b.tzOffset === '') ? 8 : +b.tzOffset;
+    const sex = b.sex || 'M';
+    const trueSolar = !!(document.getElementById('baziTrueSolar') && document.getElementById('baziTrueSolar').checked);
+    const longitude = (b.lng == null || b.lng === '') ? null : +b.lng;
+    if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day) || !Number.isFinite(hour)) {
+      return { error: '生辰档案不完整，请到「我的」重新录入。' };
+    }
+    if (trueSolar && (longitude == null || !Number.isFinite(longitude))) {
+      return { error: '档案中没有出生地经度：请到「我的」补录城市或经度后，再用真太阳时。' };
     }
     return {
-      input: { year, month, day, hour, minute, sex: baziSelectedSex, timezone, trueSolar, longitude }
+      input: { year, month, day, hour, minute, sex, timezone, trueSolar, longitude }
     };
   }
   function submitBaziForm() {
-    pushBaziToShared();
     const errEl = document.getElementById('baziError');
     if (errEl) errEl.textContent = '';
     const parsed = readBaziInput();
@@ -328,7 +64,6 @@
       if (errEl) errEl.textContent = parsed.error;
       return;
     }
-    saveBaziForm();
     let result;
     try {
       result = BaziShensha.calculate(parsed.input);

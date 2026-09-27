@@ -127,10 +127,7 @@
       luckyColor: '紫色、天空蓝', luckyNum: '3、12', career: '旅行、教育、出版、外贸、运动与户外。',
       openLuck: '计划一次短途出走；学一点新语言或哲学；对承诺做减法。' }
   ];
-  const ZODIAC_STORAGE_KEY = 'yumiao_zodiac_v1';
   let zodiacSelected = null;
-  let zodiacMonthVal = 6;
-  let zodiacDayVal = 15;
   function getZodiacByDate(month, day) {
     for (const z of ZODIAC_LIST) {
       const [fm, fd] = z.from;
@@ -143,52 +140,28 @@
     }
     return ZODIAC_LIST[0];
   }
-  function updateZodiacPreview() {
-    const z = getZodiacByDate(zodiacMonthVal, zodiacDayVal);
-    zodiacSelected = z;
+  // 以统一生辰档案判定星座（无滚轮）
+  function refreshZodiacFromBirth() {
+    const b = (typeof loadSharedBirth === 'function') ? loadSharedBirth() : null;
+    zodiacSelected = null;
     const el = document.getElementById('zodiacPreviewName');
-    if (el) el.textContent = z.icon + ' ' + z.name + ' · ' + z.en + '（' + z.element + '象）';
-  }
-  function initZodiacWheels() {
-    const mEl = document.getElementById('zodiacMonthWheel');
-    const dEl = document.getElementById('zodiacDayWheel');
-    if (!mEl || !dEl) return;
-    const data = readStorageJSON(ZODIAC_STORAGE_KEY, null);
-    if (data) {
-      if (data.month) zodiacMonthVal = Number(data.month);
-      if (data.day) zodiacDayVal = Number(data.day);
+    if (!b || !b.month || !b.day) {
+      if (el) el.textContent = '—';
+      return null;
     }
-    document.getElementById('zodiacMonth').value = zodiacMonthVal;
-    document.getElementById('zodiacDay').value = zodiacDayVal;
-    const months = [1,2,3,4,5,6,7,8,9,10,11,12];
-    const syncDay = () => {
-      const maxD = daysInMonth(2000, zodiacMonthVal);
-      if (zodiacDayVal > maxD) zodiacDayVal = maxD;
-      document.getElementById('zodiacDay').value = zodiacDayVal;
-      const days = [];
-      for (let d = 1; d <= maxD; d++) days.push(d);
-      buildWheel(dEl, days, days.map(d => d + '日'), zodiacDayVal, (v) => {
-        zodiacDayVal = v;
-        document.getElementById('zodiacDay').value = v;
-        updateZodiacPreview();
-        saveSharedBirth({ month: zodiacMonthVal, day: zodiacDayVal });
-        writeStorageJSON(ZODIAC_STORAGE_KEY, { month: zodiacMonthVal, day: zodiacDayVal });
-      });
-      updateZodiacPreview();
-    };
-    buildWheel(mEl, months, months.map(m => m + '月'), zodiacMonthVal, (v) => {
-      zodiacMonthVal = v;
-      document.getElementById('zodiacMonth').value = v;
-      syncDay();
-      saveSharedBirth({ month: zodiacMonthVal, day: zodiacDayVal });
-      writeStorageJSON(ZODIAC_STORAGE_KEY, { month: zodiacMonthVal, day: zodiacDayVal });
-    });
-    syncDay();
+    const z = getZodiacByDate(+b.month, +b.day);
+    zodiacSelected = z;
+    if (el) el.textContent = z.icon + ' ' + z.name + ' · ' + z.en + '（' + z.element + '象）';
+    return z;
   }
+  window.getZodiacChip = function () {
+    const z = zodiacSelected || refreshZodiacFromBirth();
+    return z ? (z.icon + ' ' + z.name + ' · ' + z.element + '象') : '';
+  };
   function openZodiacPanel() {
-    applySharedToZodiac();
-    initZodiacWheels();
     backToZodiacForm();
+    refreshZodiacFromBirth();
+    if (typeof window.renderProfileBar === 'function') window.renderProfileBar('zodiacProfileBar', { extraFn: 'getZodiacChip' });
     ModalUI.open('zodiac');
   }
   function closeZodiacPanel() {
@@ -202,9 +175,11 @@
     if (form) form.style.display = '';
   }
   function submitZodiacForm() {
-    saveSharedBirth({ month: zodiacMonthVal, day: zodiacDayVal });
-    updateZodiacPreview();
-    if (!zodiacSelected) return;
+    refreshZodiacFromBirth();
+    if (!zodiacSelected) {
+      if (typeof toast === 'function') toast('请先录入生辰档案');
+      return;
+    }
     saveProfileSummary('zodiac', `${zodiacSelected.name}·${zodiacSelected.element}象`);
     document.getElementById('zodiacForm').style.display = 'none';
     document.getElementById('zodiacReveal').style.display = 'flex';
@@ -212,7 +187,7 @@
   }
   function castZodiacJiao() {
     if (!zodiacSelected) {
-      updateZodiacPreview();
+      refreshZodiacFromBirth();
       if (!zodiacSelected) return;
     }
     const recastBtn = document.getElementById('zodiacRecast');
@@ -258,7 +233,8 @@
   function zodiacSeed() {
     const z = zodiacSelected;
     if (!z) return 1;
-    const s = z.key + '|' + zodiacMonthVal + '|' + zodiacDayVal + '|' + new Date().toDateString();
+    const b = (typeof loadSharedBirth === 'function') ? loadSharedBirth() : null;
+    const s = z.key + '|' + (b ? b.month : '') + '|' + (b ? b.day : '') + '|' + new Date().toDateString();
     let h = 2166136261;
     for (let i = 0; i < s.length; i++) {
       h ^= s.charCodeAt(i);
@@ -319,7 +295,9 @@
       11: '11 月逐步顺畅：适合推进长期项目，沟通成本下降。',
       12: '12 月偶有波动：年底事务列清单防漏，送礼与祝福话术宜真诚简洁。'
     };
-    return windows[zodiacMonthVal] || '水逆提示仅供娱乐参考：沟通慢半拍、备份多一份，总不会错。';
+    const b = (typeof loadSharedBirth === 'function') ? loadSharedBirth() : null;
+    const m = b ? +b.month : 0;
+    return windows[m] || '水逆提示仅供娱乐参考：沟通慢半拍、备份多一份，总不会错。';
   }
   function zodiacDomainScores() {
     // 事业/财运/感情/健康 四维今日分数，由种子衍生，彼此略相关

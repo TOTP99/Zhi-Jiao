@@ -140,8 +140,8 @@
 
   /* ── 生辰档案 ── */
   var CITY_PRESETS = {
-    shenyang: { tz: 8, lng: 123.4, label: '沈阳' },
-    toronto: { tz: -5, lng: -79.4, label: '多伦多' }
+    shenyang: { tz: 8, lng: 123.4, lat: 41.8, tzName: 'Asia/Shanghai', label: '沈阳' },
+    toronto: { tz: -5, lng: -79.4, lat: 43.7, tzName: 'America/Toronto', label: '多伦多' }
   };
   function readBirth() {
     try { return JSON.parse(localStorage.getItem(LS_BIRTH) || 'null'); } catch (_) { return null; }
@@ -164,6 +164,52 @@
     });
   }
   window.renderProfile = renderProfile;
+  window.getBirthProfile = function () { return readBirth(); };
+
+  /* ── 统一生辰档案条：各命盘面板共用，一次录入、处处可用 ── */
+  function escHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  window.renderProfileBar = function (elId, opts) {
+    var el = typeof elId === 'string' ? $(elId) : elId;
+    if (!el) return;
+    opts = opts || {};
+    el.setAttribute('data-bar', '1');
+    try { el.setAttribute('data-bar-opts', JSON.stringify(opts)); } catch (_) {}
+    var b = readBirth();
+    if (!b || !b.year) {
+      el.innerHTML = '<div class="profile-empty"><p>尚未录入生辰档案<br>录入一次，八字 · 星座 · 星盘皆可共用</p>' +
+        '<button type="button" class="btn-gold btn-sm" onclick="editProfile()">录入生辰档案</button></div>';
+      return;
+    }
+    var sexLabel = b.sex === 'F' ? '女' : '男';
+    var cityLabel = (b.city && CITY_PRESETS[b.city]) ? CITY_PRESETS[b.city].label : '其他城市';
+    var t = (b.hour != null && b.hour !== '') ? ' ' + b.hour + '时' + (b.minute ? b.minute + '分' : '') : '';
+    var sub = sexLabel + ' · ' + cityLabel + ' · 时区' + (b.tzOffset >= 0 ? '+' : '') + b.tzOffset;
+    var extraText = opts.extra || '';
+    if (!extraText && opts.extraFn && typeof window[opts.extraFn] === 'function') {
+      try { extraText = window[opts.extraFn]() || ''; } catch (_) { extraText = ''; }
+    }
+    var extra = extraText ? '<div class="pb-extra">' + escHtml(extraText) + '</div>' : '';
+    el.innerHTML = '<div class="pb-info"><div class="pb-kicker">生辰档案</div>' +
+      '<div class="pb-text">' + escHtml(b.year + '年' + b.month + '月' + b.day + '日' + t) + '</div>' +
+      '<div class="pb-sub">' + escHtml(sub) + '</div>' + extra + '</div>' +
+      '<button type="button" class="btn-ghost btn-sm" onclick="editProfile()">更换</button>';
+  };
+  window.refreshProfileBars = function () {
+    document.querySelectorAll('.profile-bar[data-bar]').forEach(function (el) {
+      var opts = {};
+      try { opts = JSON.parse(el.getAttribute('data-bar-opts') || '{}'); } catch (_) {}
+      window.renderProfileBar(el, opts);
+    });
+  };
+  var _origSaveBirth = saveBirth;
+  saveBirth = function (obj) {
+    _origSaveBirth(obj);
+    try { window.refreshProfileBars(); } catch (_) {}
+  };
 
   /* ── 新手引导 ── */
   var obStep = 0;
@@ -182,8 +228,11 @@
       el.querySelectorAll('button').forEach(function (x) { x.classList.remove('on'); });
       b.classList.add('on');
       if (id === 'obCity') {
+        var isOther = b.dataset.v === 'other';
         var tzRow = $('obTzRow');
-        if (tzRow) tzRow.hidden = b.dataset.v !== 'other';
+        var geoRow = $('obGeoRow');
+        if (tzRow) tzRow.hidden = !isOther;
+        if (geoRow) geoRow.hidden = !isOther;
       }
     });
   }
@@ -221,10 +270,13 @@
     var city = segVal('obCity') || 'toronto';
     var preset = CITY_PRESETS[city];
     var tz = preset ? preset.tz : (parseFloat(($('obTz') || {}).value) || 0);
+    var lat = preset ? preset.lat : (parseFloat(($('obLat') || {}).value) || null);
+    var lng = preset ? preset.lng : (parseFloat(($('obLng') || {}).value) || null);
     return {
       year: +parts[0], month: +parts[1], day: +parts[2],
       hour: tp[0] === '' ? 12 : +tp[0], minute: tp[1] === '' ? 0 : +tp[1],
-      tzOffset: tz, lng: preset ? preset.lng : undefined, city: city,
+      tzOffset: tz, tzName: preset ? preset.tzName : undefined,
+      lat: lat, lng: lng, city: city,
       sex: segVal('obSex') || 'M'
     };
   }
@@ -246,8 +298,13 @@
         });
       });
       var tzRow = $('obTzRow');
-      if (tzRow) tzRow.hidden = (b.city || 'toronto') !== 'other';
+      var geoRow = $('obGeoRow');
+      var isOther = (b.city || 'toronto') === 'other';
+      if (tzRow) tzRow.hidden = !isOther;
+      if (geoRow) geoRow.hidden = !isOther;
       if ($('obTz') && b.tzOffset != null) $('obTz').value = b.tzOffset;
+      if ($('obLat') && b.lat != null) $('obLat').value = b.lat;
+      if ($('obLng') && b.lng != null) $('obLng').value = b.lng;
     }
     ob.setAttribute('aria-hidden', 'false');
     ob.classList.add('show');

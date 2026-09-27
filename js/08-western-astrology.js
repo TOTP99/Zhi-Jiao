@@ -101,7 +101,6 @@
   // 流程：滚轮选生日时间 → 开始分析 → 折叠报告 / 小词典 → 知道了返回
   // ============================================================
   // ============================================================
-  const WESTERN_STORAGE_KEY = 'yumiao_western_form_v1';
   const W_SIGN = ['白羊座','金牛座','双子座','巨蟹座','狮子座','处女座','天秤座','天蝎座','射手座','摩羯座','水瓶座','双鱼座'];
   const W_SIGN_GLYPH = ['♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓'];
   function signName(idx){ return W_SIGN_GLYPH[idx]+W_SIGN[idx]; }
@@ -613,142 +612,24 @@
       report.style.display = 'none';
     }
   }
-  let westernYearVal=1990, westernMonthVal=7, westernDayVal=15, westernHourVal=12, westernMinuteVal=0;
-    function initWesternWheels(){
-    if(typeof buildWheel!=='function') return;
-    const state = {
-      get year(){return westernYearVal;}, set year(v){westernYearVal=v;},
-      get month(){return westernMonthVal;}, set month(v){westernMonthVal=v;},
-      get day(){return westernDayVal;}, set day(v){westernDayVal=v;},
-      get hour(){return westernHourVal;}, set hour(v){westernHourVal=v;},
-      get minute(){return westernMinuteVal;}, set minute(v){westernMinuteVal=v;}
-    };
-    initDateTimeWheelSet({
-      state,
-      ids:{
-        yearWheel:'westernYearWheel', monthWheel:'westernMonthWheel', dayWheel:'westernDayWheel',
-        hourWheel:'westernHourWheel', minuteWheel:'westernMinuteWheel',
-        year:'westernYear', month:'westernMonth', day:'westernDay',
-        hour:'westernHour', minute:'westernMinute'
-      },
-      onChange: () => saveSharedBirth({
-        year:westernYearVal, month:westernMonthVal, day:westernDayVal,
-        hour:westernHourVal, minute:westernMinuteVal
-      })
-    });
-  }
-  // 沈阳 / 多伦多 地点预设（八字 + 西方星盘共用数据）
-  const CITY_PRESETS = {
-    shenyang: { name: '沈阳', lat: 41.8057, lng: 123.4315, tz: 'Asia/Shanghai', tzOffset: 8 },
-    toronto:  { name: '多伦多', lat: 43.6532, lng: -79.3832, tz: 'America/Toronto', tzOffset: -5 }
-  };
-  function applyCityPreset(prefix, city, onPicked) {
-    const sy = document.getElementById(prefix + 'CityShenyang');
-    const to = document.getElementById(prefix + 'CityToronto');
-    if (!sy || !to) return null;
-    if (city === 'shenyang' && sy.checked) to.checked = false;
-    if (city === 'toronto' && to.checked) sy.checked = false;
-    const picked = sy.checked ? 'shenyang' : (to.checked ? 'toronto' : null);
-    if (!picked) return null;
-    const preset = CITY_PRESETS[picked];
-    if (preset && onPicked) onPicked(preset, picked);
-    return picked;
-  }
-  function applyBaziCityPreset(city) {
-    applyCityPreset('bazi', city, (c, picked) => {
-      const tzEl = document.getElementById('baziTimezone');
-      const lonEl = document.getElementById('baziLongitude');
-      if (tzEl) tzEl.value = c.tzOffset;
-      if (lonEl) lonEl.value = c.lng;
-      const cb = document.getElementById('baziTrueSolar');
-      if (cb && !cb.checked) {
-        cb.checked = true;
-        if (typeof toggleTrueSolarUI === 'function') toggleTrueSolarUI();
-      }
-      if (typeof saveBaziForm === 'function') try { saveBaziForm(); } catch (_) {}
-      saveSharedBirth({ city: picked, lat: c.lat, lng: c.lng, tz: c.tz, tzOffset: c.tzOffset });
-    });
-  }
-  function applyWesternCityPreset(city) {
-    applyCityPreset('western', city, (c, picked) => {
-      const latEl = document.getElementById('westernLat');
-      const lngEl = document.getElementById('westernLng');
-      const tzEl = document.getElementById('westernTz');
-      if (latEl) latEl.value = c.lat;
-      if (lngEl) lngEl.value = c.lng;
-      if (tzEl) tzEl.value = c.tz;
-      saveSharedBirth({ city: picked, lat: c.lat, lng: c.lng, tz: c.tz, tzOffset: c.tzOffset });
-    });
-  }
-  function applyZodiacCityPreset(city) {
-    applyCityPreset('zodiac', city, (c, picked) => {
-      saveSharedBirth({ city: picked, lat: c.lat, lng: c.lng, tz: c.tz, tzOffset: c.tzOffset });
-    });
-  }
-  let westernInputTimer = null;
-  function showWesternInputForm(){
-    const chart = document.getElementById('westernChartWrap');
-    const form = document.getElementById('westernForm');
-    const cta = document.getElementById('westernInputCta');
-    if (!chart || !form) return;
-    if (westernInputTimer) clearTimeout(westernInputTimer);
-    if (cta) cta.hidden = true;
-    chart.classList.add('chart-leaving');
-    westernInputTimer = setTimeout(() => {
-      form.style.display = '';
-      westernInputTimer = null;
-    }, 260);
-  }
+  // 统一生辰档案：一次录入，星盘直接取用（无独立表单）
   function openWesternPanel(){
-    applySharedToWestern();
-    try{
-      const by=document.getElementById('baziYear')?.value, bm=document.getElementById('baziMonth')?.value, bd=document.getElementById('baziDay')?.value;
-      const bh=document.getElementById('baziHour')?.value, bmin=document.getElementById('baziMinute')?.value;
-      if(by) westernYearVal=parseInt(by,10)||westernYearVal;
-      if(bm) westernMonthVal=parseInt(bm,10)||westernMonthVal;
-      if(bd) westernDayVal=parseInt(bd,10)||westernDayVal;
-      if(bh!==undefined&&bh!=='') westernHourVal=parseInt(bh,10);
-      if(bmin!==undefined&&bmin!=='') westernMinuteVal=parseInt(bmin,10)||0;
-    }catch(_){}
-    try{
-      const s=readStorageJSON(WESTERN_STORAGE_KEY, null);
-      if(s){
-        if(s.year) westernYearVal=+s.year; if(s.month) westernMonthVal=+s.month; if(s.day) westernDayVal=+s.day;
-        if(s.hour!=null) westernHourVal=+s.hour; if(s.minute!=null) westernMinuteVal=+s.minute;
-        if(s.lat!=null&&s.lat!=='') document.getElementById('westernLat').value=s.lat;
-        if(s.lng!=null&&s.lng!=='') document.getElementById('westernLng').value=s.lng;
-        if(s.tz) document.getElementById('westernTz').value=s.tz;
-      }
-    }catch(_){}
-    if (westernInputTimer) { clearTimeout(westernInputTimer); westernInputTimer = null; }
-    document.getElementById('westernError').textContent='';
-    document.getElementById('westernForm').style.display='none';
-    document.getElementById('westernReveal').style.display='none';
-    document.getElementById('westernInputCta').hidden = false;
-    const _wd=document.getElementById('westernDictBox'); if(_wd){ _wd.style.display='none'; _wd.innerHTML=''; }
-    const _wr=document.getElementById('westernReport'); if(_wr) _wr.style.display='';
+    backToWesternForm();
     ModalUI.open('western');
-    setTimeout(initWesternWheels, 30);
-    const chartWrap = document.getElementById('westernChartWrap');
-    if (chartWrap) chartWrap.classList.remove('hidden', 'chart-leaving');
   }
   function closeWesternPanel(){
     const wmd = document.getElementById('westernModal');
-    // 横屏嵌入时不卸下面板，仅允许「重新填写」等内部切换
+    // 横屏嵌入时不卸下面板，仅允许内部切换
     if (wmd && wmd.classList.contains('land-embed')) {
-      if (westernInputTimer) { clearTimeout(westernInputTimer); westernInputTimer = null; }
       const dict = document.getElementById('westernDictBox');
       const report = document.getElementById('westernReport');
       if (dict) { dict.style.display = 'none'; dict.innerHTML = ''; }
       if (report) report.style.display = '';
-      // 回到输入表单而不是关掉整层
       if (typeof backToWesternForm === 'function') {
         try { backToWesternForm(); } catch (_) {}
       }
       return;
     }
-    if (westernInputTimer) { clearTimeout(westernInputTimer); westernInputTimer = null; }
-    // 复位词典/报告显示，避免下次打开仍停在词典页
     const dict = document.getElementById('westernDictBox');
     const report = document.getElementById('westernReport');
     if (dict) { dict.style.display = 'none'; dict.innerHTML = ''; }
@@ -764,43 +645,31 @@
     const dict = document.getElementById('westernDictBox');
     const report = document.getElementById('westernReport');
     const chartWrap = document.getElementById('westernChartWrap');
-    const cta = document.getElementById('westernInputCta');
-    if (westernInputTimer) { clearTimeout(westernInputTimer); westernInputTimer = null; }
     if (dict) { dict.style.display = 'none'; dict.innerHTML = ''; }
     if (report) report.style.display = '';
     if (reveal) reveal.style.display = 'none';
-    if (form) form.style.display = 'none';
+    if (form) form.style.display = '';
     if (chartWrap) chartWrap.classList.remove('hidden', 'chart-leaving');
-    if (cta) cta.hidden = false;
+    if (typeof window.renderProfileBar === 'function') window.renderProfileBar('westernProfileBar');
   }
   function submitWesternForm(){
     const errEl = document.getElementById('westernError');
     if (errEl) errEl.textContent = '';
-    const year = westernYearVal, month = westernMonthVal, day = westernDayVal;
-    const hour = westernHourVal, minute = westernMinuteVal;
-    const latEl = document.getElementById('westernLat');
-    const lngEl = document.getElementById('westernLng');
-    const tzEl = document.getElementById('westernTz');
-    const latRaw = latEl ? latEl.value : '';
-    const lngRaw = lngEl ? lngEl.value : '';
-    const tz = (tzEl && tzEl.value || '').trim();
-    const lat = latRaw === '' ? null : parseFloat(latRaw);
-    const lng = lngRaw === '' ? null : parseFloat(lngRaw);
-    if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
-      if (errEl) errEl.textContent = '请选择有效出生日期。';
+    // 统一生辰档案：生日 + 出生地一次录入，星盘直接取用
+    const b = (typeof loadSharedBirth === 'function') ? loadSharedBirth() : null;
+    if (!b || !b.year || !b.month || !b.day) {
+      if (errEl) errEl.textContent = '请先录入生辰档案，再来分析星盘。';
       return;
     }
-    if (latRaw !== '' && (!Number.isFinite(lat) || lat < -90 || lat > 90)) {
-      if (errEl) errEl.textContent = '纬度无效（-90~90）。';
-      return;
-    }
-    if (lngRaw !== '' && (!Number.isFinite(lng) || lng < -180 || lng > 180)) {
-      if (errEl) errEl.textContent = '经度无效（-180~180）。';
-      return;
-    }
+    const year = +b.year, month = +b.month, day = +b.day;
+    const hour = (b.hour == null || b.hour === '') ? 12 : +b.hour;
+    const minute = (b.minute == null || b.minute === '') ? 0 : +b.minute;
+    const lat = (b.lat == null || b.lat === '') ? null : +b.lat;
+    const lng = (b.lng == null || b.lng === '') ? null : +b.lng;
+    // 时区：优先 IANA 名（夏令时准确），否则用数字偏移
+    const tz = b.tzName || (b.city === 'toronto' ? 'America/Toronto'
+      : (b.city === 'shenyang' ? 'Asia/Shanghai' : String(b.tzOffset != null ? b.tzOffset : 8)));
     const input = { year, month, day, hour, minute, lat, lng, tz };
-    writeStorageJSON(WESTERN_STORAGE_KEY, input);
-    saveSharedBirth({ year, month, day, hour, minute, lat, lng, tz });
     if (typeof saveProfileSummary === 'function') {
       saveProfileSummary('western', year + '-' + month + '-' + day + '·西盘');
     }
