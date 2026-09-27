@@ -127,17 +127,15 @@
     const res = document.getElementById('fortuneResult');
     const again = document.getElementById('fortuneAgain');
     if (bd) bd.classList.add('show');
-    if (md) { md.classList.remove('landscape-result'); md.classList.add('show'); }
+    if (md) md.classList.add('show');
     if (res) res.innerHTML = '<span style="color:#a08c60">禅猫就位 · 圆盘待命…</span>';
     if (again) { again.style.display = 'none'; again.disabled = false; }
     setTimeout(function(){ spinFortuneWheel(); }, 280);
   }
   function closeFortuneWheel() {
     if (fortuneSpinning) return;
-    const md = document.getElementById('fortuneModal');
-    // 横屏嵌入时不关闭（两侧正方形常驻）
-    if (md && md.classList.contains('land-embed')) return;
     const bd = document.getElementById('fortuneBackdrop');
+    const md = document.getElementById('fortuneModal');
     if (bd) bd.classList.remove('show');
     if (md) md.classList.remove('show');
   }
@@ -175,13 +173,6 @@
         '<div>' + line + '</div>' +
         '<div class="fr-catline">' + segData.cat + '</div>';
       if (again) { again.style.display = ''; again.disabled = false; }
-      // 仅横屏：圆盘转完后缩小退场，再把结论移到屏幕中央。竖屏保持原逻辑。
-      if (window.matchMedia && window.matchMedia('(orientation: landscape)').matches) {
-        var md = document.getElementById('fortuneModal');
-        if (md) {
-          setTimeout(function(){ md.classList.add('landscape-result'); }, 420);
-        }
-      }
     }, 3000);
   }
   (function bindBoxLongPress(){

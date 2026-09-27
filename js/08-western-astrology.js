@@ -634,18 +634,6 @@
     ModalUI.open('western');
   }
   function closeWesternPanel(){
-    const wmd = document.getElementById('westernModal');
-    // 横屏嵌入时不卸下面板，仅允许内部切换
-    if (wmd && wmd.classList.contains('land-embed')) {
-      const dict = document.getElementById('westernDictBox');
-      const report = document.getElementById('westernReport');
-      if (dict) { dict.style.display = 'none'; dict.innerHTML = ''; }
-      if (report) report.style.display = '';
-      if (typeof backToWesternForm === 'function') {
-        try { backToWesternForm(); } catch (_) {}
-      }
-      return;
-    }
     const dict = document.getElementById('westernDictBox');
     const report = document.getElementById('westernReport');
     if (dict) { dict.style.display = 'none'; dict.innerHTML = ''; }

@@ -152,13 +152,6 @@
       }, 120);
     }
   };
-  window.openCasualFromDiscover = function () {
-    switchTab('divine');
-    setTimeout(function () {
-      if (typeof window.selectQuestionMenuItem === 'function') window.selectQuestionMenuItem('casual');
-    }, 320);
-  };
-
   /* ── 生辰档案 ── */
   var CITY_PRESETS = {
     shenyang: { tz: 8, lng: 123.4, lat: 41.8, tzName: 'Asia/Shanghai', label: '沈阳' },
