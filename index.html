@@ -174,8 +174,8 @@
       <div class="ritual-area" id="ritualArea">
         <figure class="seal-fig">
           <img id="sealImg" class="seal-img" src="pics/seal.webp" alt="御猫灵局印信" draggable="false">
-          <div class="seal-hit" id="sealHit" role="button" aria-label="打开西方星盘" title="西方星盘"></div>
-          <figcaption>长按印信 · 开西方星盘</figcaption>
+          <div class="seal-hit" id="sealHit" aria-label="御猫灵局印信"></div>
+          <figcaption>御猫灵局印信</figcaption>
         </figure>
         <div class="jiao-display" id="jiaoDisplay"></div>
         <div class="result-area" id="resultArea">
@@ -201,7 +201,7 @@
         </div>
         <button class="btn-ghost btn-sm" type="button" onclick="editProfile()">编辑</button>
       </div>
-      <div class="feature-list">
+      <div class="feature-list hstrip">
         <button type="button" class="feature-card" onclick="openBaziPanel()">
           <span class="f-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg></span>
           <span class="f-text"><strong>八字排盘</strong><span>四柱 · 五行 · 十神 · 神煞</span></span>
@@ -223,7 +223,7 @@
 
     <!-- ── 发现 ── -->
     <section class="view" id="view-discover">
-      <div class="feature-list">
+      <div class="feature-list hstrip">
         <button type="button" class="feature-card" onclick="openMbtiQuiz()">
           <span class="f-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg></span>
           <span class="f-text"><strong>MBTI 人格快测</strong><span>48 题 · 掷筊定解读详略</span></span>
@@ -283,7 +283,7 @@
         </button>
       </div>
       <button type="button" id="recordBtn" class="hidden-anchor" onclick="toggleHistory()" aria-hidden="true" tabindex="-1"></button>
-      <p class="foot-note">御猫灵局 v2.0 · 数据仅存于本机</p>
+      <p class="foot-note">御猫灵局 v2.4 · 数据仅存于本机</p>
     </section>
   </main>
 
@@ -342,7 +342,7 @@
 <div class="sheet" id="mbtiModal" role="dialog" aria-label="MBTI 人格快测">
   <div class="sheet-handle"></div>
   <div class="sheet-head"><h3>MBTI 人格快测</h3><button type="button" class="sheet-close" onclick="closeMbtiQuiz()" aria-label="关闭">×</button></div>
-  <div class="mbti-intro">凭第一反应作答：是 / 否。不必揣测题目意图，若两边皆可，选更贴近日常自然反应的一边。</div>
+  <div class="mbti-intro">凭第一反应拖动滑杆：偏左为「否」，偏右为「是」。不必揣测题目意图，取更贴近日常自然反应的一边。</div>
   <div class="mbti-progress" id="mbtiProgress">已完成 0/48</div>
   <div class="mbti-quick-result" id="mbtiQuickResult"></div>
   <div class="mbti-list" id="mbtiList"></div>
@@ -464,7 +464,7 @@
   <div class="sheet-handle"></div>
   <div class="sheet-head"><h3>关于与声明</h3><button type="button" class="sheet-close" onclick="closeDisclaimer()" aria-label="关闭">×</button></div>
   <div class="disclaimer-body">
-    <p><strong>御猫灵局 v2.0</strong><br>传统掷筊问卜 · 八字排盘 · 星座运势 · 西方星盘 · MBTI 人格快测</p>
+    <p><strong>御猫灵局 v2.4</strong><br>传统掷筊问卜 · 八字排盘 · 星座运势 · 西方星盘 · MBTI 人格快测</p>
     <p><strong>隐私</strong><br>生辰档案、问卜记录等所有数据仅保存在本机浏览器，不上传任何服务器。</p>
     <p><strong>免责声明</strong><br>签文、排盘、运势等内容源自传统民俗与娱乐化演算，仅供娱乐与怡情，不构成医疗、法律、投资或人生决策建议。重要事项请咨询专业人士。</p>
   </div>
@@ -546,48 +546,19 @@
     lazy('backToZodiacForm', ['js/06-zodiac.js']);
     lazy('openZodiacDict', ['js/06-zodiac.js']);
     lazy('closeZodiacDict', ['js/06-zodiac.js']);
-    /* 印信长按：08 未加载时先拉取再打开；08 就位后撤掉 stub，交给模块自己的绑定 */
-    (function bindSealLazy() {
+    /* 印信保护：仅禁止系统长按菜单 / 保存图片（长按开星盘已移除） */
+    (function protectSealLazy() {
       var hit = document.getElementById('sealHit');
-      if (!hit || hit._lazyBound) return;
-      hit._lazyBound = true;
-      var timer = null, LONG_MS = 550;
-      function clear() { if (timer) { clearTimeout(timer); timer = null; } }
-      function onMouseDown(e) { if (e.button === 0) start(e); }
-      function unbind() {
-        hit.removeEventListener('touchstart', start);
-        hit.removeEventListener('touchend', clear);
-        hit.removeEventListener('touchcancel', clear);
-        hit.removeEventListener('touchmove', clear);
-        hit.removeEventListener('mousedown', onMouseDown);
-        hit.removeEventListener('mouseup', clear);
-        hit.removeEventListener('mouseleave', clear);
+      var seal = document.getElementById('sealImg');
+      if (!hit || hit._sealProtected) return;
+      hit._sealProtected = true;
+      function block(e) { e.preventDefault(); }
+      hit.addEventListener('contextmenu', block);
+      hit.addEventListener('dragstart', block);
+      if (seal) {
+        seal.addEventListener('contextmenu', block);
+        seal.addEventListener('dragstart', block);
       }
-      function start(e) {
-        /* 08 的真实函数已就位：撤掉 stub，让模块自己的长按绑定接管 */
-        var real = window.openWesternPanel;
-        if (typeof real === 'function' && !real._yumiaoStub) { unbind(); return; }
-        if (e && e.target && e.target.closest && e.target.closest('.jade-zone')) return;
-        var seal = document.getElementById('sealImg');
-        if (seal && seal.classList.contains('watermark')) return;
-        if (hit.classList.contains('disabled')) return;
-        clear();
-        timer = setTimeout(function () {
-          timer = null;
-          loadScript('js/08-western-astrology.js').then(function () {
-            unbind();
-            if (typeof window.openWesternPanel === 'function') window.openWesternPanel();
-          });
-        }, LONG_MS);
-      }
-      hit.addEventListener('touchstart', start, { passive: true });
-      hit.addEventListener('touchend', clear);
-      hit.addEventListener('touchcancel', clear);
-      hit.addEventListener('touchmove', clear);
-      hit.addEventListener('mousedown', onMouseDown);
-      hit.addEventListener('mouseup', clear);
-      hit.addEventListener('mouseleave', clear);
-      hit.addEventListener('contextmenu', function (e) { e.preventDefault(); });
     })();
     /* 箱图长按：09 未加载时先拉取再打开；09 就位后撤掉 stub，交给模块自己的绑定 */
     (function bindBoxLazy() {
