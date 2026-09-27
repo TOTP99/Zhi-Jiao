@@ -97,7 +97,7 @@
   // ============================================================
   // ============================================================
   // 西方星盘模块（纯前端，无需 Python）
-  // 触发：长按 #sealHit 热区（覆盖猫徽章，禁止系统「保存图片」）
+  // 印信 #sealHit 热区仅用于禁止系统「保存图片」菜单；星盘统一从「命盘」页进入（长按开星盘已移除）
   // 流程：滚轮选生日时间 → 开始分析 → 折叠报告 / 小词典 → 知道了返回
   // ============================================================
   // ============================================================
@@ -351,6 +351,22 @@
       固定:'稳定持久，认定的事很难被动摇，擅长把事情做深做透，但也要提防过度固执、拒绝调整。',
       变动:'适应力强，善于随机应变、切换赛道，缺点是容易见异思迁，缺乏把事情收尾的耐心。'
     };
+    // 元素×特质神断：十二组合，古典意象
+    const W_ELEM_QUAL = {
+      '火-基本': '火借风势，始能燎原：开创之火最忌孤军奋战。把第一份热情分给同伴，星火方成大势。',
+      '火-固定': '此火如长明之灯：不在一时之烈，而在持久之暖。守住初心，便是一生最大的魔法。',
+      '火-变动': '变动之火，如旷野流萤：宜把理想装进行囊，而非挂在嘴边。走出去，世界自会给你答案。',
+      '土-基本': '开创之土，如高山奠基：慢工出细活，时间是最好的包浆。多年后回望，皆是勋章。',
+      '土-固定': '固定之土，如沃野藏金：认定了便深耕不辍。然土太实则板结，宜偶尔松松土，让新风进来。',
+      '土-变动': '变动之土，如良田轮作：于细微处见功夫。把挑剔炼成标准，便是封神之路。',
+      '风-基本': '开创之风，如平湖初澜：为和谐而生，也为和谐而困。先安放好自己，再去平衡世界。',
+      '风-固定': '固定之风，如高空急流：独立是天赋，孤独是代价。找到同类，风便有了方向。',
+      '风-变动': '变动之风，如柳絮因风起：信息是养料，专注是根。把「知道」变成「做到」，方为智者。',
+      '水-基本': '开创之水，如源头活泉：以柔克刚，以情动人。先安顿情绪，再安顿人生。',
+      '水-固定': '固定之水，如深潭藏龙：洞察是天赋，信任是修行。把控制换成边界，深情才有回响。',
+      '水-变动': '变动之水，如雾海行舟：共情是帆，边界是舵。有舵的船，才能到得了彼岸。'
+    };
+    function wElemQual(pl){ return W_ELEM_QUAL[W_ELEM[pl.signIdx]+'-'+W_QUAL[pl.signIdx]] || ''; }
     const ELEM_MISSING = {
       火:'盘中火象缺席：行动力不是本能反应，需要刻意给自己设短期截止日来「点火」，否则容易一直停在计划阶段。',
       土:'盘中土象缺席：落地执行是相对弱项，想法常常很好但难持续推进，建议借助清单、伙伴或制度把创意变成现实。',
@@ -403,9 +419,9 @@
     // 一、核心三轴 · 太阳·月亮·上升
     const axisBody = lines([
       '<span class="w-chip">☉ 太阳</span> '+signOf(sun)+' '+sun.deg+(sun.house?' · '+W_HOUSE_CN[sun.house-1]:''),
-      '→ '+SUN_I[sun.signIdx],
+      '→ '+SUN_I[sun.signIdx]+'<br>◆ '+wElemQual(sun),
       '<span class="w-chip">☽ 月亮</span> '+signOf(moon)+' '+moon.deg+(moon.house?' · '+W_HOUSE_CN[moon.house-1]:''),
-      '→ '+MOON_I[moon.signIdx],
+      '→ '+MOON_I[moon.signIdx]+'<br>◆ '+wElemQual(moon),
       r.asc ? ('<span class="w-chip">↑ 上升</span> '+signOf(r.asc)+' '+r.asc.deg+'<br>→ '+ASC_I[r.asc.signIdx]) : '↑ 上升：填写出生地后可计算',
       sun.signIdx!==moon.signIdx ? '太阳与月亮不同星座：外人眼中的你，和独处时的你可能有明显反差，这是正常的「表里两面」，不是矛盾。' : '太阳与月亮同星座：表里高度一致，情绪与目标常同步，决策也更干脆利落。',
       (r.asc && r.asc.signIdx===sun.signIdx) ? '上升与太阳同星座：第一印象就是本色出演，辨识度高。' : ((r.asc && r.asc.signIdx===moon.signIdx) ? '上升与月亮同星座：初次见面就能感受到你的情绪底色，亲和力强。' : '')
@@ -465,20 +481,20 @@
     // 七、沟通思维 · 学习与表达风格
     const h3 = hSign(2);
     const mercuryBody = lines([
-      '水星在'+signOf(mercury)+'：'+MERCURY_I[mercury.signIdx],
+      '水星在'+signOf(mercury)+'：'+MERCURY_I[mercury.signIdx]+'<br>◆ '+wElemQual(mercury),
       mercury.house ? '水星落第'+mercury.house+'宫：沟通与学习的课题会集中在「'+houseTheme[mercury.house]+'」相关的场合。' : '',
       h3 ? '沟通宫（第3宫）落在'+h3+'：这是你日常交流、社交圈氛围的底色。' : '补全出生地后，可看到沟通宫（第3宫）星座。'
     ].filter(Boolean));
     // 八、魅力吸引 · 审美偏好与情感连结
     const h5 = hSign(4);
     const venusBody = lines([
-      '金星在'+signOf(venus)+'：'+VENUS_I[venus.signIdx],
+      '金星在'+signOf(venus)+'：'+VENUS_I[venus.signIdx]+'<br>◆ '+wElemQual(venus),
       venus.house ? '金星落第'+venus.house+'宫：审美与喜好会集中体现在「'+houseTheme[venus.house]+'」相关的领域。' : '',
       h5 ? '第5宫（恋爱/创造/娱乐）落在'+h5+'：这是你享受生活、放松身心的偏好方式。' : ''
     ].filter(Boolean));
     // 九、行动张力 · 欲望驱动与冲突反应
     const marsBody = lines([
-      '火星在'+signOf(mars)+'：'+MARS_I[mars.signIdx],
+      '火星在'+signOf(mars)+'：'+MARS_I[mars.signIdx]+'<br>◆ '+wElemQual(mars),
       mars.house ? '火星落第'+mars.house+'宫：你的行动力和竞争心，会最先在「'+houseTheme[mars.house]+'」相关领域被点燃。' : '',
       '把水星（怎么想）、金星（喜欢什么）、火星（怎么做）连起来看，就是你从想法到行动的完整链路。'
     ].filter(Boolean));
@@ -696,59 +712,20 @@
       if (errEl) errEl.textContent = '分析出错：' + (err && err.message ? err.message : '请重试');
     }
   }
-  (function bindSealLongPress(){
+  (function protectSealImage(){
     function wire(){
       const hit = document.getElementById('sealHit');
       const seal = document.getElementById('sealImg');
       if (!hit) return;
-      let timer = null;
-      let armed = false;
-      const LONG_MS = 550;
-      function isWatermark() {
-        return seal && seal.classList.contains('watermark');
-      }
-      function clearTimer() {
-        if (timer) { clearTimeout(timer); timer = null; }
-        armed = false;
-      }
-      function startPress(e) {
-        if (isWatermark()) return;
-        if (hit.classList.contains('disabled')) return;
-        clearTimer();
-        armed = true;
-        timer = setTimeout(function () {
-          if (!armed) return;
-          timer = null;
-          armed = false;
-          if (typeof openWesternPanel === 'function') openWesternPanel();
-        }, LONG_MS);
-      }
-      function endPress() { clearTimer(); }
-      // 禁止系统菜单 / 保存图片 / 选中
-      hit.addEventListener('contextmenu', function (e) { e.preventDefault(); e.stopPropagation(); return false; });
-      hit.addEventListener('dragstart', function (e) { e.preventDefault(); });
+      // 仅禁止系统菜单 / 保存图片 / 拖拽：长按开星盘已移除
+      const block = function (e) { e.preventDefault(); e.stopPropagation(); return false; };
+      const noDrag = function (e) { e.preventDefault(); };
+      hit.addEventListener('contextmenu', block);
+      hit.addEventListener('dragstart', noDrag);
       if (seal) {
-        seal.addEventListener('contextmenu', function (e) { e.preventDefault(); e.stopPropagation(); return false; });
-        seal.addEventListener('dragstart', function (e) { e.preventDefault(); });
+        seal.addEventListener('contextmenu', block);
+        seal.addEventListener('dragstart', noDrag);
       }
-      hit.addEventListener('touchstart', startPress, { passive: true });
-      hit.addEventListener('touchend', endPress);
-      hit.addEventListener('touchcancel', endPress);
-      hit.addEventListener('touchmove', endPress);
-      hit.addEventListener('mousedown', function (e) {
-        if (e.button !== 0) return;
-        startPress(e);
-      });
-      hit.addEventListener('mouseup', endPress);
-      hit.addEventListener('mouseleave', endPress);
-      // 水印切换时同步热区
-      try {
-        const mo = new MutationObserver(function () {
-          if (isWatermark()) hit.classList.add('disabled');
-          else hit.classList.remove('disabled');
-        });
-        if (seal) mo.observe(seal, { attributes: true, attributeFilter: ['class'] });
-      } catch (_) {}
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
     else wire();

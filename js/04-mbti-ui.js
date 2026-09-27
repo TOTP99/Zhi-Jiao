@@ -155,36 +155,60 @@
       }
       q.appendChild(document.createTextNode(text));
       item.appendChild(q);
-      const choices = document.createElement('div');
-      choices.className = 'mbti-choices';
-      const yesBtn = document.createElement('button');
-      yesBtn.type = 'button';
-      yesBtn.className = 'mbti-choice';
-      yesBtn.dataset.idx = idx;
-      yesBtn.dataset.val = 'yes';
-      yesBtn.textContent = '是';
-      yesBtn.onclick = () => answerMbti(idx, 'yes');
-      const noBtn = document.createElement('button');
-      noBtn.type = 'button';
-      noBtn.className = 'mbti-choice';
-      noBtn.dataset.idx = idx;
-      noBtn.dataset.val = 'no';
-      noBtn.textContent = '否';
-      noBtn.onclick = () => answerMbti(idx, 'no');
-      choices.appendChild(yesBtn);
-      choices.appendChild(noBtn);
-      item.appendChild(choices);
+      const wrap = document.createElement('div');
+      wrap.className = 'mbti-slider-wrap';
+      const labels = document.createElement('div');
+      labels.className = 'mbti-slider-labels';
+      const noLab = document.createElement('span'); noLab.textContent = '否';
+      const state = document.createElement('span');
+      state.className = 'mbti-slider-state'; state.textContent = '未作答';
+      const yesLab = document.createElement('span'); yesLab.textContent = '是';
+      labels.appendChild(noLab); labels.appendChild(state); labels.appendChild(yesLab);
+      const slider = document.createElement('input');
+      slider.type = 'range'; slider.min = '0'; slider.max = '100'; slider.value = '50';
+      slider.className = 'yslider mbti-slider';
+      slider.dataset.idx = idx;
+      slider.setAttribute('aria-label', '倾向滑杆：左否右是');
+      slider.addEventListener('input', () => {
+        const v = Number(slider.value);
+        slider.style.setProperty('--val', v);
+        paintMbtiSliderState(slider, v >= 50 ? 'yes' : 'no');
+      });
+      slider.addEventListener('change', () => {
+        const v = Number(slider.value);
+        answerMbti(idx, v >= 50 ? 'yes' : 'no');
+      });
+      const ticks = document.createElement('div');
+      ticks.className = 'mbti-slider-ticks';
+      ticks.innerHTML = '<i></i><i></i><i></i><i></i><i></i>';
+      wrap.appendChild(labels); wrap.appendChild(slider); wrap.appendChild(ticks);
+      item.appendChild(wrap);
       frag.appendChild(item);
     });
     list.innerHTML = '';
     list.appendChild(frag);
     mbtiListRendered = true;
   }
+  function paintMbtiSliderState(slider, val) {
+    const wrap = slider.closest('.mbti-slider-wrap');
+    const st = wrap ? wrap.querySelector('.mbti-slider-state') : null;
+    if (st) {
+      const yes = val === 'yes';
+      st.textContent = yes ? '倾向「是」' : '倾向「否」';
+      st.classList.toggle('yes', yes);
+      st.classList.toggle('no', !yes);
+    }
+  }
+  function syncMbtiSlider(slider, val) {
+    const v = val === 'yes' ? 82 : 18;
+    slider.value = String(v);
+    slider.style.setProperty('--val', v);
+    paintMbtiSliderState(slider, val);
+  }
   function applyMbtiAnswersToUI() {
-    document.querySelectorAll('.mbti-choice').forEach(btn => {
-      const idx = btn.dataset.idx;
-      const val = btn.dataset.val;
-      btn.classList.toggle('selected', mbtiAnswers[idx] === val);
+    document.querySelectorAll('.mbti-slider').forEach(slider => {
+      const val = mbtiAnswers[slider.dataset.idx];
+      if (val === 'yes' || val === 'no') syncMbtiSlider(slider, val);
     });
     updateMbtiProgress();
   }
@@ -278,8 +302,8 @@
   function answerMbti(idx, val) {
     mbtiAnswers[idx] = val;
     saveMbtiAnswers();
-    document.querySelectorAll(`.mbti-choice[data-idx="${idx}"]`).forEach(btn => {
-      btn.classList.toggle('selected', btn.dataset.val === val);
+    document.querySelectorAll(`.mbti-slider[data-idx="${idx}"]`).forEach(slider => {
+      syncMbtiSlider(slider, val);
     });
     updateMbtiProgress();
   }
@@ -428,6 +452,7 @@
     if (type === 'sheng') {
       reportEl.innerHTML = `
         <div class="mbti-type">${escapeHtml(report.type)} · ${escapeHtml(report.name)}${report.primaryPercent ? '（约 ' + report.primaryPercent + '%）' : ''}</div><div class="mbti-summary">${escapeHtml(report.summary)}</div>
+        ${report.mystic ? `<div class="mbti-sec"><span class="mbti-sec-label">神断</span>${escapeHtml(report.mystic)}</div>` : ''}
         ${secHTML}
         ${trapNoteHTML}
         <div class="mbti-sec"><span class="mbti-sec-label">优势</span>${report.strengths.map(escapeHtml).join('、')}</div><div class="mbti-sec"><span class="mbti-sec-label">盲点</span>${report.blindSpots.map(escapeHtml).join('、')}</div><div class="mbti-sec"><span class="mbti-sec-label">工作</span>${escapeHtml(report.work)}</div><div class="mbti-sec"><span class="mbti-sec-label">关系</span>${escapeHtml(report.relationship)}</div><div class="mbti-sec"><span class="mbti-sec-label">压力</span>${escapeHtml(report.stress)}</div>

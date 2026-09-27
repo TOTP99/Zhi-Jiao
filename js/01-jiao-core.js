@@ -1,6 +1,17 @@
 // ============================================================
 // 掷筊核心：滚动锁 / 弹窗开关 / 瑞兽信息 / 音效 / 签文数据库 / 问卜菜单
 // 原始行号（拆分前单文件 script.js 中的位置）: 1-1244
+// ---- 神秘变体抽取器（全局）：同 salt 恒得同一变体 —— 同一命盘判词稳定，异命则各见其妙 ----
+  function yumiaoHash(str) {
+    let h = 2166136261 >>> 0;
+    const s = String(str == null ? '' : str);
+    for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+  function pickVariant(pool, salt) {
+    if (!Array.isArray(pool) || pool.length === 0) return '';
+    return pool[yumiaoHash(salt) % pool.length];
+  }
 // ============================================================
   // ---- 弹层滚动锁：打开星盘/八字/星座/MBTI/记录 等浮层时，锁住背景掷筊页面的滚动，
   // 避免在浮层内上下滑动选择年月日时时，手指误触发背景页面跟着滚动。
