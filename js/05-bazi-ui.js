@@ -388,7 +388,7 @@
     document.querySelectorAll('.jade-zone').forEach(z => z.classList.remove('active'));
     if (selectedBeast === el.dataset.beast) {
       selectedBeast = null;
-      document.getElementById('selectedLine').innerHTML = '1️⃣⬆️预选🐲🐯🦁护法问卜／不选=随机🔮';
+      document.getElementById('selectedLine').textContent = '轻触瑞兽请护法，不选则随机';
       return;
     }
     el.classList.add('active');
@@ -424,16 +424,8 @@
   async function castJiao() {
     const btn = document.getElementById('castBtn');
     if (btn.disabled) return;
-    const question = document.getElementById('question').value.trim();
-    if (!question) {
-      const qEl = document.getElementById('question');
-      if (typeof showMainMenu === 'function') showMainMenu();
-      if (qEl) {
-        qEl.style.borderColor = '#c08080';
-        setTimeout(() => { qEl.style.borderColor = ''; }, 1200);
-      }
-      return;
-    }
+    /* 未写问题则直接以「今日运势」起卦，不再弹出选项 */
+    const question = document.getElementById('question').value.trim() || '今日运势';
     const now = Date.now();
     const beastIdentity = selectedBeast || 'random'; // 未选择视为「随机」这一身份，用于冷却比对
     const sameBeastAsLast = lastBeastIdentity !== null && beastIdentity === lastBeastIdentity;
@@ -447,12 +439,12 @@
       descEl.innerHTML = renderOracleHTML(
         typeof makeOracle === 'function'
           ? makeOracle({
-              神意: `同一所问，神明已有示兆。请静心体会约 ${remain} 秒后再求，勿急于连掷；若想请示别位瑞兽，可直接点选⬆️🐲🐯🦁换一位再问。`,
+              神意: `同一所问，神明已有示兆。请静心体会约 ${remain} 秒后再求，勿急于连掷；若想请示别位瑞兽，可直接点选宝盒上方瑞兽换一位再问。`,
               宜: '静心体悟',
               忌: '反复追问'
             }, 'xiao', 'general', 'cooldown')
           : {
-              神意: `同一所问，神明已有示兆。请静心体会约 ${remain} 秒后再求，勿急于连掷；若想请示别位瑞兽，可直接点选⬆️🐲🐯🦁换一位再问。`,
+              神意: `同一所问，神明已有示兆。请静心体会约 ${remain} 秒后再求，勿急于连掷；若想请示别位瑞兽，可直接点选宝盒上方瑞兽换一位再问。`,
               宜: '静心体悟',
               忌: '反复追问'
             }
@@ -462,7 +454,7 @@
     btn.disabled = true;
     getAudioCtx();
     const myToken = ++castToken;
-    var _halo = document.getElementById('beastHalo'); if (_halo) _halo.classList.add('watermark');
+    var _halo = document.getElementById('beastOverlay'); if (_halo) _halo.classList.add('watermark');
     document.getElementById('resultTitle').textContent = '';
     const descEl = document.getElementById('resultDesc');
     descEl.textContent = '';
@@ -597,7 +589,7 @@
     qEl.setAttribute('readonly', 'readonly');
     selectedBeast = null;
     document.querySelectorAll('.jade-zone').forEach(z => z.classList.remove('active'));
-    document.getElementById('selectedLine').innerHTML = '1️⃣⬆️预选🐲🐯🦁护法问卜／不选=随机🔮';
+    document.getElementById('selectedLine').textContent = '轻触瑞兽请护法，不选则随机';
     document.getElementById('jiaoDisplay').innerHTML = '';
     document.getElementById('resultTitle').textContent = '';
     document.getElementById('resultTitle').className = 'result-title';
@@ -605,7 +597,7 @@
     descEl.textContent = '';
     descEl.classList.remove('loading');
     document.getElementById('resultBeast').textContent = '';
-    var _halo2 = document.getElementById('beastHalo'); if (_halo2) _halo2.classList.remove('watermark');
+    var _halo2 = document.getElementById('beastOverlay'); if (_halo2) _halo2.classList.remove('watermark');
     document.getElementById('castBtn').disabled = false;
     const _histBoxWasOpen = document.getElementById('historyBox').classList.contains('show');
     document.getElementById('historyBox').classList.remove('show');

@@ -83,26 +83,22 @@
       b.classList.toggle('picked', b.dataset.beast === key);
     });
   }
-  /* 瑞兽光圈：点选龙 / 虎 / 狮时，瑞兽像现于光圈之内；取消选择则复位 */
-  function updateBeastHalo() {
-    var halo = document.getElementById('beastHalo');
-    var img = document.getElementById('beastHaloImg');
-    var empty = document.getElementById('beastHaloEmpty');
-    if (!halo || !img) return;
+  /* 瑞兽覆影：点选龙 / 虎 / 狮时，瑞兽像覆于宝盒之上；取消选择则复位 */
+  function updateBeastOverlay() {
+    var ov = document.getElementById('beastOverlay');
+    var img = document.getElementById('beastOverlayImg');
+    if (!ov || !img) return;
     var active = document.querySelector('.jade-zone.active');
     var key = active ? active.dataset.beast : null;
     if (key && BEAST_HALO_IMG[key]) {
       img.src = BEAST_HALO_IMG[key];
       img.alt = BEAST_NAMES[key] || '';
-      img.hidden = false;
-      if (empty) empty.style.display = 'none';
-      halo.classList.add('lit');
+      ov.hidden = false;
     } else {
       img.removeAttribute('src');
-      img.hidden = true;
-      if (empty) empty.style.display = '';
-      halo.classList.remove('lit');
+      ov.hidden = true;
     }
+    ov.classList.remove('watermark');
   }
   window.selectBeastLabel = function (beast) {
     var z = document.querySelector('.jade-zone[data-beast="' + beast + '"]');
@@ -122,7 +118,7 @@
         line.textContent = '轻触瑞兽请护法，不选则随机';
       }
       syncBeastLabels();
-      updateBeastHalo();
+      updateBeastOverlay();
     };
     window.selectBeast._yumiaoPatched = true;
     if (typeof window.resetAll === 'function' && !window.resetAll._yumiaoPatched) {
@@ -132,7 +128,7 @@
         var line = $('selectedLine');
         if (line) line.textContent = '轻触瑞兽请护法，不选则随机';
         syncBeastLabels();
-        updateBeastHalo();
+        updateBeastOverlay();
         document.querySelectorAll('.mchip').forEach(function (c, i) {
           c.classList.toggle('on', i === 0);
         });
@@ -469,19 +465,26 @@
     if (b) b.classList.remove('show');
     lockScroll(false);
   }
-  /* ── 万能 × 关闭：所有子页面共用，不依赖懒加载模块的就绪状态 ──
-     先尝试模块专属关闭（含业务清理），随后校验是否真的关上；
-     任何异常（stub 未就绪、抛错、守卫提前返回）都由兜底强制关闭，保证 × 永远有效。 */
+  /* ── 万能关闭：× 与遮罩共用。先试模块专属关闭，再校验，不成则强制关 ── */
   window.closeSheetByBtn = function (btn) {
     var sheet = null;
     try {
       if (btn) {
-        if (btn.closest) sheet = btn.closest('.sheet');
-        if (!sheet) {
-          var p = btn.parentNode;
-          while (p && p !== document) {
-            if (p.classList && p.classList.contains('sheet')) { sheet = p; break; }
-            p = p.parentNode;
+        if (btn.classList && btn.classList.contains('sheet-backdrop')) {
+          /* 点的是遮罩：sheet 就是它的下一个兄弟节点 */
+          var n = btn.nextElementSibling;
+          while (n) {
+            if (n.classList && n.classList.contains('sheet')) { sheet = n; break; }
+            n = n.nextElementSibling;
+          }
+        } else {
+          if (btn.closest) sheet = btn.closest('.sheet');
+          if (!sheet) {
+            var p = btn.parentNode;
+            while (p && p !== document) {
+              if (p.classList && p.classList.contains('sheet')) { sheet = p; break; }
+              p = p.parentNode;
+            }
           }
         }
       }
@@ -626,18 +629,6 @@
     });
   };
 
-  /* ── 结果出现后显示操作按钮 ── */
-  function watchResult() {
-    var t = $('resultTitle');
-    if (!t) return;
-    var mo = new MutationObserver(function () {
-      var has = !!(t.textContent && t.textContent.trim());
-      var ra = $('resultActions');
-      if (ra) ra.hidden = !has;
-    });
-    mo.observe(t, { childList: true, characterData: true, subtree: true });
-  }
-
   /* ── 清除数据 ── */
   var clearArmed = false, clearTimer = null;
   window.clearAllData = function () {
@@ -660,7 +651,6 @@
     patchBeastText();
     renderProfile();
     renderDailyCard();
-    watchResult();
     initOnboard();
     var qEl = $('question');
     if (qEl && !qEl._menuBound) {
