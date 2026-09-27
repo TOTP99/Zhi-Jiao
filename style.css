@@ -201,8 +201,8 @@ input,textarea{font-family:inherit}
 .box-img{position:relative;z-index:1;width:100%;display:block;border-radius:var(--r-md);filter:drop-shadow(0 16px 30px rgba(0,0,0,.5))}
 .jade-zone{position:absolute;top:64%;height:18%;width:17%;border-radius:50%;cursor:pointer}
 .jade-zone.dragon{left:21%}.jade-zone.tiger{left:41.5%}.jade-zone.lion{left:62%}
-/* 瑞兽覆影：点选龙 / 虎 / 狮后，瑞兽像覆于宝盒之上 */
-.beast-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+/* 瑞兽覆影：点选龙 / 虎 / 狮后，瑞兽像覆于宝盒之上（z-index 高于宝盒图） */
+.beast-overlay{position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;pointer-events:none}
 .beast-overlay img{width:74%;aspect-ratio:1/1;border-radius:50%;object-fit:cover;
   border:2px solid rgba(232,199,102,.85);outline:1px solid rgba(232,199,102,.4);outline-offset:5px;
   box-shadow:0 0 26px rgba(232,199,102,.55),0 0 64px rgba(201,162,39,.28);
