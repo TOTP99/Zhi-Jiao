@@ -75,12 +75,34 @@
 
   /* ── 瑞兽：标签同步 + 去 emoji 文案 ── */
   var BEAST_NAMES = { dragon: '唤醒天龙', tiger: '平定四方', lion: '瑞兽祈福' };
+  var BEAST_HALO_IMG = { dragon: 'pics/beast-dragon.webp', tiger: 'pics/beast-tiger.webp', lion: 'pics/beast-lion.webp' };
   function syncBeastLabels() {
     var active = document.querySelector('.jade-zone.active');
     var key = active ? active.dataset.beast : null;
     document.querySelectorAll('.beast-labels button').forEach(function (b) {
       b.classList.toggle('picked', b.dataset.beast === key);
     });
+  }
+  /* 瑞兽光圈：点选龙 / 虎 / 狮时，瑞兽像现于光圈之内；取消选择则复位 */
+  function updateBeastHalo() {
+    var halo = document.getElementById('beastHalo');
+    var img = document.getElementById('beastHaloImg');
+    var empty = document.getElementById('beastHaloEmpty');
+    if (!halo || !img) return;
+    var active = document.querySelector('.jade-zone.active');
+    var key = active ? active.dataset.beast : null;
+    if (key && BEAST_HALO_IMG[key]) {
+      img.src = BEAST_HALO_IMG[key];
+      img.alt = BEAST_NAMES[key] || '';
+      img.hidden = false;
+      if (empty) empty.style.display = 'none';
+      halo.classList.add('lit');
+    } else {
+      img.removeAttribute('src');
+      img.hidden = true;
+      if (empty) empty.style.display = '';
+      halo.classList.remove('lit');
+    }
   }
   window.selectBeastLabel = function (beast) {
     var z = document.querySelector('.jade-zone[data-beast="' + beast + '"]');
@@ -100,6 +122,7 @@
         line.textContent = '轻触瑞兽请护法，不选则随机';
       }
       syncBeastLabels();
+      updateBeastHalo();
     };
     window.selectBeast._yumiaoPatched = true;
     if (typeof window.resetAll === 'function' && !window.resetAll._yumiaoPatched) {
@@ -109,6 +132,7 @@
         var line = $('selectedLine');
         if (line) line.textContent = '轻触瑞兽请护法，不选则随机';
         syncBeastLabels();
+        updateBeastHalo();
         document.querySelectorAll('.mchip').forEach(function (c, i) {
           c.classList.toggle('on', i === 0);
         });
@@ -445,6 +469,48 @@
     if (b) b.classList.remove('show');
     lockScroll(false);
   }
+  /* ── 万能 × 关闭：所有子页面共用，不依赖懒加载模块的就绪状态 ──
+     先尝试模块专属关闭（含业务清理），随后校验是否真的关上；
+     任何异常（stub 未就绪、抛错、守卫提前返回）都由兜底强制关闭，保证 × 永远有效。 */
+  window.closeSheetByBtn = function (btn) {
+    var sheet = null;
+    try {
+      if (btn) {
+        if (btn.closest) sheet = btn.closest('.sheet');
+        if (!sheet) {
+          var p = btn.parentNode;
+          while (p && p !== document) {
+            if (p.classList && p.classList.contains('sheet')) { sheet = p; break; }
+            p = p.parentNode;
+          }
+        }
+      }
+    } catch (_) { sheet = null; }
+    if (!sheet) return;
+    var id = sheet.id || '';
+    var closerMap = {
+      fortuneModal: 'closeFortuneWheel', historyBox: 'toggleHistory',
+      mbtiModal: 'closeMbtiQuiz', baziModal: 'closeBaziPanel',
+      zodiacModal: 'closeZodiacPanel', westernModal: 'closeWesternPanel',
+      dailySheet: 'closeDailySheet', memberSheet: 'closeMemberSheet',
+      disclaimerSheet: 'closeDisclaimer'
+    };
+    var fn = window[closerMap[id]];
+    if (typeof fn === 'function' && !fn._yumiaoStub) {
+      try { fn(); } catch (_) {}
+    }
+    if (sheet.classList.contains('show')) {
+      sheet.classList.remove('show');
+      var bd = document.getElementById(id.replace(/(Modal|Box|Sheet)$/, 'Backdrop'));
+      if (!bd && sheet.previousElementSibling &&
+          sheet.previousElementSibling.classList.contains('sheet-backdrop')) {
+        bd = sheet.previousElementSibling;
+      }
+      if (bd) bd.classList.remove('show');
+      try { if (typeof unlockPageScroll === 'function') unlockPageScroll(); } catch (_) {}
+      try { lockScroll(false); } catch (_) {}
+    }
+  };
   window.openMemberSheet = function () { openSheet('memberSheet', 'memberBackdrop'); };
   window.closeMemberSheet = function () { closeSheet('memberSheet', 'memberBackdrop'); };
   window.memberSoon = function () { toast('会员功能开发中，当前版本全部免费'); };

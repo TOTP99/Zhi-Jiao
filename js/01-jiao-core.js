@@ -1116,7 +1116,7 @@
     const cell = document.createElement('div');
     cell.className = 'question-menu-cell casual-item';
     cell.setAttribute('role', 'option');
-    cell.style.cssText = 'flex-direction:row;justify-content:flex-start;gap:8px;padding:10px 12px;text-align:left;flex-shrink:0;transition:background 0.18s ease,transform 0.12s ease;';
+    cell.style.cssText = 'flex-direction:row;justify-content:flex-start;gap:6px;padding:8px 10px;text-align:left;font-size:12px;flex-shrink:0;transition:background 0.18s ease,transform 0.12s ease;';
     // 滑动防误触：记录指针起点，位移超过阈值则取消点击
     let ptrX = 0, ptrY = 0, moved = false;
     const onDown = (e) => {

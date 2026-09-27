@@ -462,7 +462,7 @@
     btn.disabled = true;
     getAudioCtx();
     const myToken = ++castToken;
-    document.getElementById('sealImg').classList.add('watermark');
+    var _halo = document.getElementById('beastHalo'); if (_halo) _halo.classList.add('watermark');
     document.getElementById('resultTitle').textContent = '';
     const descEl = document.getElementById('resultDesc');
     descEl.textContent = '';
@@ -605,7 +605,7 @@
     descEl.textContent = '';
     descEl.classList.remove('loading');
     document.getElementById('resultBeast').textContent = '';
-    document.getElementById('sealImg').classList.remove('watermark');
+    var _halo2 = document.getElementById('beastHalo'); if (_halo2) _halo2.classList.remove('watermark');
     document.getElementById('castBtn').disabled = false;
     const _histBoxWasOpen = document.getElementById('historyBox').classList.contains('show');
     document.getElementById('historyBox').classList.remove('show');

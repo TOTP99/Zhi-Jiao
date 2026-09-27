@@ -97,7 +97,7 @@
   // ============================================================
   // ============================================================
   // 西方星盘模块（纯前端，无需 Python）
-  // 印信 #sealHit 热区仅用于禁止系统「保存图片」菜单；星盘统一从「命盘」页进入（长按开星盘已移除）
+  // 星盘统一从「命盘」页进入（印信长按已移除；v2.5 印信改为掷筊页瑞兽光圈）
   // 流程：滚轮选生日时间 → 开始分析 → 折叠报告 / 小词典 → 知道了返回
   // ============================================================
   // ============================================================
@@ -712,21 +712,4 @@
       if (errEl) errEl.textContent = '分析出错：' + (err && err.message ? err.message : '请重试');
     }
   }
-  (function protectSealImage(){
-    function wire(){
-      const hit = document.getElementById('sealHit');
-      const seal = document.getElementById('sealImg');
-      if (!hit) return;
-      // 仅禁止系统菜单 / 保存图片 / 拖拽：长按开星盘已移除
-      const block = function (e) { e.preventDefault(); e.stopPropagation(); return false; };
-      const noDrag = function (e) { e.preventDefault(); };
-      hit.addEventListener('contextmenu', block);
-      hit.addEventListener('dragstart', noDrag);
-      if (seal) {
-        seal.addEventListener('contextmenu', block);
-        seal.addEventListener('dragstart', noDrag);
-      }
-    }
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
-    else wire();
-  })();
+  /* 印信已从掷筊页移除（v2.5 改为瑞兽光圈），此处不再需要印信保护逻辑 */
