@@ -394,6 +394,7 @@ input,textarea{font-family:inherit}
 .mbti-num{color:var(--gold-soft);font-weight:600;margin-right:6px;font-size:12.5px}
 .mbti-actions{flex:0 0 auto;padding-top:12px;display:flex;gap:10px;justify-content:center;align-items:center}
 .mbti-reveal{display:none;flex-direction:column;align-items:center;gap:10px;overflow-y:auto;flex:1 1 auto;min-height:0;padding:6px 2px}
+.mbti-reveal>*{flex-shrink:0}/* 揭示区子项不被 flex 挤压，超长时由容器滚动 */
 .mbti-reveal .jiao-display{min-height:48px;margin:6px 0}
 .mbti-jiao-label{font-size:14px;font-weight:600;letter-spacing:3px}
 .mbti-jiao-label.sheng{color:var(--jade)}.mbti-jiao-label.xiao{color:var(--gold-bright)}.mbti-jiao-label.yin{color:var(--cinnabar)}
@@ -454,6 +455,7 @@ input,textarea{font-family:inherit}
 
 /* 命运圆盘：一页看全 —— 转盘 + 一只禅猫 + 判词 + 底部按键 */
 .fortune-layout{display:flex;flex-direction:column;align-items:center;gap:8px}
+.fortune-layout>*{flex-shrink:0}/* 转盘/禅猫/判词不被 flex 挤压 */
 .fortune-stage{position:relative;width:200px;height:200px;margin:2px auto 0;filter:drop-shadow(0 10px 18px rgba(0,0,0,.5))}
 .fortune-wheel{width:200px;height:200px;border-radius:50%;position:relative;border:4px solid transparent;
   background:conic-gradient(from -90deg,#c9a84a 0 45deg,#8a7028 45deg 90deg,#d4b85a 90deg 135deg,#6b5520 135deg 180deg,
@@ -472,7 +474,8 @@ input,textarea{font-family:inherit}
   background:radial-gradient(circle at 32% 28%,#fff6d0 0%,#e0c36a 40%,#a8791f 78%,#5a4018 100%);
   border:2px solid #3a2c10;display:flex;align-items:center;justify-content:center;
   font-family:var(--serif);font-size:24px;font-weight:700;color:#3a2a08}
-/* 转盘内唯一的禅猫像 */
+/* 转盘内唯一的禅猫像：与转盘保持呼吸间隙 */
+.fortune-cat{margin-top:14px}
 .fortune-cat img{width:104px;height:62px;object-fit:cover;border-radius:12px;border:1px solid var(--line-soft);display:block}
 .fortune-result{width:100%;min-height:64px;padding:12px 14px;border-radius:var(--r-md);background:rgba(243,234,211,.05);
   border:1px solid var(--line-soft);font-size:13.5px;line-height:1.9;color:var(--cream-dim);text-align:left}
@@ -499,7 +502,7 @@ input,textarea{font-family:inherit}
 .casual-scroll-hint{font-size:11px;color:var(--gold-soft);text-align:center;letter-spacing:1px;padding-top:6px;flex:0 0 auto}
 
 /* 西方星盘 */
-.western-chart-wrap{text-align:center;padding:4px 6px;margin-bottom:8px;max-height:640px;overflow:hidden;
+.western-chart-wrap{text-align:center;padding:4px 6px;margin-bottom:8px;max-height:640px;overflow:hidden;flex:0 0 auto;
   transform-origin:center top;transition:max-height .4s ease,opacity .32s ease,transform .4s ease,padding .4s ease,margin .4s ease}
 .western-chart-wrap.hidden{display:none}
 .western-chart-wrap.chart-leaving{max-height:0;opacity:0;transform:scale(.72);margin-bottom:0;padding-top:0;padding-bottom:0;pointer-events:none}
