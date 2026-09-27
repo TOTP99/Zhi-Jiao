@@ -82,10 +82,18 @@
   };
   let selectedBeast = null;
   const beastInfo = {
-    dragon: { name: '唤醒天龙', emoji: '🐉', style: '突破与转机' },
-    tiger:  { name: '平定四方', emoji: '🐯', style: '稳定与守护' },
-    lion:   { name: '瑞兽祈福', emoji: '🦁', style: '福气与庇佑' }
+    dragon: { name: '唤醒天龙', style: '突破与转机' },
+    tiger:  { name: '平定四方', style: '稳定与守护' },
+    lion:   { name: '瑞兽祈福', style: '福气与庇佑' }
   };
+  /* 瑞兽小图标（替代 emoji 的行内小图）：emo-dragon/tiger/lion.webp */
+  const BEAST_ICON_SRC = { dragon: 'pics/emo-dragon.webp', tiger: 'pics/emo-tiger.webp', lion: 'pics/emo-lion.webp' };
+  const BEAST_KEY_BY_NAME = { '唤醒天龙': 'dragon', '平定四方': 'tiger', '瑞兽祈福': 'lion' };
+  window.beastIconHTML = function (key, cls) {
+    if (!key || !BEAST_ICON_SRC[key]) return '';
+    return '<img class="beast-ico' + (cls ? ' ' + cls : '') + '" src="' + BEAST_ICON_SRC[key] + '" alt="">';
+  };
+  window.beastKeyByName = function (name) { return BEAST_KEY_BY_NAME[name] || ''; };
   let audioCtx = null;
   function getAudioCtx() {
     if (!audioCtx) {
@@ -755,15 +763,11 @@
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     }[c]));
   }
-  function autoGrowQuestion(el) {
-    el.style.height = 'auto';
-    el.style.height = Math.min(el.scrollHeight, 160) + 'px';
-  }
+
   // ---- 问卜范例浮动菜单 ----
   // 输入栏默认 readonly：点击时不弹键盘，先出现菜单；
   // 仅选择「1 自定义问题」时才解除 readonly 并唤起键盘。
   let questionMenuHideTimer = null;
-  let questionReminderTimer = null;
   let customEditing = false; // 自定义输入中：禁止 blur 再锁回 readonly
   // 常见 108 问：前 72 问覆盖生活各领域（逐条核对，确保互不重复、互不相似、语义不歧义）；
   // 后 36 问为宏大议题（移民、财经、法律、政治、经济、哲学、宗教、心理、宇宙、数学、物理、新发现、人工智能），
@@ -812,12 +816,12 @@
     { q: '异地恋能否修成正果？', cat: 'marriage' },
     { q: '分手后还能否复合？', cat: 'marriage' },
     { q: '二婚/再婚是否合适？', cat: 'marriage' },
-    { q: '该不该要孩子？备孕时机如何？', cat: 'children' },
+    { q: '该不该要孩子？', cat: 'children' },
     { q: '二胎该不该生？', cat: 'children' },
     { q: '被裁员的风险大不大？', cat: 'job' },
     { q: '该不该裸辞休整一段时间？', cat: 'job' },
     { q: '副业能否做出起色？', cat: 'career' },
-    { q: '该不该报考公务员或事业编？', cat: 'exam' },
+    { q: '该考公务员吗？', cat: 'exam' },
     { q: '驾照考试能否顺利通过？', cat: 'exam' },
     { q: '退休后的生活该如何规划？', cat: 'life' },
     { q: '该不该提前还清房贷？', cat: 'wealth' },
@@ -828,58 +832,58 @@
     { q: '手上的房子该不该卖？', cat: 'house' },
     { q: '和邻居的纠纷该如何化解？', cat: 'general' },
     { q: '和室友的矛盾该如何处理？', cat: 'friendship' },
-    { q: '和上司关系紧张该如何应对？', cat: 'job' },
+    { q: '上司关系如何改善？', cat: 'job' },
     { q: '手头的项目能否顺利完成？', cat: 'career' },
     { q: '面试/选拔能否顺利入围？', cat: 'exam' },
     { q: '合同签署是否顺利？', cat: 'business' },
-    { q: '短线操作股票或基金是否可行？', cat: 'wealth' },
+    { q: '短线炒股可行吗？', cat: 'wealth' },
     { q: '父母的养老该如何安排？', cat: 'family' },
     { q: '是否需要做这台手术？', cat: 'health' },
     { q: '长期焦虑失眠该如何缓解？', cat: 'health' },
-    { q: '关系闹僵后，道歉能否被接受？', cat: 'friendship' },
-    { q: '该不该在意网上的评价和口碑？', cat: 'general' },
-    { q: '信用卡或网贷额度审批能否通过？', cat: 'wealth' },
-    { q: '学一门新技能是否值得投入？', cat: 'study' },
-    { q: '特长生或艺考升学是否顺利？', cat: 'exam' },
-    { q: '旅途中航班或车次延误该如何应对？', cat: 'travel' },
-    { q: '眼下最烦心的事，何时能真正过去？', cat: 'life' },
+    { q: '道歉会被接受吗？', cat: 'friendship' },
+    { q: '要在意网上评价吗？', cat: 'general' },
+    { q: '信用卡审批能过吗？', cat: 'wealth' },
+    { q: '学新技能值得吗？', cat: 'study' },
+    { q: '艺考升学顺利吗？', cat: 'exam' },
+    { q: '航班延误怎么办？', cat: 'travel' },
+    { q: '烦心事何时过去？', cat: 'life' },
     // ---- 73-108：宏大议题三十六问（移民/财经/法律/政治/经济/哲学/宗教/心理/宇宙/数学/物理/人工智能）----
-    { q: '移民他国是否会带来更好的生活？' },
-    { q: '未来数十年，全球移民政策会更宽松还是更严格？' },
-    { q: '一个人该不该为了子女教育移民海外？' },
-    { q: '未来十年，全球经济格局会如何变化？' },
-    { q: '通货膨胀长期来看是否难以避免？' },
-    { q: '数字货币会不会取代传统货币？' },
-    { q: '法律的根本目的是维护公平还是维护秩序？' },
-    { q: '未来的法律体系会不会因科技发展而被颠覆？' },
-    { q: '一个社会的法治水平由什么决定？' },
-    { q: '民主制度是否是最适合人类社会的治理方式？' },
-    { q: '国际局势长期是否会趋于更加合作？' },
-    { q: '一个国家的强盛究竟取决于制度还是资源？' },
-    { q: '自由市场经济能否解决贫富差距问题？' },
-    { q: '未来的工作形态会因自动化发生哪些根本改变？' },
-    { q: '经济增长是否终将面临自然资源的极限？' },
+    { q: '移民生活会更好吗？' },
+    { q: '移民政策会收紧吗？' },
+    { q: '为子女教育移民吗？' },
+    { q: '未来经济格局如何？' },
+    { q: '通胀难以避免吗？' },
+    { q: '数字货币能取代现金吗？' },
+    { q: '法律为公平还是秩序？' },
+    { q: '科技会颠覆法律吗？' },
+    { q: '法治水平由何决定？' },
+    { q: '民主是最好的制度吗？' },
+    { q: '国际局势会更合作吗？' },
+    { q: '强盛靠制度还是资源？' },
+    { q: '市场能消除贫富差距吗？' },
+    { q: '自动化会改变工作吗？' },
+    { q: '增长会触及资源极限吗？' },
     { q: '人生的意义究竟是什么？' },
     { q: '自由意志是否真实存在？' },
-    { q: '幸福更多来自外在条件还是内心状态？' },
-    { q: '不同宗教信仰的核心追求是否殊途同归？' },
-    { q: '信仰对现代人的意义是否正在改变？' },
-    { q: '灵魂是否会在肉体消亡后继续存在？' },
-    { q: '人的性格究竟由先天决定还是后天塑造？' },
-    { q: '潜意识对人的行为影响究竟有多大？' },
-    { q: '人为什么会重复同样的情感模式？' },
-    { q: '宇宙之外是否还存在其他宇宙？' },
-    { q: '人类是否终将在宇宙中找到地外生命？' },
+    { q: '幸福靠外在还是内心？' },
+    { q: '各宗教追求一致吗？' },
+    { q: '信仰的意义在改变吗？' },
+    { q: '灵魂死后还存在吗？' },
+    { q: '性格先天还是后天？' },
+    { q: '潜意识影响有多大？' },
+    { q: '为何重复情感模式？' },
+    { q: '宇宙之外还有宇宙吗？' },
+    { q: '能找到地外生命吗？' },
     { q: '时间的本质究竟是什么？' },
-    { q: '数学究竟是被发现的还是被发明的？' },
-    { q: '是否存在人类永远无法证明的数学真理？' },
-    { q: '数学能否完全描述这个物理世界？' },
-    { q: '物理学界会不会迎来颠覆现有理论的新发现？' },
-    { q: '暗物质与暗能量的真面目何时能被揭开？' },
-    { q: '量子力学与相对论能否最终统一？' },
-    { q: '人工智能会不会最终超越人类的智慧？' },
-    { q: '人工智能的发展会给人类社会带来更多福祉还是风险？' },
-    { q: '未来人类与人工智能会形成怎样的关系？' },
+    { q: '数学是发现还是发明？' },
+    { q: '有无法证明的真理吗？' },
+    { q: '数学能描述世界吗？' },
+    { q: '物理学会被颠覆吗？' },
+    { q: '暗物质何时被揭开？' },
+    { q: '量子与相对论能统一吗？' },
+    { q: 'AI 会超越人类吗？' },
+    { q: 'AI 是福祉还是风险？' },
+    { q: '人类与 AI 关系如何？' },
   ];
   // ---- 菜单状态：main | casual | none ----
   // 交互原则：
@@ -896,87 +900,24 @@
   function getQuestionEl() {
     return document.getElementById('question');
   }
-  function setQuestionReadonly(ro) {
-    const q = getQuestionEl();
-    if (!q) return;
-    if (ro) {
-      q.readOnly = true;
-      q.setAttribute('readonly', 'readonly');
-    } else {
-      q.readOnly = false;
-      q.removeAttribute('readonly');
-    }
-  }
-  function fillQuestionText(text, readonly) {
+  /* 输入行恒为手动输入：永不锁定，直接可编辑 */
+  function fillQuestionText(text) {
     const q = getQuestionEl();
     if (!q) return;
     customEditing = false;
     q.value = text;
-    setQuestionReadonly(!!readonly);
-    autoGrowQuestion(q);
   }
   function closeAllMenus() {
     clearTimeout(questionMenuHideTimer);
     menuLayer = 'none';
     menuPinned = false;
-    const main = document.getElementById('questionMenu');
-    const casual = document.getElementById('casualMenu');
-    if (main) main.classList.remove('show');
-    if (casual) casual.classList.remove('show');
-    document.querySelectorAll('.method-cell.armed').forEach(c => c.classList.remove('armed'));
-  }
-  function showMainMenu() {
-    if (customEditing) return;
-    clearTimeout(questionMenuHideTimer);
-    menuPinned = false;
-    menuLayer = 'main';
-    const main = document.getElementById('questionMenu');
     const casual = document.getElementById('casualMenu');
     if (casual) casual.classList.remove('show');
-    if (main) main.classList.add('show');
-    bindOutsideClickOnce();
   }
   function onQuestionInput() {
     customEditing = true;
     // 一旦开始打字，收起菜单以免挡输入
     if (menuLayer !== 'none') closeAllMenus();
-  }
-  function enableCustomInput() {
-    const q = getQuestionEl();
-    if (!q) return;
-    closeAllMenus();
-    if (typeof clearPreferredCategory === 'function') clearPreferredCategory();
-    customEditing = true;
-    setQuestionReadonly(false);
-    q.value = '';
-    autoGrowQuestion(q);
-    const tryFocus = () => {
-      q.focus();
-      try {
-        if (typeof q.setSelectionRange === 'function') q.setSelectionRange(0, 0);
-      } catch (_) {}
-    };
-    tryFocus();
-    setTimeout(tryFocus, 50);
-    setTimeout(tryFocus, 180);
-    showQuestionReminder();
-  }
-  function hideQuestionMenuDelayed() {
-    // 二级菜单钉住、或自定义编辑中：blur 不关菜单/不锁输入
-    if (menuPinned || customEditing) return;
-    clearTimeout(questionMenuHideTimer);
-    questionMenuHideTimer = setTimeout(() => {
-      if (menuPinned || customEditing) return;
-      const q = getQuestionEl();
-      if (q && document.activeElement === q) return;
-      // 若焦点仍在菜单内部（极少见），也不关
-      const active = document.activeElement;
-      if (active && active.closest && (
-        active.closest('#questionMenu') || active.closest('#casualMenu')
-      )) return;
-      closeAllMenus();
-      if (q && !q.readOnly && !customEditing) setQuestionReadonly(true);
-    }, 200);
   }
   function bindOutsideClickOnce() {
     if (outsideClickBound) return;
@@ -987,53 +928,23 @@
     if (menuLayer === 'none') return;
     const t = e.target;
     if (!t) return;
-    // 点在输入框或任一菜单内：不关
+    // 点在输入框或菜单内：不关
     if (t.closest && (
       t.closest('#question') ||
-      t.closest('#questionMenu') ||
       t.closest('#casualMenu') ||
       t.closest('.question-wrap')
     )) return;
-    // 自定义编辑中点外部：只关菜单，不锁键盘
     closeAllMenus();
-    if (!customEditing) {
-      const q = getQuestionEl();
-      if (q && !q.readOnly) setQuestionReadonly(true);
-    }
   }
-  // 问卜方式两步选择：第一次点击=选中（淡黄高亮），第二次点击同一项=确认进入
-  function armOrSelectMethod(el, method) {
-    if (el.classList.contains('armed')) {
-      el.classList.add('entering');
-      setTimeout(() => {
-        selectQuestionMenuItem(method);
-        el.classList.remove('entering');
-      }, 120);
-      return;
-    }
-    document.querySelectorAll('.method-cell.armed').forEach(c => c.classList.remove('armed'));
-    el.classList.add('armed');
-    try {
-      if (navigator.vibrate) navigator.vibrate(12);
-    } catch (_) {}
-  }
+  /* 问卜方式 chips：MBTI / 八字 / 星座 / 108 问；手动输入直接在输入行完成 */
   function selectQuestionMenuItem(n) {
     const q = getQuestionEl();
     if (!q) return;
     clearTimeout(questionMenuHideTimer);
-    // 兼容旧数字编号
-    if (n === 1 || n === '1') n = 'manual';
-    if (n === 2 || n === '2') n = 'mbti';
-    if (n === 3 || n === '3') n = 'bazi';
-    if (n === 9 || n === '9') n = 'casual';
-    if (n === 'manual') {
-      enableCustomInput();
-      return;
-    }
     if (n === 'mbti') {
       closeAllMenus();
       if (typeof clearPreferredCategory === 'function') clearPreferredCategory();
-      fillQuestionText('MBTI 性格测试', true);
+      fillQuestionText('MBTI 性格测试');
       q.blur();
       openMbtiQuiz();
       return;
@@ -1041,7 +952,7 @@
     if (n === 'bazi') {
       closeAllMenus();
       if (typeof clearPreferredCategory === 'function') clearPreferredCategory();
-      fillQuestionText('八字运程与神煞', true);
+      fillQuestionText('八字运程与神煞');
       q.blur();
       openBaziPanel();
       return;
@@ -1049,7 +960,7 @@
     if (n === 'zodiac') {
       closeAllMenus();
       if (typeof clearPreferredCategory === 'function') clearPreferredCategory();
-      fillQuestionText('星座运势测试', true);
+      fillQuestionText('星座运势测试');
       q.blur();
       if (typeof openZodiacPanel === 'function') openZodiacPanel();
       return;
@@ -1059,30 +970,11 @@
       return;
     }
   }
-  // 手动输入：菜单内独立输入框，与其它扩展选项区分，不复用主展示框直接编辑
-  function confirmManualQuestion(autoCast, isExplicit) {
-    const input = document.getElementById('manualQuestionInput');
-    if (!input) return;
-    const text = input.value.trim();
-    if (!text) {
-      if (isExplicit) input.focus(); // 主动确认但未填写：提示继续输入，不打断随手点开又关闭的场景
-      return;
-    }
-    if (typeof clearPreferredCategory === 'function') clearPreferredCategory();
-    fillQuestionText(text, true);
-    input.value = '';
-    closeAllMenus();
-    const q = getQuestionEl();
-    if (q) q.blur();
-    if (autoCast) castJiao();
-  }
   function openCasualMenu() {
     clearTimeout(questionMenuHideTimer);
     menuPinned = true;
     menuLayer = 'casual';
-    const main = document.getElementById('questionMenu');
     const casual = document.getElementById('casualMenu');
-    if (main) main.classList.remove('show');
     if (!casual) return;
     if (!casualMenuRendered) renderCasualMenu();
     casual.classList.add('show');
@@ -1195,18 +1087,8 @@
     }, { passive: true });
   }
   function closeCasualMenu() {
-    // 返回主菜单，保持 pinned 短暂，避免 blur 立刻关掉
-    clearTimeout(questionMenuHideTimer);
-    menuPinned = true;
-    menuLayer = 'main';
-    const casual = document.getElementById('casualMenu');
-    const main = document.getElementById('questionMenu');
-    if (casual) casual.classList.remove('show');
-    if (main) main.classList.add('show');
-    // 下一拍解除 pinned，之后仍可由外部点击关闭
-    setTimeout(() => {
-      if (menuLayer === 'main') menuPinned = false;
-    }, 300);
+    // 主菜单已移除：直接关闭 108 问菜单
+    closeAllMenus();
   }
   function selectCasualQuestion(index) {
     const item = CASUAL_QUESTIONS[index];
@@ -1216,16 +1098,7 @@
     if (typeof setPreferredCategory === 'function') {
       setPreferredCategory(item.cat || null);
     }
-    fillQuestionText(item.q, true);
+    fillQuestionText(item.q);
     const q = getQuestionEl();
     if (q) q.blur();
-  }
-  function showQuestionReminder() {
-    const el = document.getElementById('questionReminder');
-    if (!el) return;
-    clearTimeout(questionReminderTimer);
-    el.classList.add('show');
-    questionReminderTimer = setTimeout(() => {
-      el.classList.remove('show');
-    }, 2800);
   }

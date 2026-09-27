@@ -372,7 +372,7 @@
   // 统一清回占位符状态，无需整页重置即可重新选择。
   function clearQuestionSelectionToDefault() {
     if (typeof clearPreferredCategory === 'function') clearPreferredCategory();
-    fillQuestionText('', true);
+    fillQuestionText('');
   }
   function closeMbtiQuiz() {
     ModalUI.close('mbti');
@@ -395,7 +395,7 @@
     selectedBeast = el.dataset.beast;
     const info = beastInfo[selectedBeast];
     document.getElementById('selectedLine').innerHTML =
-      `已请示 <span>${info.emoji} ${info.name}</span>`;
+      `已请示 <span>${info.name}</span>`;
     if (selectedBeast === 'dragon') playQing();
     else if (selectedBeast === 'tiger') playBell();
     else if (selectedBeast === 'lion') playZhong();
@@ -488,7 +488,7 @@
         const titleEl = document.getElementById('resultTitle');
         titleEl.textContent = meta.title;
         titleEl.className = 'result-title ' + meta.class;
-        document.getElementById('resultBeast').textContent = `${info.emoji} ${info.name} · ${info.style}`;
+        document.getElementById('resultBeast').innerHTML = (window.beastIconHTML ? window.beastIconHTML(beastKey) : '') + escapeHtml(info.name) + ' · ' + escapeHtml(info.style);
         descEl.textContent = '叩问神明，判词生成中…';
         descEl.classList.add('loading');
         const oracle = await resolveOracle(question, type, beastKey);
@@ -559,7 +559,7 @@
       return;
     }
     list.innerHTML = profileBar + history.map(h => `
-      <div class="history-item"><span>${h.time} · ${escapeHtml(h.q)}${h.snippet ? `<br><span style="color:#a08c60;font-size:10px;">${escapeHtml(h.snippet)}</span>` : ''}</span><span class="history-result ${h.result.cls}">${h.result.text}（${escapeHtml(h.beast)}）</span></div>
+      <div class="history-item"><span>${h.time} · ${escapeHtml(h.q)}${h.snippet ? `<br><span style="color:#a08c60;font-size:10px;">${escapeHtml(h.snippet)}</span>` : ''}</span><span class="history-result ${h.result.cls}">${h.result.text}（${window.beastIconHTML ? window.beastIconHTML(window.beastKeyByName ? window.beastKeyByName(h.beast) : '', 'sm') : ''}${escapeHtml(h.beast)}）</span></div>
     `).join('');
   }
   function toggleHistory() {
@@ -584,9 +584,7 @@
     const qEl = document.getElementById('question');
     qEl.value = '';
     qEl.style.borderColor = '';
-    qEl.style.height = 'auto';
-    qEl.readOnly = true;
-    qEl.setAttribute('readonly', 'readonly');
+    qEl.blur();
     selectedBeast = null;
     document.querySelectorAll('.jade-zone').forEach(z => z.classList.remove('active'));
     document.getElementById('selectedLine').textContent = '轻触瑞兽请护法，不选则随机';
@@ -610,13 +608,4 @@
       e.preventDefault();
       castJiao();
     }
-  });
-  document.getElementById('manualQuestionInput').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      confirmManualQuestion(true, true);
-    }
-  });
-  document.getElementById('manualQuestionInput').addEventListener('blur', function() {
-    setTimeout(() => { confirmManualQuestion(false, false); }, 120);
   });

@@ -113,7 +113,7 @@
       if (!line) return;
       var active = document.querySelector('.jade-zone.active');
       if (active && BEAST_NAMES[active.dataset.beast]) {
-        line.innerHTML = '已请 <span>' + BEAST_NAMES[active.dataset.beast] + '</span> 护法';
+        line.innerHTML = '已请 ' + (window.beastIconHTML ? window.beastIconHTML(active.dataset.beast) : '') + '<span>' + BEAST_NAMES[active.dataset.beast] + '</span> 护法';
       } else {
         line.textContent = '轻触瑞兽请护法，不选则随机';
       }
@@ -129,8 +129,9 @@
         if (line) line.textContent = '轻触瑞兽请护法，不选则随机';
         syncBeastLabels();
         updateBeastOverlay();
-        document.querySelectorAll('.mchip').forEach(function (c, i) {
-          c.classList.toggle('on', i === 0);
+        /* 手动输入为默认方式：重置后不预选任何问卜方式 */
+        document.querySelectorAll('.mchip').forEach(function (c) {
+          c.classList.remove('on');
         });
       };
       window.resetAll._yumiaoPatched = true;
@@ -652,14 +653,6 @@
     renderProfile();
     renderDailyCard();
     initOnboard();
-    var qEl = $('question');
-    if (qEl && !qEl._menuBound) {
-      qEl._menuBound = true;
-      /* 空问题框被点选时，直接展开问卜方式菜单 */
-      qEl.addEventListener('click', function () {
-        if (qEl.readOnly && !qEl.value && typeof window.showMainMenu === 'function') window.showMainMenu();
-      });
-    }
     var dd = $('dailyDrawBtn');
     if (dd) dd.addEventListener('click', openDailySheet);
     var td = $('topbarDaily');

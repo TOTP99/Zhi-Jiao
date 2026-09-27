@@ -283,8 +283,8 @@
         if (doneTrap >= 12) {
           const v = checkTrapValidity();
           validityNote = v.ok
-            ? `<div class="mbti-quick-note">✅ 12 题真实性核验已通过（${v.passed}/12），此结果更为真实可信。</div>`
-            : `<div class="mbti-quick-note">⚠️ 12 题真实性核验未通过（${v.passed}/12，作答专注度或一致性偏低），此结果仅供参考，建议静心重测。</div>`;
+            ? `<div class="mbti-quick-note"><span class="tag-ok">通过</span>12 题真实性核验已通过（${v.passed}/12），此结果更为真实可信。</div>`
+            : `<div class="mbti-quick-note"><span class="tag-warn">存疑</span>12 题真实性核验未通过（${v.passed}/12，作答专注度或一致性偏低），此结果仅供参考，建议静心重测。</div>`;
         }
       }
       el.innerHTML = `
@@ -446,8 +446,8 @@
     if (mbtiExtraMode) {
       const v = checkTrapValidity();
       trapNoteHTML = v.ok
-        ? `<div class="mbti-sec"><span class="mbti-sec-label">真实性</span>✅ 12 题核验已通过（${v.passed}/12），以上为核验后更真实的人格结果。</div>`
-        : `<div class="mbti-sec"><span class="mbti-sec-label">真实性</span>⚠️ 12 题核验未通过（${v.passed}/12），作答专注度或一致性偏低，以上结果仅供参考，建议静心重测加测题。</div>`;
+        ? `<div class="mbti-sec"><span class="mbti-sec-label">真实性</span><span class="tag-ok">通过</span>12 题核验已通过（${v.passed}/12），以上为核验后更真实的人格结果。</div>`
+        : `<div class="mbti-sec"><span class="mbti-sec-label">真实性</span><span class="tag-warn">存疑</span>12 题核验未通过（${v.passed}/12），作答专注度或一致性偏低，以上结果仅供参考，建议静心重测加测题。</div>`;
     }
     if (type === 'sheng') {
       reportEl.innerHTML = `
