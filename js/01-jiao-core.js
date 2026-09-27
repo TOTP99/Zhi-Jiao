@@ -683,15 +683,6 @@
       return fallback;
     }
   }
-  function writeStorageJSON(key, value) {
-    try {
-      localStorage.setItem(key, JSON.stringify(value));
-      return true;
-    } catch (_) {
-      return false;
-    }
-  }
-
   function loadProfileSummaries() {
     try {
       const raw = localStorage.getItem(PROFILE_SUMMARY_KEY);

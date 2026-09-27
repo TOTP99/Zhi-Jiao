@@ -11,14 +11,6 @@
   function loadSharedBirth() {
     return readStorageJSON(SHARED_BIRTH_KEY, null);
   }
-  function saveSharedBirth(partial) {
-    const next = Object.assign({}, loadSharedBirth() || {}, partial || {});
-    writeStorageJSON(SHARED_BIRTH_KEY, next);
-  }
-  // 统一档案桥：旧的各面板表单同步入口保留为档案条刷新（供命运圆盘嵌入等调用）
-  function applySharedToWestern() {
-    if (typeof window.renderProfileBar === 'function') window.renderProfileBar('westernProfileBar');
-  }
   function openBaziPanel() {
     backToBaziForm();
     if (typeof window.renderProfileBar === 'function') window.renderProfileBar('baziProfileBar');

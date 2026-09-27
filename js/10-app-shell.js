@@ -178,7 +178,6 @@
     });
   }
   window.renderProfile = renderProfile;
-  window.getBirthProfile = function () { return readBirth(); };
 
   /* ── 统一生辰档案条：各命盘面板共用，一次录入、处处可用 ── */
   function escHtml(s) {
@@ -643,6 +642,12 @@
     wrapSound();
     refreshSoundUI();
     patchBeastText();
+    /* 长按保护：全局屏蔽长按系统菜单（输入框除外）；宝盒长按开转盘走 touch 计时器，不受影响 */
+    document.addEventListener('contextmenu', function (e) {
+      var t = e.target;
+      if (t && t.closest && t.closest('input,textarea,[contenteditable="true"]')) return;
+      e.preventDefault();
+    });
     renderProfile();
     renderDailyCard();
     initOnboard();
