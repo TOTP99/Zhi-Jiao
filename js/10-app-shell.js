@@ -632,7 +632,14 @@
       return;
     }
     clearTimeout(clearTimer); clearArmed = false;
-    try { localStorage.clear(); } catch (_) {}
+    try {
+      var keys = [];
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k && k.indexOf('yumiao_') === 0) keys.push(k);
+      }
+      keys.forEach(function (k) { localStorage.removeItem(k); });
+    } catch (_) {}
     toast('已清除，页面即将刷新');
     setTimeout(function () { location.reload(); }, 900);
   };

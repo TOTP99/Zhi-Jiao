@@ -538,10 +538,20 @@
       result: safeType,
       beast: beastName || '',
       snippet,
+      ts: Date.now(),
       time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
     });
     if (history.length > 8) history.pop();
+    saveHistory();
     renderHistory();
+  }
+  function historyTimeLabel(h) {
+    try {
+      if (!h.ts) return h.time || '';
+      const d = new Date(h.ts), n = new Date();
+      if (d.toDateString() === n.toDateString()) return h.time || '';
+      return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + (h.time || '');
+    } catch (_) { return h.time || ''; }
   }
   function renderHistory() {
     const list = document.getElementById('historyList');
@@ -551,7 +561,7 @@
       return;
     }
     list.innerHTML = profileBar + history.map(h => `
-      <div class="history-item"><span>${h.time} · ${escapeHtml(h.q)}${h.snippet ? `<br><span style="color:#a08c60;font-size:10px;">${escapeHtml(h.snippet)}</span>` : ''}</span><span class="history-result ${h.result.cls}">${h.result.text}（${window.beastIconHTML ? window.beastIconHTML(window.beastKeyByName ? window.beastKeyByName(h.beast) : '', 'sm') : ''}${escapeHtml(h.beast)}）</span></div>
+      <div class="history-item"><span>${historyTimeLabel(h)} · ${escapeHtml(h.q)}${h.snippet ? `<br><span style="color:#a08c60;font-size:10px;">${escapeHtml(h.snippet)}</span>` : ''}</span><span class="history-result ${h.result.cls}">${h.result.text}（${window.beastIconHTML ? window.beastIconHTML(window.beastKeyByName ? window.beastKeyByName(h.beast) : '', 'sm') : ''}${escapeHtml(h.beast)}）</span></div>
     `).join('');
   }
   function toggleHistory() {

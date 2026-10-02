@@ -669,7 +669,18 @@
       catch (__) { return makeOracle(ultimateFallback, 'xiao', 'general', 'guardian'); }
     }
   }
-  const history = [];
+  // 请示记录：持久化到本机，最多 8 条
+  const HISTORY_KEY = 'yumiao_history_v1';
+  const history = (function () {
+    try {
+      const raw = localStorage.getItem(HISTORY_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr.filter(function (h) { return h && typeof h.q === 'string' && h.result; }).slice(0, 8) : [];
+    } catch (_) { return []; }
+  })();
+  function saveHistory() {
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history)); } catch (_) {}
+  }
   // ---- 性格 / 八字 / 星座 测试摘要：本地浏览器存储，供"记录"面板展示 ----
   // 若某项已测过，记录面板会以「不超过 20 字」的极简说明 + 时间戳展示，无需重新测试即可一眼看到此前结果。
   const PROFILE_SUMMARY_KEY = 'yumiao_profile_summary_v1';
