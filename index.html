@@ -10,8 +10,6 @@
 <meta name="format-detection" content="telephone=no">
 <title>御猫灵局 · 掷筊问卜</title>
 <link rel="stylesheet" href="style.css">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 </head>
 <body>
 
@@ -459,10 +457,43 @@
         var fn = window[name];
         if (typeof fn !== 'function' || fn._yumiaoStub) throw new Error(name + ' unavailable');
         return fn.apply(window, args);
-      });
+      }).catch(loadFailed);
     };
     stub._yumiaoStub = true;
     window[name] = stub;
+  }
+  /* 兜底：模块加载失败（弱网 / 被拦）时不报错，改成一句不重样的"今日不宜"文案 */
+  var FALLBACK_LINES = [
+    '今日不宜占卜，改日再来',
+    '天机未显，稍候片刻再问',
+    '灵猫正在打盹，请稍后再唤',
+    '香火未燃，缘分未到，且待片刻',
+    '云遮月影，卦象不明，晚些再试',
+    '今日气场不稳，宜静心，不宜问卜',
+    '筊杯暂歇，莫急，再试一次便是',
+    '神明正忙，请稍候再来请示'
+  ];
+  var fallbackBag = [];
+  var lastFallback = '';
+  function nextFallbackLine() {
+    if (!fallbackBag.length) {
+      fallbackBag = FALLBACK_LINES.slice();
+      for (var i = fallbackBag.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var t = fallbackBag[i]; fallbackBag[i] = fallbackBag[j]; fallbackBag[j] = t;
+      }
+      if (fallbackBag[fallbackBag.length - 1] === lastFallback && fallbackBag.length > 1) fallbackBag.unshift(fallbackBag.pop());
+    }
+    lastFallback = fallbackBag.pop();
+    return lastFallback;
+  }
+  function loadFailed() {
+    try {
+      var msg = nextFallbackLine();
+      if (typeof window.toast === 'function') { window.toast(msg); return; }
+      var el = document.getElementById('toast');
+      if (el) { el.textContent = msg; el.classList.add('show'); setTimeout(function () { el.classList.remove('show'); }, 2200); }
+    } catch (_) {}
   }
   function afterCore(fn) {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn);
@@ -473,15 +504,15 @@
     lazy('openZodiacPanel', ['js/06-zodiac.js']);
     if (typeof window.openBaziPanel === 'function') {
       var _openBazi = window.openBaziPanel;
-      window.openBaziPanel = function () { var a = arguments; return loadScript('js/03-bazi-engine.js').then(function () { return _openBazi.apply(window, a); }); };
+      window.openBaziPanel = function () { var a = arguments; return loadScript('js/03-bazi-engine.js').then(function () { return _openBazi.apply(window, a); }).catch(loadFailed); };
     }
     if (typeof window.submitBaziForm === 'function') {
       var _submitBazi = window.submitBaziForm;
-      window.submitBaziForm = function () { var a = arguments; return loadScript('js/03-bazi-engine.js').then(function () { return _submitBazi.apply(window, a); }); };
+      window.submitBaziForm = function () { var a = arguments; return loadScript('js/03-bazi-engine.js').then(function () { return _submitBazi.apply(window, a); }).catch(loadFailed); };
     }
     if (typeof window.castBaziJiao === 'function') {
       var _castBazi = window.castBaziJiao;
-      window.castBaziJiao = function () { var a = arguments; return loadScript('js/03-bazi-engine.js').then(function () { return _castBazi.apply(window, a); }); };
+      window.castBaziJiao = function () { var a = arguments; return loadScript('js/03-bazi-engine.js').then(function () { return _castBazi.apply(window, a); }).catch(loadFailed); };
     }
     lazy('openWesternPanel', ['js/08-western-astrology.js']);
     lazy('submitWesternForm', ['js/08-western-astrology.js']);
@@ -528,7 +559,7 @@
           loadScript('js/09-fortune-wheel.js').then(function () {
             unbind();
             if (typeof window.openFortuneWheel === 'function') window.openFortuneWheel();
-          });
+          }).catch(loadFailed);
         }, LONG_MS);
       }
       wrap.addEventListener('touchstart', start, { passive: true });
