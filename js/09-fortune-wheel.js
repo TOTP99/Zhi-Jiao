@@ -192,25 +192,7 @@
       }
       target.addEventListener('contextmenu', blockSave);
       function clearTimer(){ if (timer) { clearTimeout(timer); timer = null; } armed = false; }
-      function startPress(e){
-        // 不与玉佩热区点击冲突：若点在 jade-zone 上则不触发
-        if (e.target && e.target.classList && e.target.classList.contains('jade-zone')) return;
-        clearTimer();
-        armed = true;
-        timer = setTimeout(function(){
-          if (!armed) return;
-          timer = null; armed = false;
-          openFortuneWheel();
-        }, LONG_MS);
-      }
-      function endPress(){ clearTimer(); }
-      target.addEventListener('touchstart', startPress, { passive: true });
-      target.addEventListener('touchend', endPress);
-      target.addEventListener('touchcancel', endPress);
-      target.addEventListener('touchmove', endPress);
-      target.addEventListener('mousedown', function(e){ if (e.button === 0) startPress(e); });
-      target.addEventListener('mouseup', endPress);
-      target.addEventListener('mouseleave', endPress);
+      /* 长按已改为开启周易摇卦（index.html stub），此处不再绑定，避免冲突 */
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
     else wire();
