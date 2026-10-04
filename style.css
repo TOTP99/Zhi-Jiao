@@ -1,3 +1,10 @@
+/* 崇羲篆体（中研院免费小篆字体，仅含印章58字子集） */
+@font-face{
+  font-family:"ChongXiSeal";
+  src:url("fonts/chongxi-seal.woff2") format("woff2");
+  font-display:swap;
+}
+
 /* ════════════════════════════════════════════════════════════
    御猫灵局 v2.0 · 深墨鎏金设计系统
    移动优先 · 底部导航 · 底部抽屉
@@ -779,7 +786,7 @@ input[type=range].yslider::-moz-range-thumb{width:20px;height:20px;border-radius
 .yj-title{display:flex;align-items:center;justify-content:center;gap:14px;margin:8px 0 6px;min-height:64px}
 .yj-seal{flex:0 0 auto;width:58px;height:58px;display:flex;flex-direction:column;
   align-items:center;justify-content:center;overflow:hidden;
-  font-family:"Songti SC","Noto Serif SC",serif;font-size:22px;font-weight:700;
+  font-family:"ChongXiSeal","Songti SC",serif;font-size:24px;font-weight:400;
   color:#f5efe0;line-height:1.25;
   background:
     repeating-linear-gradient(45deg,rgba(0,0,0,.06) 0 2px,transparent 2px 4px),

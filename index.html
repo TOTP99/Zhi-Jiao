@@ -524,6 +524,7 @@
     lazy('backToWesternForm', ['js/08-western-astrology.js']);
     lazy('toggleWesternDict', ['js/08-western-astrology.js']);
     lazy('openFortuneWheel', ['js/09-fortune-wheel.js']);
+    lazy('openYijingPanel', ['js/11-yijing.js']);
     lazy('spinFortuneWheel', ['js/09-fortune-wheel.js']);
     lazy('castMbtiJiao', ['js/02-mbti-engine.js', 'js/04-mbti-ui.js']);
     lazy('resetMbtiQuiz', ['js/02-mbti-engine.js', 'js/04-mbti-ui.js']);
@@ -536,7 +537,7 @@
     lazy('backToZodiacForm', ['js/06-zodiac.js']);
     lazy('openZodiacDict', ['js/06-zodiac.js']);
     lazy('closeZodiacDict', ['js/06-zodiac.js']);
-    /* 箱图长按：09 未加载时先拉取再打开；09 就位后撤掉 stub，交给模块自己的绑定 */
+    /* 箱图：点按开命运转盘，长按 560ms 开周易摇卦 */
     (function bindBoxLazy() {
       var wrap = document.querySelector('.box-wrap') || document.querySelector('.box-img');
       if (!wrap || wrap._lazyBound) return;
@@ -544,35 +545,48 @@
       var timer = null, LONG_MS = 560;
       function clear() { if (timer) { clearTimeout(timer); timer = null; } }
       function onMouseDown(e) { if (e.button === 0) start(e); }
+      function isJade(t){ return t && t.classList && t.classList.contains('jade-zone'); }
+      function openWheel(){
+        loadScript('js/09-fortune-wheel.js').then(function () {
+          if (typeof window.openFortuneWheel === 'function') window.openFortuneWheel();
+        }).catch(loadFailed);
+      }
+      function openYi(){
+        loadScript('js/11-yijing.js').then(function () {
+          if (typeof window.openYijingPanel === 'function') window.openYijingPanel();
+        }).catch(loadFailed);
+      }
       function unbind() {
         wrap.removeEventListener('touchstart', start);
-        wrap.removeEventListener('touchend', clear);
+        wrap.removeEventListener('touchend', onEnd);
         wrap.removeEventListener('touchcancel', clear);
         wrap.removeEventListener('touchmove', clear);
         wrap.removeEventListener('mousedown', onMouseDown);
-        wrap.removeEventListener('mouseup', clear);
+        wrap.removeEventListener('mouseup', onMouseUp);
         wrap.removeEventListener('mouseleave', clear);
       }
       function start(e) {
-        /* 09 的真实函数已就位：撤掉 stub，让模块自己的长按绑定接管，避免重复开转 */
-        var real = window.openFortuneWheel;
-        if (typeof real === 'function' && !real._yumiaoStub) { unbind(); return; }
-        if (e.target && e.target.classList && e.target.classList.contains('jade-zone')) return;
+        if (isJade(e.target)) return;
         clear();
         timer = setTimeout(function () {
           timer = null;
-          loadScript('js/09-fortune-wheel.js').then(function () {
-            unbind();
-            if (typeof window.openFortuneWheel === 'function') window.openFortuneWheel();
-          }).catch(loadFailed);
+          openYi(); // 长按 → 周易摇卦
         }, LONG_MS);
       }
+      function onEnd(e) {
+        if (isJade(e.target)) { clear(); return; }
+        if (timer) { clear(); openWheel(); } // 点按 → 命运转盘
+      }
+      function onMouseUp(e) {
+        if (isJade(e.target)) { clear(); return; }
+        if (timer) { clear(); openWheel(); }
+      }
       wrap.addEventListener('touchstart', start, { passive: true });
-      wrap.addEventListener('touchend', clear);
+      wrap.addEventListener('touchend', onEnd);
       wrap.addEventListener('touchcancel', clear);
       wrap.addEventListener('touchmove', clear);
       wrap.addEventListener('mousedown', onMouseDown);
-      wrap.addEventListener('mouseup', clear);
+      wrap.addEventListener('mouseup', onMouseUp);
       wrap.addEventListener('mouseleave', clear);
     })();
     function idlePreload() {
