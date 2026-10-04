@@ -840,7 +840,8 @@ var YIJING_DATA = {
     var jd = judge(S.lines, hex, chex);
 
     var h = '<div class="yj-res yj-scroll">';
-    var sealChars = String(hex.name||'').split('').map(function(c){return '<span>'+esc(c)+'</span>';}).join('');
+    var TRAD = {'临':'臨','为':'為','兑':'兌','剥':'剝','师':'師','恒':'恆','损':'損','晋':'晉','泽':'澤','涣':'渙','渐':'漸','节':'節','蛊':'蠱','观':'觀','讼':'訟','谦':'謙','贲':'賁','随':'隨','颐':'頤','风':'風'};
+    var sealChars = String(hex.name||'').split('').map(function(c){return '<span>'+esc(TRAD[c]||c)+'</span>';}).join('');
     h += '<div class="yj-title"><div class="yj-seal">' + sealChars + '</div>' +
       '<div class="yj-hexname">' + esc(hex.fullName) + '</div></div>';
     h += '<div class="yj-qian">' + esc(hex.qian) + '</div>';
