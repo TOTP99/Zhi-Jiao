@@ -840,8 +840,9 @@ var YIJING_DATA = {
     var jd = judge(S.lines, hex, chex);
 
     var h = '<div class="yj-res yj-scroll">';
-    h += '<div class="yj-seal">' + esc(hex.name) + '</div>';
-    h += '<div class="yj-hexname">' + esc(hex.fullName) + '</div>';
+    var sealChars = String(hex.name||'').split('').map(function(c){return '<span>'+esc(c)+'</span>';}).join('');
+    h += '<div class="yj-title"><div class="yj-seal">' + sealChars + '</div>' +
+      '<div class="yj-hexname">' + esc(hex.fullName) + '</div></div>';
     h += '<div class="yj-qian">' + esc(hex.qian) + '</div>';
     h += hexDiagram(S.lines);
     h += '<div class="yj-rule">断法：' + esc(jd.rule) + '</div>';
