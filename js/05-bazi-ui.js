@@ -533,11 +533,24 @@
         if (snippet.length > 16) snippet = snippet.slice(0, 16) + '…';
       }
     } catch (_) { snippet = ''; }
+    let detail = null;
+    try {
+      if (oracle) {
+        detail = {
+          shenyi: String(oracle['神意'] || ''),
+          yi: String(oracle['宜'] || ''),
+          ji: String(oracle['忌'] || ''),
+          shiji: Array.isArray(oracle['诗偈']) ? oracle['诗偈'].map(function(x){ return String(x); }) : []
+        };
+      }
+    } catch (_) { detail = null; }
     history.unshift({
       q: question.length > 18 ? question.slice(0, 18) + '…' : question,
+      qFull: question,
       result: safeType,
       beast: beastName || '',
       snippet,
+      detail,
       ts: Date.now(),
       time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
     });
@@ -553,6 +566,77 @@
       return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + (h.time || '');
     } catch (_) { return h.time || ''; }
   }
+
+  /* 记录下载：一问一页，按占卜顺序（最早在前），调系统打印存为 PDF */
+  function downloadHistoryPDF() {
+    let list = [];
+    try {
+      const raw = localStorage.getItem('yumiao_history_v1');
+      list = raw ? JSON.parse(raw) : [];
+    } catch (_) { list = []; }
+    if (!Array.isArray(list) || list.length === 0) {
+      try {
+        const t = document.createElement('div');
+        t.className = 'mini-toast';
+        t.textContent = '暂无请示记录';
+        document.body.appendChild(t);
+        setTimeout(function(){ t.classList.add('show'); }, 20);
+        setTimeout(function(){ t.classList.remove('show'); setTimeout(function(){ t.remove(); }, 300); }, 1600);
+      } catch (_) { alert('暂无请示记录'); }
+      return;
+    }
+    const ordered = list.slice().reverse(); // 最早的问卜在前
+    const esc = function(x){
+      return String(x == null ? '' : x)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    };
+    const d = new Date();
+    const pad = function(n){ return String(n).padStart(2,'0'); };
+    const today = d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+    let html = '<div id="print-root"><div class="pdf-cover">'
+      + '<div class="pdf-cover-title">御猫灵局</div>'
+      + '<div class="pdf-cover-sub">请示记录 · 详细分析</div>'
+      + '<div class="pdf-cover-meta">共 ' + ordered.length + ' 问 · 导出于 ' + today + '</div>'
+      + '<div class="pdf-cover-note">一问一页 · 按占卜顺序排列</div></div>';
+    ordered.forEach(function(h, i){
+      const dt = h.detail || {};
+      const shiji = Array.isArray(dt.shiji) ? dt.shiji.filter(Boolean) : [];
+      const timeLabel = (function(){
+        try {
+          if (h.ts) {
+            const dd = new Date(h.ts);
+            return dd.getFullYear() + '-' + pad(dd.getMonth()+1) + '-' + pad(dd.getDate()) + ' ' + (h.time || '');
+          }
+        } catch (_) {}
+        return h.time || '';
+      })();
+      html += '<div class="pdf-page">'
+        + '<div class="pdf-head"><span>第 ' + (i+1) + ' 问 / 共 ' + ordered.length + ' 问</span><span>' + esc(timeLabel) + '</span></div>'
+        + '<h2 class="pdf-q">' + esc(h.qFull || h.q) + '</h2>'
+        + '<div class="pdf-meta"><span class="pdf-jiao ' + esc((h.result||{}).cls||'') + '">' + esc((h.result||{}).text||'') + '</span>'
+        + (h.beast ? '<span>瑞兽 · ' + esc(h.beast) + '</span>' : '') + '</div>';
+      if (shiji.length) {
+        html += '<div class="pdf-shiji">' + shiji.map(function(l){ return '<p>' + esc(l) + '</p>'; }).join('') + '</div>';
+      }
+      if (dt.shenyi) {
+        html += '<div class="pdf-sec"><div class="pdf-sec-t">神意</div><p>' + esc(dt.shenyi) + '</p></div>';
+        if (dt.yi || dt.ji) {
+          html += '<div class="pdf-yiji"><span>宜 · ' + esc(dt.yi||'—') + '</span><span>忌 · ' + esc(dt.ji||'—') + '</span></div>';
+        }
+      } else {
+        html += '<div class="pdf-sec"><div class="pdf-sec-t">神意</div><p>' + esc(h.snippet||'（旧记录，仅存摘要）') + '</p></div>';
+      }
+      html += '<div class="pdf-foot">御猫灵局 · 仅供参详</div></div>';
+    });
+    html += '</div>';
+    let root = document.getElementById('print-root');
+    if (root) root.remove();
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    document.body.appendChild(div.firstChild);
+    setTimeout(function(){ window.print(); }, 60);
+  }
+
   function renderHistory() {
     const list = document.getElementById('historyList');
     const profileBar = renderProfileSummaryBar();
