@@ -524,7 +524,6 @@
     lazy('backToWesternForm', ['js/08-western-astrology.js']);
     lazy('toggleWesternDict', ['js/08-western-astrology.js']);
     lazy('openFortuneWheel', ['js/09-fortune-wheel.js']);
-    lazy('openYijingPanel', ['js/11-yijing.js']);
     lazy('spinFortuneWheel', ['js/09-fortune-wheel.js']);
     lazy('castMbtiJiao', ['js/02-mbti-engine.js', 'js/04-mbti-ui.js']);
     lazy('resetMbtiQuiz', ['js/02-mbti-engine.js', 'js/04-mbti-ui.js']);
@@ -537,57 +536,21 @@
     lazy('backToZodiacForm', ['js/06-zodiac.js']);
     lazy('openZodiacDict', ['js/06-zodiac.js']);
     lazy('closeZodiacDict', ['js/06-zodiac.js']);
-    /* 箱图：点按开命运转盘，长按 560ms 开周易摇卦 */
-    (function bindBoxLazy() {
+    /* 箱图点按：打开命运圆盘 */
+    (function bindBoxTap() {
       var wrap = document.querySelector('.box-wrap') || document.querySelector('.box-img');
-      if (!wrap || wrap._lazyBound) return;
-      wrap._lazyBound = true;
-      var timer = null, LONG_MS = 560;
-      function clear() { if (timer) { clearTimeout(timer); timer = null; } }
-      function onMouseDown(e) { if (e.button === 0) start(e); }
-      function isJade(t){ return t && t.classList && t.classList.contains('jade-zone'); }
-      function openWheel(){
+      if (!wrap || wrap._tapBound) return;
+      wrap._tapBound = true;
+      function open() {
         loadScript('js/09-fortune-wheel.js').then(function () {
           if (typeof window.openFortuneWheel === 'function') window.openFortuneWheel();
         }).catch(loadFailed);
       }
-      function openYi(){
-        loadScript('js/11-yijing.js').then(function () {
-          if (typeof window.openYijingPanel === 'function') window.openYijingPanel();
-        }).catch(loadFailed);
+      function onTap(e) {
+        if (e.target && e.target.classList && e.target.classList.contains('jade-zone')) return;
+        open();
       }
-      function unbind() {
-        wrap.removeEventListener('touchstart', start);
-        wrap.removeEventListener('touchend', onEnd);
-        wrap.removeEventListener('touchcancel', clear);
-        wrap.removeEventListener('touchmove', clear);
-        wrap.removeEventListener('mousedown', onMouseDown);
-        wrap.removeEventListener('mouseup', onMouseUp);
-        wrap.removeEventListener('mouseleave', clear);
-      }
-      function start(e) {
-        if (isJade(e.target)) return;
-        clear();
-        timer = setTimeout(function () {
-          timer = null;
-          openYi(); // 长按 → 周易摇卦
-        }, LONG_MS);
-      }
-      function onEnd(e) {
-        if (isJade(e.target)) { clear(); return; }
-        if (timer) { clear(); openWheel(); } // 点按 → 命运转盘
-      }
-      function onMouseUp(e) {
-        if (isJade(e.target)) { clear(); return; }
-        if (timer) { clear(); openWheel(); }
-      }
-      wrap.addEventListener('touchstart', start, { passive: true });
-      wrap.addEventListener('touchend', onEnd);
-      wrap.addEventListener('touchcancel', clear);
-      wrap.addEventListener('touchmove', clear);
-      wrap.addEventListener('mousedown', onMouseDown);
-      wrap.addEventListener('mouseup', onMouseUp);
-      wrap.addEventListener('mouseleave', clear);
+      wrap.addEventListener('click', onTap);
     })();
     function idlePreload() {
       loadScript('js/07-error-monitoring.js');

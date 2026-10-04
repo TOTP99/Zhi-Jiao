@@ -1,10 +1,3 @@
-/* 崇羲篆体（中研院免费小篆字体，仅含印章58字子集） */
-@font-face{
-  font-family:"ChongXiSeal";
-  src:url("fonts/chongxi-seal.woff2") format("woff2");
-  font-display:swap;
-}
-
 /* ════════════════════════════════════════════════════════════
    御猫灵局 v2.0 · 深墨鎏金设计系统
    移动优先 · 底部导航 · 底部抽屉
@@ -421,8 +414,6 @@ input,textarea{font-family:inherit}
 .bazi-row>label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:8px;letter-spacing:2px}
 .bazi-optional{color:var(--faint);font-size:11px}
 
-
-
 .bazi-checkbox{display:flex !important;align-items:center;gap:8px;font-size:13px !important;color:var(--muted) !important;cursor:pointer}
 .bazi-checkbox input{accent-color:var(--gold);width:17px;height:17px}
 /* ── 统一生辰档案条：一次录入，全部分支共用 ── */
@@ -445,10 +436,7 @@ input,textarea{font-family:inherit}
 .bazi-row-tight{margin-bottom:12px}
 .bazi-error{font-size:12.5px;color:var(--cinnabar);min-height:18px;text-align:center;margin:6px 0}
 
-
-
 /* 滚轮 */
-
 
 /* 历史 */
 #historyList{overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1 1 auto;min-height:0}
@@ -765,101 +753,3 @@ input[type=range].yslider::-moz-range-thumb{width:20px;height:20px;border-radius
   .pdf-report-body svg line,.pdf-report-body svg circle,.pdf-report-body svg path{stroke:#888 !important}
 }
 
-/* ── 周易六爻 · 古籍书香 + 商业导航 ── */
-.yj-head .sheet-back{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;
-  font-size:22px;color:var(--gold-soft);background:none;border:none;cursor:pointer}
-.yj-book-title{text-align:center;font-family:"Songti SC","Noto Serif SC",serif;font-size:24px;
-  color:var(--gold-bright);letter-spacing:8px;margin:16px 0 6px}
-.yj-book-sub{text-align:center;font-size:13px;color:var(--muted);letter-spacing:4px;margin:0 0 18px}
-.yj-qinput{display:block;width:86%;margin:0 auto 8px;padding:10px 14px;font-size:14px;
-  background:rgba(201,162,39,.06);border:1px solid rgba(201,162,39,.3);border-radius:6px;color:var(--cream)}
-.yj-qinput::placeholder{color:var(--muted)}
-.yj-scroll{position:relative;margin:6px 10px 0;padding:20px 18px 8px;
-  border:1px solid rgba(201,162,39,.4);outline:1px solid rgba(201,162,39,.18);outline-offset:4px;
-  background:radial-gradient(ellipse at 20% 0%, rgba(201,162,39,.06), transparent 55%),
-    radial-gradient(ellipse at 85% 100%, rgba(201,162,39,.05), transparent 50%),
-    linear-gradient(180deg, rgba(38,30,18,.55), rgba(22,17,10,.65));
-  border-radius:3px}
-.yj-scroll::before,.yj-scroll::after{content:"";position:absolute;width:14px;height:14px;border:1px solid rgba(201,162,39,.55)}
-.yj-scroll::before{top:6px;left:6px;border-right:none;border-bottom:none}
-.yj-scroll::after{bottom:6px;right:6px;border-left:none;border-top:none}
-.yj-title-col{display:flex;flex-direction:column;align-items:center;text-align:center;margin:8px 0 6px}
-.yj-title-col .yj-hexname{margin:10px 0 4px;text-align:center}
-.yj-title-col .yj-qian{font-size:12px;letter-spacing:3px}
-.yj-qian-inline{font-size:12px;color:var(--gold-soft);letter-spacing:2px;margin-left:8px}
-.yj-seal{flex:0 0 auto;width:58px;height:58px;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;overflow:hidden;
-  font-family:"ChongXiSeal","Songti SC",serif;font-size:24px;font-weight:400;
-  color:#f5efe0;line-height:1.25;
-  background:
-    repeating-linear-gradient(45deg,rgba(0,0,0,.06) 0 2px,transparent 2px 4px),
-    linear-gradient(145deg,#b03a28,#8e2a1e);
-  border-radius:4px;border:2px solid rgba(245,239,224,.28);
-  box-shadow:0 0 0 1px rgba(120,30,20,.6),0 4px 10px rgba(0,0,0,.5),inset 0 0 14px rgba(60,10,5,.5);
-  text-shadow:0 0 1px rgba(245,239,224,.6),0 1px 2px rgba(0,0,0,.5)}
-.yj-hexname{font-family:"Songti SC","Noto Serif SC",serif;font-size:19px;color:var(--gold-bright);
-  letter-spacing:1px;margin:0;line-height:1.5;text-align:left;flex:1 1 auto;min-width:0}
-.yj-qian{text-align:center;color:var(--gold-soft);font-size:14px;letter-spacing:4px;margin-bottom:12px}
-.yj-diagram{text-align:center;margin:10px 0;line-height:2}
-.yj-dline{font-size:20px;letter-spacing:6px;color:var(--cream);font-family:"Songti SC","Noto Serif SC",serif}
-.yj-dline.moving{color:var(--cinnabar)}
-.yj-dline i{font-style:normal;font-size:11px;border:1px solid var(--cinnabar);border-radius:3px;
-  padding:0 4px;margin-left:6px;vertical-align:2px}
-.yj-rule{text-align:center;font-size:13px;color:var(--muted);margin:10px 0 16px}
-.yj-sec{margin:0 0 16px}
-.yj-sec-t{font-size:13px;letter-spacing:4px;color:var(--gold-soft);margin-bottom:8px;
-  border-bottom:1px solid rgba(201,162,39,.25);padding-bottom:6px;font-family:"Songti SC","Noto Serif SC",serif}
-.yj-classical{font-family:"Songti SC","Noto Serif SC",serif;font-size:16px;line-height:1.9;letter-spacing:1px;
-  color:var(--cream);margin:0;padding:10px 14px;background:rgba(201,162,39,.06);
-  border-left:2px solid var(--gold-soft);border-radius:0 4px 4px 0}
-.yj-modern{font-size:14px;line-height:1.9;color:var(--cream-dim);margin:0;padding:10px 14px;
-  background:rgba(255,255,255,.03);border-left:2px solid var(--muted);border-radius:0 4px 4px 0}
-.yj-moving-info,.yj-qian2{font-size:14px;color:var(--cream-dim);margin:0}
-.yj-tab-btns{display:flex;gap:12px;justify-content:center;margin:18px 0 6px}
-.yj-tabbtn{flex:1;max-width:180px;padding:11px 0;font-size:15px;letter-spacing:2px;cursor:pointer;
-  color:var(--gold-soft);background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.4);border-radius:8px}
-.yj-tabbtn.active{color:#1a1408;background:linear-gradient(180deg,var(--gold-bright),var(--gold-soft));
-  border-color:var(--gold-bright);font-weight:700}
-.yj-expand{animation:yjFade .35s}
-.yj-meaning{font-size:14px;line-height:1.9;color:var(--cream-dim)}
-.yj-meaning br{content:"";display:block;margin-bottom:6px}
-.yj-cast-page{text-align:center;padding:8px 16px 20px}
-.yj-ask{margin:12px 0}
-.yj-hint{font-size:13px;color:var(--muted);line-height:1.8;margin:0 0 16px}
-.yj-line{display:flex;align-items:center;gap:10px;padding:7px 4px;
-  border-bottom:1px solid rgba(201,162,39,.14);font-size:14px;animation:yjFade .4s}
-.yj-line.moving{color:var(--gold-bright)}
-.yj-lineno{color:var(--muted);min-width:36px}
-.yj-coins{color:var(--cream-dim);letter-spacing:2px}
-.yj-tag{color:var(--gold-soft)}
-.yj-sym{margin-left:auto;letter-spacing:2px}
-.yj-sym b{color:var(--cinnabar);font-size:12px}
-.yj-actions{text-align:center;margin-top:18px}
-.yj-err{color:var(--cinnabar);text-align:center}
-@keyframes yjFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-
-/* ── 周易书卷弹窗：窄而秀，高可滚 ── */
-#yijingBox.yj-sheet{
-  left:50%;right:auto;bottom:auto;top:50%;
-  width:min(86vw,340px);height:min(86dvh,740px);max-height:86dvh;
-  margin:0;transform:translate(-50%,-48%) scale(.97);opacity:0;
-  transition:transform .32s cubic-bezier(.22,1,.36,1),opacity .28s;
-  border-radius:10px;border:1px solid rgba(201,162,39,.5);
-  outline:1px solid rgba(201,162,39,.2);outline-offset:5px;
-  background:
-    linear-gradient(90deg,transparent 26px,rgba(201,162,39,.14) 26px,rgba(201,162,39,.14) 27px,transparent 27px),
-    radial-gradient(ellipse at 50% 0%,rgba(201,162,39,.07),transparent 60%),
-    linear-gradient(180deg,#221c12 0%,#171208 100%);
-  box-shadow:0 18px 60px rgba(0,0,0,.65),0 0 0 1px rgba(0,0,0,.4);
-  padding:10px 16px calc(14px + env(safe-area-inset-bottom));
-  overflow:hidden;
-}
-#yijingBox.yj-sheet.show{transform:translate(-50%,-50%) scale(1);opacity:1}
-#yijingBox.yj-sheet .sheet-handle{display:none}
-#yijingBox.yj-sheet .sheet-head{background:transparent;border-bottom:1px solid rgba(201,162,39,.22);
-  margin-left:-16px;margin-right:-16px;padding:8px 16px}
-#yijingBox.yj-sheet .sheet-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;
-  scrollbar-width:thin;scrollbar-color:rgba(201,162,39,.4) transparent}
-#yijingBox.yj-sheet .sheet-scroll::-webkit-scrollbar{width:4px}
-#yijingBox.yj-sheet .sheet-scroll::-webkit-scrollbar-thumb{background:rgba(201,162,39,.4);border-radius:2px}
-#yijingBox.yj-sheet .yj-scroll{margin:6px 2px 0;padding:16px 14px 8px}
