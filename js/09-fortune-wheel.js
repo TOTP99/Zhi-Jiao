@@ -192,7 +192,7 @@
       }
       target.addEventListener('contextmenu', blockSave);
       function clearTimer(){ if (timer) { clearTimeout(timer); timer = null; } armed = false; }
-      /* 长按已改为开启周易摇卦（index.html stub），此处不再绑定，避免冲突 */
+      /* 宝盒点按由 index.html 统一处理，此处不绑定 */
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
     else wire();
