@@ -743,4 +743,17 @@ input[type=range].yslider::-moz-range-thumb{width:20px;height:20px;border-radius
   .pdf-sec p{font-size:16px;line-height:1.9;margin:0 0 16px}
   .pdf-yiji{display:flex;gap:24px;font-size:15px;margin-bottom:20px}
   .pdf-foot{margin-top:36px;padding-top:12px;border-top:1px solid #ccc;font-size:12px;color:#999;text-align:center}
+  /* 详细报告：强制浅色打印（App 是深色主题） */
+  .pdf-report-body{background:#fff !important;color:#1a1a1a !important}
+  .pdf-report-body *{background:transparent !important;color:inherit !important;border-color:#ddd !important;box-shadow:none !important;text-shadow:none !important}
+  .pdf-report-body .mbti-type{color:#8a6d1c !important}
+  .pdf-report-body .mbti-summary{color:#444 !important}
+  .pdf-report-body .mbti-sec{color:#333 !important}
+  .pdf-report-body .mbti-sec-label{color:#fff !important;background:#8a6d1c !important}
+  .pdf-report-body .mbti-brief-note{color:#666 !important;border-color:#ddd !important;background:#f7f3ea !important}
+  .pdf-report-body .mbti-no-report{color:#666 !important}
+  .pdf-report-body button{display:none !important}
+  .pdf-report-body .western-chart-viz svg{max-width:100%}
+  .pdf-report-body svg text{fill:#1a1a1a !important}
+  .pdf-report-body svg line,.pdf-report-body svg circle,.pdf-report-body svg path{stroke:#888 !important}
 }
