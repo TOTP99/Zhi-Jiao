@@ -690,6 +690,7 @@
       if (report) {
         report.style.display = '';
         report.innerHTML = renderWesternReport(result);
+        if (typeof saveReportHTML === 'function') saveReportHTML('yumiao_report_western_v1', '西方星盘', 'westernReport');
       }
       if (form) form.style.display = 'none';
       if (reveal) reveal.style.display = 'flex';

@@ -471,4 +471,5 @@
         ${dictBtn}
       `;
     }
+    if (typeof saveReportHTML === 'function') saveReportHTML('yumiao_report_mbti_v1', 'MBTI人格', 'mbtiReport');
   }

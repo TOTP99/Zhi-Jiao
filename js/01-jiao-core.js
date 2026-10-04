@@ -670,6 +670,17 @@
     }
   }
   // 请示记录：持久化到本机，最多 8 条
+
+  /* 详细报告捕获：报告渲染完成后存完整 HTML，供「记录下载」生成 PDF */
+  function saveReportHTML(key, title, elId) {
+    try {
+      const el = document.getElementById(elId);
+      if (!el || !el.innerHTML || el.innerHTML.length < 50) return;
+      if (el.dataset.prevHtml) return; // 词典覆盖态不存
+      localStorage.setItem(key, JSON.stringify({ html: el.innerHTML, ts: Date.now(), title: title }));
+    } catch (_) { /* 存储失败不影响主流程 */ }
+  }
+
   const HISTORY_KEY = 'yumiao_history_v1';
   const history = (function () {
     try {

@@ -397,6 +397,7 @@
       '<div class="mbti-sec"><span class="mbti-sec-label">聊天</span>' + escapeHtml(z.chat || '') + '</div>' +
       '<div class="mbti-sec"><span class="mbti-sec-label">麻将</span>' + escapeHtml(z.mahjong) + '</div>' +
       '<div class="mbti-brief-note">星座与运势仅供娱乐参考，不构成任何决策建议。擲筊只决定详略，不改变星座本身。</div>';
+    if (typeof saveReportHTML === 'function') saveReportHTML('yumiao_report_zodiac_v1', '星座分析', 'zodiacReport');
   }
   function openZodiacDict() {
     let html = '<div class="mbti-intro" style="margin-bottom:8px;">十二星座词典（图标 · 中英文 · 日期 · 元素）。点返回可回到结果。</div>';

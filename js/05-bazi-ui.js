@@ -358,6 +358,7 @@
         <div class="mbti-brief-note">两筊皆阳，天机含笑未决，此为简版排盘，仅供参考，非定论。</div>
       `;
     }
+    if (typeof saveReportHTML === 'function') saveReportHTML('yumiao_report_bazi_v1', '八字命盘', 'baziReport');
   }
   // 打开 MBTI/八字/星座 等扩展面板后，若用户中途关闭而未完成，
   // 主输入框不应残留该扩展的占位文字（否则误按下方掷筊会把它当成真实问题提交）。
@@ -568,69 +569,58 @@
   }
 
   /* 记录下载：一问一页，按占卜顺序（最早在前），调系统打印存为 PDF */
+  /* 详细报告下载：八字→MBTI→星座→星盘，每类一页，走系统打印存 PDF */
   function downloadHistoryPDF() {
-    let list = [];
-    try {
-      const raw = localStorage.getItem('yumiao_history_v1');
-      list = raw ? JSON.parse(raw) : [];
-    } catch (_) { list = []; }
-    if (!Array.isArray(list) || list.length === 0) {
+    const KEYS = [
+      'yumiao_report_bazi_v1',
+      'yumiao_report_mbti_v1',
+      'yumiao_report_zodiac_v1',
+      'yumiao_report_western_v1'
+    ];
+    const reports = [];
+    KEYS.forEach(function(k){
+      try {
+        const raw = localStorage.getItem(k);
+        if (!raw) return;
+        const r = JSON.parse(raw);
+        if (r && r.html && r.html.length > 50) reports.push(r);
+      } catch (_) {}
+    });
+    if (reports.length === 0) {
       try {
         const t = document.createElement('div');
         t.className = 'mini-toast';
-        t.textContent = '暂无请示记录';
+        t.textContent = '暂无详细报告，请先完成测算';
         document.body.appendChild(t);
         setTimeout(function(){ t.classList.add('show'); }, 20);
-        setTimeout(function(){ t.classList.remove('show'); setTimeout(function(){ t.remove(); }, 300); }, 1600);
-      } catch (_) { alert('暂无请示记录'); }
+        setTimeout(function(){ t.classList.remove('show'); setTimeout(function(){ t.remove(); }, 300); }, 1800);
+      } catch (_) { alert('暂无详细报告，请先完成测算'); }
       return;
     }
-    const ordered = list.slice().reverse(); // 最早的问卜在前
-    const esc = function(x){
-      return String(x == null ? '' : x)
-        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    };
     const d = new Date();
     const pad = function(n){ return String(n).padStart(2,'0'); };
     const today = d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+    const fmtTs = function(ts){
+      try {
+        const dd = new Date(ts);
+        return dd.getFullYear() + '-' + pad(dd.getMonth()+1) + '-' + pad(dd.getDate())
+          + ' ' + pad(dd.getHours()) + ':' + pad(dd.getMinutes());
+      } catch (_) { return ''; }
+    };
     let html = '<div id="print-root"><div class="pdf-cover">'
       + '<div class="pdf-cover-title">御猫灵局</div>'
-      + '<div class="pdf-cover-sub">请示记录 · 详细分析</div>'
-      + '<div class="pdf-cover-meta">共 ' + ordered.length + ' 问 · 导出于 ' + today + '</div>'
-      + '<div class="pdf-cover-note">一问一页 · 按占卜顺序排列</div></div>';
-    ordered.forEach(function(h, i){
-      const dt = h.detail || {};
-      const shiji = Array.isArray(dt.shiji) ? dt.shiji.filter(Boolean) : [];
-      const timeLabel = (function(){
-        try {
-          if (h.ts) {
-            const dd = new Date(h.ts);
-            return dd.getFullYear() + '-' + pad(dd.getMonth()+1) + '-' + pad(dd.getDate()) + ' ' + (h.time || '');
-          }
-        } catch (_) {}
-        return h.time || '';
-      })();
-      html += '<div class="pdf-page">'
-        + '<div class="pdf-head"><span>第 ' + (i+1) + ' 问 / 共 ' + ordered.length + ' 问</span><span>' + esc(timeLabel) + '</span></div>'
-        + '<h2 class="pdf-q">' + esc(h.qFull || h.q) + '</h2>'
-        + '<div class="pdf-meta"><span class="pdf-jiao ' + esc((h.result||{}).cls||'') + '">' + esc((h.result||{}).text||'') + '</span>'
-        + (h.beast ? '<span>瑞兽 · ' + esc(h.beast) + '</span>' : '') + '</div>';
-      if (shiji.length) {
-        html += '<div class="pdf-shiji">' + shiji.map(function(l){ return '<p>' + esc(l) + '</p>'; }).join('') + '</div>';
-      }
-      if (dt.shenyi) {
-        html += '<div class="pdf-sec"><div class="pdf-sec-t">神意</div><p>' + esc(dt.shenyi) + '</p></div>';
-        if (dt.yi || dt.ji) {
-          html += '<div class="pdf-yiji"><span>宜 · ' + esc(dt.yi||'—') + '</span><span>忌 · ' + esc(dt.ji||'—') + '</span></div>';
-        }
-      } else {
-        html += '<div class="pdf-sec"><div class="pdf-sec-t">神意</div><p>' + esc(h.snippet||'（旧记录，仅存摘要）') + '</p></div>';
-      }
-      html += '<div class="pdf-foot">御猫灵局 · 仅供参详</div></div>';
+      + '<div class="pdf-cover-sub">详细报告</div>'
+      + '<div class="pdf-cover-meta">共 ' + reports.length + ' 类 · 导出于 ' + today + '</div>'
+      + '<div class="pdf-cover-note">一类一页 · 按八字 / MBTI / 星座 / 星盘顺序排列</div></div>';
+    reports.forEach(function(r, i){
+      html += '<div class="pdf-page pdf-report">'
+        + '<div class="pdf-head"><span>' + (r.title || ('报告' + (i+1))) + '</span><span>' + fmtTs(r.ts) + '</span></div>'
+        + '<div class="pdf-report-body">' + r.html + '</div>'
+        + '<div class="pdf-foot">御猫灵局 · 仅供参详</div></div>';
     });
     html += '</div>';
-    let root = document.getElementById('print-root');
-    if (root) root.remove();
+    const old = document.getElementById('print-root');
+    if (old) old.remove();
     const div = document.createElement('div');
     div.innerHTML = html;
     document.body.appendChild(div.firstChild);
