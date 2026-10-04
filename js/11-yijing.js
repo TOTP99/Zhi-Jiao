@@ -916,7 +916,7 @@ var YIJING_DATA = {
     var d = document.createElement('div');
     d.innerHTML =
       '<div class="sheet-backdrop" id="yijingBackdrop" onclick="yijingClose()"></div>' +
-      '<div class="sheet" id="yijingBox" role="dialog" aria-label="周易六爻">' +
+      '<div class="sheet yj-sheet" id="yijingBox" role="dialog" aria-label="周易六爻">' +
       '<div class="sheet-handle"></div>' +
       '<div class="sheet-head yj-head">' +
       '<button type="button" id="yijingBack" class="sheet-back" onclick="yijingGoBack()" aria-label="返回" style="display:none">‹</button>' +
