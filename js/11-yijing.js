@@ -842,9 +842,9 @@ var YIJING_DATA = {
     var h = '<div class="yj-res yj-scroll">';
     var TRAD = {'临':'臨','为':'為','兑':'兌','剥':'剝','师':'師','恒':'恆','损':'損','晋':'晉','泽':'澤','涣':'渙','渐':'漸','节':'節','蛊':'蠱','观':'觀','讼':'訟','谦':'謙','贲':'賁','随':'隨','颐':'頤','风':'風'};
     var sealChars = String(hex.name||'').split('').map(function(c){return '<span>'+esc(TRAD[c]||c)+'</span>';}).join('');
-    h += '<div class="yj-title"><div class="yj-seal">' + sealChars + '</div>' +
-      '<div class="yj-hexname">' + esc(hex.fullName) + '</div></div>';
-    h += '<div class="yj-qian">' + esc(hex.qian) + '</div>';
+    var shortName = (hex.fullName.match(/（(.+?)卦）/) || [])[1] || hex.name;
+    h += '<div class="yj-title-col"><div class="yj-seal">' + sealChars + '</div>' +
+      '<div class="yj-hexname">' + esc(shortName) + ' <span class="yj-qian-inline">' + esc(hex.qian) + '</span></div></div>';
     h += hexDiagram(S.lines);
     h += '<div class="yj-rule">断法：' + esc(jd.rule) + '</div>';
 
