@@ -44,6 +44,48 @@
   }
   window.switchTab = switchTab;
 
+  /* ── 周易：外部页面全屏浮层 ──
+     退出方式：左上「返回」/ ESC / 手机返回键（pushState + popstate）/ 右上「新窗口打开」可另开。
+     关闭时清空 iframe，避免后台继续播放声音或占用内存。 */
+  var YI_URL = 'https://totp99.github.io/Yi/';
+  var yiOpen = false;
+  function yiFrameEl() { return $('yiFrame'); }
+  window.openYi = function () {
+    var ov = $('yiOverlay'), fr = yiFrameEl();
+    if (!ov || !fr || yiOpen) return;
+    yiOpen = true;
+    var ld = $('yiLoading');
+    if (ld) ld.style.display = '';
+    fr.classList.remove('loaded');
+    fr.onload = function () {
+      if (fr.getAttribute('src') !== YI_URL) return;
+      fr.classList.add('loaded');
+      if (ld) ld.style.display = 'none';
+    };
+    fr.src = YI_URL;
+    ov.classList.add('show');
+    ov.setAttribute('aria-hidden', 'false');
+    lockScroll(true);
+    try { history.pushState({ yumiaoYi: 1 }, ''); } catch (_) {}
+    try { if (navigator.vibrate) navigator.vibrate(8); } catch (_) {}
+  };
+  function hideYi() {
+    var ov = $('yiOverlay'), fr = yiFrameEl();
+    if (!yiOpen) return;
+    yiOpen = false;
+    if (ov) { ov.classList.remove('show'); ov.setAttribute('aria-hidden', 'true'); }
+    if (fr) { fr.onload = null; fr.removeAttribute('src'); fr.classList.remove('loaded'); }
+    lockScroll(false);
+  }
+  window.closeYi = function () {
+    if (!yiOpen) return;
+    var st = null;
+    try { st = history.state; } catch (_) {}
+    if (st && st.yumiaoYi) history.back();   /* 交给 popstate 统一收尾，保持历史栈干净 */
+    else hideYi();
+  };
+  window.addEventListener('popstate', function () { if (yiOpen) hideYi(); });
+
   /* ── 音效开关（包裹 01 的播放函数） ── */
   function soundOn() {
     try { return localStorage.getItem(LS_SOUND) !== 'off'; } catch (_) { return true; }
@@ -671,6 +713,7 @@
     /* ESC 关闭本壳抽屉 */
     document.addEventListener('keydown', function (e) {
       if (e.key !== 'Escape') return;
+      if (yiOpen) { window.closeYi(); return; }
       /* 只关本壳的三张抽屉；模块弹窗走各自的关闭逻辑 */
       [['dailySheet', 'dailyBackdrop'], ['memberSheet', 'memberBackdrop'], ['disclaimerSheet', 'disclaimerBackdrop']].forEach(function (pair) {
         var s = $(pair[0]), b = $(pair[1]);
