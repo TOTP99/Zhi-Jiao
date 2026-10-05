@@ -753,3 +753,20 @@ input[type=range].yslider::-moz-range-thumb{width:20px;height:20px;border-radius
   .pdf-report-body svg line,.pdf-report-body svg circle,.pdf-report-body svg path{stroke:#888 !important}
 }
 
+/* ══════════ 周易浮层 ══════════ */
+#yiOverlay{position:fixed;inset:0;z-index:95;display:none;flex-direction:column;background:var(--ink-950)}
+#yiOverlay.show{display:flex}
+.yi-bar{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:calc(8px + env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) 8px max(10px,env(safe-area-inset-left));
+  background:linear-gradient(180deg,rgba(18,16,11,.97),rgba(11,9,6,.97));border-bottom:1px solid var(--line-soft)}
+.yi-back,.yi-ext{min-width:84px;padding:8px 12px;font-size:14px;letter-spacing:1px;color:var(--gold-bright);
+  border:1px solid var(--line);border-radius:999px;background:rgba(201,162,39,.08);text-align:center;text-decoration:none}
+.yi-back:active,.yi-ext:active{background:rgba(201,162,39,.2)}
+.yi-ext{font-size:12px;color:var(--gold-soft)}
+.yi-title{font-family:var(--serif);font-size:16px;letter-spacing:6px;text-indent:6px;color:var(--cream)}
+.yi-body{position:relative;flex:1 1 auto;min-height:0}
+.yi-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;color:var(--muted);letter-spacing:2px;line-height:2}
+.yi-loading small{font-size:11.5px;letter-spacing:1px;color:var(--faint)}
+#yiFrame{position:absolute;inset:0;width:100%;height:100%;border:0;background:var(--ink-950)}
+#yiFrame.loaded{background:#fff}

@@ -266,11 +266,28 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17M3.5 12h17"/></svg>
       <span>命盘</span>
     </button>
+    <button type="button" class="tab" data-tab="yi" onclick="openYi()" aria-haspopup="dialog">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 6.5h14M5 12h5.5M13.5 12H19M5 17.5h14"/></svg>
+      <span>周易</span>
+    </button>
     <button type="button" class="tab" data-tab="me" onclick="switchTab('me')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20a6.5 6.5 0 0113 0"/></svg>
       <span>我的</span>
     </button>
   </nav>
+</div>
+
+<!-- ══════════ 周易（外部页面浮层：返回键 / ESC / 手机返回键 均可退出） ══════════ -->
+<div id="yiOverlay" role="dialog" aria-label="周易" aria-hidden="true">
+  <div class="yi-bar">
+    <button type="button" class="yi-back" onclick="closeYi()" aria-label="返回御猫灵局">‹ 返回</button>
+    <strong class="yi-title">周易</strong>
+    <a class="yi-ext" id="yiExt" href="https://totp99.github.io/Yi/" target="_blank" rel="noopener">新窗口打开</a>
+  </div>
+  <div class="yi-body">
+    <p class="yi-loading" id="yiLoading">周易载入中…<br><small>若长时间空白，请点右上角「新窗口打开」</small></p>
+    <iframe id="yiFrame" title="周易" referrerpolicy="no-referrer" allow="fullscreen"></iframe>
+  </div>
 </div>
 
 <!-- ══════════ 命运圆盘 ══════════ -->
