@@ -304,7 +304,7 @@
       const entry = shenshaEntry(name);
       const desc = entry.base || (items.find(i => i.name === name) || {}).description || '传统神煞，流派解释不一。';
       const pos = items.filter(i => i.name === name).map(i => i.positionNames.join('、')).filter(Boolean);
-      html += `<div class="mbti-sec" style="margin-bottom:8px;"><span class="mbti-sec-label">${escapeHtml(name)}</span>${pos.length ? '（' + escapeHtml(pos.join('；')) + '）' : ''}<br><span style="color:#5a4526;">${escapeHtml(desc)}</span>${entry.note ? '<br><span style="color:#8a6f3a;">\u25C6 ' + escapeHtml(entry.note) + '</span>' : ''}</div>`;
+      html += `<div class="mbti-sec" style="margin-bottom:8px;"><span class="mbti-sec-label">${escapeHtml(name)}</span>${pos.length ? '（' + escapeHtml(pos.join('；')) + '）' : ''}<br><span style="color:var(--cream-dim);">${escapeHtml(desc)}</span>${entry.note ? '<br><span style="color:#8a6f3a;">\u25C6 ' + escapeHtml(entry.note) + '</span>' : ''}</div>`;
     });
     const reportEl = document.getElementById('baziReport');
     if (reportEl) {

@@ -228,7 +228,7 @@
       return n;
     })();
     if (baseDone >= 48 && !mbtiExtraMode && done >= 48) {
-      el.innerHTML = `四十八问已毕 · <button type="button" class="mbti-reset" style="display:inline;padding:0 4px;" onclick="startMbtiExtra()">再测 24 题更准</button> · <button type="button" class="mbti-reset" style="display:inline;padding:0 4px;" onclick="document.getElementById('mbtiCastBtn')&&document.getElementById('mbtiCastBtn').focus()">不想，直接掷筊</button>`;
+      el.innerHTML = `四十八问已毕 · <button type="button" class="mbti-reset" style="min-height:0;padding:0 6px;border:none;background:none;text-decoration:underline;" onclick="startMbtiExtra()">再测 24 题更准</button> · <button type="button" class="mbti-reset" style="min-height:0;padding:0 6px;border:none;background:none;text-decoration:underline;" onclick="document.getElementById('mbtiCastBtn')&&document.getElementById('mbtiCastBtn').focus()">不想，直接掷筊</button>`;
     } else if (done >= total) {
       if (total > 48) {
         const v = checkTrapValidity();
@@ -340,6 +340,8 @@
     const list = document.getElementById('mbtiList');
     if (reveal) reveal.style.display = 'none';
     if (list) list.style.display = '';
+    const modal = document.getElementById('mbtiModal');
+    if (modal) { modal.classList.remove('is-reveal'); modal.scrollTop = 0; }
   }
   function castMbtiJiao() {
     const done = Object.keys(mbtiAnswers).length;
@@ -356,6 +358,8 @@
     if (recastBtn) recastBtn.style.display = 'none';
     if (list) list.style.display = 'none';
     reveal.style.display = 'flex';
+    const modalEl = document.getElementById('mbtiModal');
+    if (modalEl) { modalEl.classList.add('is-reveal'); modalEl.scrollTop = 0; }
     if (jiaoLabel) { jiaoLabel.textContent = ''; jiaoLabel.className = 'mbti-jiao-label'; }
     if (reportEl) reportEl.innerHTML = '';
     getAudioCtx();
@@ -397,7 +401,7 @@
     order.forEach(code => {
       const t = types[code];
       if (!t) return;
-      html += `<div class="mbti-sec" style="margin-bottom:8px;"><span class="mbti-sec-label">${escapeHtml(code)}</span><strong>${escapeHtml(t.name)}</strong><br><span style="color:#5a4526;">${escapeHtml(t.summary)}</span></div>`;
+      html += `<div class="mbti-sec" style="margin-bottom:8px;"><span class="mbti-sec-label">${escapeHtml(code)}</span><strong>${escapeHtml(t.name)}</strong><br><span style="color:var(--cream-dim);">${escapeHtml(t.summary)}</span></div>`;
     });
     const reportEl = document.getElementById('mbtiReport');
     if (reportEl) {

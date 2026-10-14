@@ -406,7 +406,7 @@
         ? ('12.' + z.from[1] + '–1.' + z.to[1])
         : (z.from[0] + '.' + z.from[1] + '–' + z.to[0] + '.' + z.to[1]);
       html += '<div class="mbti-sec" style="margin-bottom:8px;"><span class="mbti-sec-label">' + z.icon + '</span><strong>' + escapeHtml(z.name) + '</strong> ' + escapeHtml(z.en) +
-        '<br><span style="color:#5a4526;">' + escapeHtml(range) + ' · ' + escapeHtml(z.element) + '象 · ' + escapeHtml(z.planet || '') + ' · ' + escapeHtml(z.keywords) + '</span></div>';
+        '<br><span style="color:var(--cream-dim);">' + escapeHtml(range) + ' · ' + escapeHtml(z.element) + '象 · ' + escapeHtml(z.planet || '') + ' · ' + escapeHtml(z.keywords) + '</span></div>';
     });
     const reportEl = document.getElementById('zodiacReport');
     if (reportEl) {
