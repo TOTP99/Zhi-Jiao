@@ -144,12 +144,12 @@
       q.appendChild(numSpan);
       if (idx > 60) {
         const tag = document.createElement('span');
-        tag.style.cssText = 'color:#a8791f;font-size:9px;margin-right:4px;';
+        tag.style.cssText = 'color:#a8791f;font-size:12px;margin-right:4px;';
         tag.textContent = '[核验]';
         q.appendChild(tag);
       } else if (idx > 48) {
         const tag = document.createElement('span');
-        tag.style.cssText = 'color:#a8791f;font-size:9px;margin-right:4px;';
+        tag.style.cssText = 'color:#a8791f;font-size:12px;margin-right:4px;';
         tag.textContent = '[加测]';
         q.appendChild(tag);
       }
@@ -439,7 +439,7 @@
     let secHTML = '';
     if (report.secondaries && report.secondaries.length) {
       secHTML = report.secondaries.map(s =>
-        `<div class="mbti-sec"><span class="mbti-sec-label">次要</span><strong>${escapeHtml(s.type)} · ${escapeHtml(s.name)}</strong>（约 ${s.percent}%）<br><span style="color:#8a6f3f;font-size:10px;">${escapeHtml(s.reason)}</span></div>`
+        `<div class="mbti-sec"><span class="mbti-sec-label">次要</span><strong>${escapeHtml(s.type)} · ${escapeHtml(s.name)}</strong>（约 ${s.percent}%）<br><span style="color:var(--muted);font-size:12px;">${escapeHtml(s.reason)}</span></div>`
       ).join('');
     }
     let trapNoteHTML = '';

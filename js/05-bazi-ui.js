@@ -635,7 +635,7 @@
       return;
     }
     list.innerHTML = profileBar + history.map(h => `
-      <div class="history-item"><span>${historyTimeLabel(h)} · ${escapeHtml(h.q)}${h.snippet ? `<br><span style="color:#a08c60;font-size:10px;">${escapeHtml(h.snippet)}</span>` : ''}</span><span class="history-result ${h.result.cls}">${h.result.text}（${window.beastIconHTML ? window.beastIconHTML(window.beastKeyByName ? window.beastKeyByName(h.beast) : '', 'sm') : ''}${escapeHtml(h.beast)}）</span></div>
+      <div class="history-item"><span>${historyTimeLabel(h)} · ${escapeHtml(h.q)}${h.snippet ? `<br><span style="color:var(--muted);font-size:12px;">${escapeHtml(h.snippet)}</span>` : ''}</span><span class="history-result ${h.result.cls}">${h.result.text}（${window.beastIconHTML ? window.beastIconHTML(window.beastKeyByName ? window.beastKeyByName(h.beast) : '', 'sm') : ''}${escapeHtml(h.beast)}）</span></div>
     `).join('');
   }
   function toggleHistory() {

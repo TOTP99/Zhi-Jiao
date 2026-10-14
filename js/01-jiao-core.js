@@ -735,9 +735,9 @@
     if (!items.length) return '';
     const chips = items.map(k => {
       const d = data[k];
-      return `<div class="history-item" style="opacity:0.92;"><span>${escapeHtml(PROFILE_LABELS[k])}已验 · ${escapeHtml(d.text)}<br><span style="color:#a08c60;font-size:10px;">${escapeHtml(formatProfileTime(d.time))}</span></span></div>`;
+      return `<div class="history-item" style="opacity:0.92;"><span>${escapeHtml(PROFILE_LABELS[k])}已验 · ${escapeHtml(d.text)}<br><span style="color:var(--muted);font-size:12px;">${escapeHtml(formatProfileTime(d.time))}</span></span></div>`;
     }).join('');
-    return `<div class="history-empty" style="text-align:left;padding:2px 6px 6px;color:#8a6f3f;font-size:10px;">已验档案（本机存储）</div>${chips}`;
+    return `<div class="history-empty" style="text-align:left;padding:2px 6px 6px;color:var(--muted);font-size:12px;">已验档案（本机存储）</div>${chips}`;
   }
   let castToken = 0;
   let lastQuestion = '';
@@ -1021,7 +1021,7 @@
     const cell = document.createElement('div');
     cell.className = 'question-menu-cell casual-item';
     cell.setAttribute('role', 'option');
-    cell.style.cssText = 'flex-direction:row;justify-content:flex-start;gap:6px;padding:8px 10px;text-align:left;font-size:12px;flex-shrink:0;transition:background 0.18s ease,transform 0.12s ease;';
+    cell.style.cssText = 'flex-direction:row;justify-content:flex-start;text-align:left;flex-shrink:0;';
     // 滑动防误触：记录指针起点，位移超过阈值则取消点击
     let ptrX = 0, ptrY = 0, moved = false;
     const onDown = (e) => {
