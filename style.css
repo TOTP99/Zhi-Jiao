@@ -884,3 +884,17 @@ input[type=range].yslider::-moz-range-thumb{width:20px;height:20px;border-radius
 .yi-loading small{font-size:var(--fs-xs);letter-spacing:1px;color:var(--faint)}
 #yiFrame{position:absolute;inset:0;width:100%;height:100%;border:0;background:var(--ink-950)}
 #yiFrame.loaded{background:#fff}
+
+/* ═════ 解读页（MBTI / 八字 / 星座 / 星盘）：揭晓后整页让给报告，整张弹窗统一滚动 ═════ */
+#mbtiModal.is-reveal{overflow-y:auto}
+#mbtiModal.is-reveal .mbti-intro,#mbtiModal.is-reveal .mbti-progress,
+#mbtiModal.is-reveal .mbti-quick-result,#mbtiModal.is-reveal .mbti-actions{display:none}
+#mbtiModal .mbti-reveal{overflow:visible;flex:0 0 auto;padding:4px 2px 0}
+.mbti-reveal-actions{position:sticky;bottom:0;z-index:2;margin:0 -20px;padding:12px 20px calc(12px + env(safe-area-inset-bottom));
+  background:#14110b;border-top:1px solid var(--line-soft)}
+#mbtiModal{align-items:stretch}
+/* 解读页内的文字按钮（人格词典 / 返回 / 再测24题）：与 btn-ghost 同规格 */
+.mbti-cast-btn,.mbti-reset{display:inline-flex;align-items:center;justify-content:center;min-height:var(--tap);padding:0 18px;
+  font-size:var(--fs-sm);letter-spacing:1px;color:var(--gold-bright);border:1px solid var(--line);border-radius:var(--r-sm);
+  background:rgba(201,162,39,.08)}
+.mbti-cast-btn:active,.mbti-reset:active{transform:scale(.97);background:rgba(201,162,39,.18)}
