@@ -128,6 +128,7 @@
     const again = document.getElementById('fortuneAgain');
     if (bd) bd.classList.add('show');
     if (md) md.classList.add('show');
+    if (typeof lockPageScroll === 'function') lockPageScroll();
     if (res) res.innerHTML = '<span style="color:#a08c60">禅猫就位 · 圆盘待命…</span>';
     if (again) { again.style.display = 'none'; again.disabled = false; }
     setTimeout(function(){ spinFortuneWheel(); }, 280);
@@ -138,6 +139,7 @@
     const md = document.getElementById('fortuneModal');
     if (bd) bd.classList.remove('show');
     if (md) md.classList.remove('show');
+    if (typeof unlockPageScroll === 'function') unlockPageScroll();
   }
   function spinFortuneWheel() {
     if (fortuneSpinning) return;
