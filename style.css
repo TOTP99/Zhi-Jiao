@@ -197,12 +197,12 @@ input,textarea{font-family:inherit}
 .hero{text-align:center;margin-bottom:6px}
 .box-wrap{position:relative;width:100%;max-width:420px;margin:0 auto}
 /* 宝盒鎏金底光：缓慢呼吸，托出主体 */
-.box-wrap::before{content:"";position:absolute;inset:-10% -8%;pointer-events:none;z-index:0;
+.box-wrap::before{content:"";position:absolute;inset:-10% -4%;pointer-events:none;z-index:0;
   background:radial-gradient(ellipse at 50% 58%,rgba(232,199,102,.22),rgba(232,199,102,.07) 46%,transparent 70%);
   animation:boxGlow 5.2s ease-in-out infinite}
 @keyframes boxGlow{0%,100%{opacity:.7}50%{opacity:1}}
 .box-img{position:relative;z-index:1;width:100%;display:block;border-radius:var(--r-md);filter:drop-shadow(0 16px 30px rgba(0,0,0,.5))}
-.jade-zone{position:absolute;top:64%;height:18%;width:17%;border-radius:50%;cursor:pointer}
+.jade-zone{position:absolute;z-index:3;top:64%;height:18%;width:17%;border-radius:50%;cursor:pointer}
 .jade-zone.dragon{left:21%}.jade-zone.tiger{left:41.5%}.jade-zone.lion{left:62%}
 /* hidden 属性必须真正隐藏：作者样式的 display 会覆盖浏览器默认的 [hidden]{display:none} */
 [hidden]{display:none!important}
@@ -357,12 +357,13 @@ input,textarea{font-family:inherit}
   border:1px solid var(--line);border-bottom:none;border-radius:20px 20px 0 0;
   box-shadow:var(--shadow);
   padding:8px 18px calc(18px + env(safe-area-inset-bottom));
-  transform:translateY(103%);transition:transform .34s cubic-bezier(.22,1,.36,1);
+  transform:translateY(103%);transition:transform .34s cubic-bezier(.22,1,.36,1),visibility 0s linear .34s;
+  visibility:hidden;pointer-events:none;
   overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
   scrollbar-width:none;
 }
 .sheet::-webkit-scrollbar{display:none}
-.sheet.show{transform:translateY(0)}
+.sheet.show{transform:translateY(0);visibility:visible;pointer-events:auto;transition:transform .34s cubic-bezier(.22,1,.36,1),visibility 0s}
 .sheet-handle{width:44px;height:4px;border-radius:2px;background:var(--ink-700);margin:6px auto 10px;flex:0 0 auto}
 .sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex:0 0 auto;
   position:sticky;top:-8px;z-index:5;margin-left:-18px;margin-right:-18px;padding:10px 18px 10px;
