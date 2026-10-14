@@ -25,8 +25,8 @@
   --card-solid:#1a1610;
   --shadow:0 18px 44px rgba(0,0,0,.5);
   --r-xl:22px; --r-lg:18px; --r-md:14px; --r-sm:10px; --r-xs:6px;
-  /* 字号阶梯：说明12 · 次要14 · 正文16 · 标题18 · 大标题22 · 结果28 */
-  --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:18px; --fs-xl:22px; --fs-2xl:28px;
+  /* 字号阶梯：说明11 · 次要12 · 正文14 · 标题16 · 大标题18 · 结果22 */
+  --fs-xs:11px; --fs-sm:12px; --fs-md:14px; --fs-lg:16px; --fs-xl:18px; --fs-2xl:22px;
   --tap:44px;
   --ease:cubic-bezier(.22,1,.36,1);
   --dur-1:.15s; --dur-2:.25s; --dur-3:.34s;
@@ -73,7 +73,7 @@ input,textarea{font-family:inherit}
   display:inline-flex;align-items:center;justify-content:center;gap:8px;
   padding:13px 30px;
   background:linear-gradient(180deg,var(--gold-bright) 0%,var(--gold) 55%,#a8811f 100%);
-  color:#241a06;font-size:var(--fs-md);font-weight:700;letter-spacing:6px;text-indent:6px;
+  color:#241a06;font-size:var(--fs-md);font-weight:700;letter-spacing:5px;text-indent:5px;
   border:1px solid #8a6a1a;border-radius:var(--r-md);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 8px 22px rgba(201,162,39,.28);
   transition:transform .15s,box-shadow .2s,filter .2s;
@@ -106,7 +106,7 @@ input,textarea{font-family:inherit}
 @keyframes splashIn{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
 .splash-seal{width:118px;height:118px;border-radius:50%;object-fit:cover;
   border:2px solid var(--gold);box-shadow:0 0 44px rgba(201,162,39,.4)}
-.splash-title{font-family:var(--serif);font-size:34px;font-weight:900;letter-spacing:12px;text-indent:12px;
+.splash-title{font-family:var(--serif);font-size:28px;font-weight:900;letter-spacing:10px;text-indent:10px;
   margin:20px 0 8px;color:var(--cream)}
 .splash-sub{font-size:var(--fs-sm);letter-spacing:6px;color:var(--gold-soft)}
 .splash-line{margin:22px auto 0;width:120px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);position:relative}
@@ -129,7 +129,7 @@ input,textarea{font-family:inherit}
   background:radial-gradient(circle at 50% 35%,rgba(201,162,39,.18),rgba(201,162,39,.04));
   box-shadow:0 0 30px rgba(201,162,39,.18)}
 .ob-icon svg{width:38px;height:38px}
-.ob-slide h2{font-family:var(--serif);font-size:var(--fs-xl);letter-spacing:8px;text-indent:8px;margin-bottom:12px;color:var(--cream)}
+.ob-slide h2{font-family:var(--serif);font-size:var(--fs-xl);letter-spacing:6px;text-indent:6px;margin-bottom:12px;color:var(--cream)}
 .ob-slide p{font-size:var(--fs-sm);color:var(--muted);line-height:2;letter-spacing:1px}
 .ob-dots{display:flex;gap:8px;justify-content:center;margin:18px 0 22px}
 .ob-dots span{width:22px;height:3px;border-radius:2px;background:var(--ink-700);transition:background .3s}
@@ -140,7 +140,7 @@ input,textarea{font-family:inherit}
 .form-row{margin-bottom:12px}
 .form-row label{display:block;font-size:var(--fs-xs);color:var(--muted);letter-spacing:2px;margin-bottom:6px}
 .form-row input[type="date"],.form-row input[type="time"],.form-row input[type="number"]{
-  width:100%;padding:11px 12px;font-size:var(--fs-md);color:var(--cream);
+  width:100%;padding:11px 12px;font-size:16px;/* 输入框锁16px：防 iOS 聚焦自动缩放 */color:var(--cream);
   background:var(--ink-800);border:1px solid var(--line);border-radius:var(--r-sm);outline:none}
 .form-row input:focus{border-color:var(--gold)}
 .seg{display:flex;gap:8px}
@@ -245,7 +245,7 @@ input,textarea{font-family:inherit}
 
 .question-wrap{position:relative;margin-bottom:10px}
 .question-box{
-  width:100%;height:48px;padding:0 16px;font-size:var(--fs-md);color:var(--cream);
+  width:100%;height:48px;padding:0 16px;font-size:16px;/* 输入框锁16px：防 iOS 聚焦自动缩放 */color:var(--cream);
   background:var(--ink-800);border:1px solid var(--line);border-radius:var(--r-md);
   outline:none;transition:border-color .2s;
 }
@@ -253,7 +253,7 @@ input,textarea{font-family:inherit}
 .question-box:focus{border-color:var(--gold)}
 
 /* 掷筊主按键：全页最醒目 */
-.cast-btn{width:100%;margin-top:6px;padding:15px 0;font-size:var(--fs-lg);font-weight:700;letter-spacing:14px;text-indent:14px;
+.cast-btn{width:100%;margin-top:6px;padding:15px 0;font-size:var(--fs-lg);font-weight:700;letter-spacing:12px;text-indent:12px;
   color:#241a06;background:linear-gradient(180deg,#f4dc96,#d9ab3c 58%,#b8891e);
   border:1px solid #8a6a12;border-radius:14px;cursor:pointer;
   box-shadow:0 6px 22px rgba(201,162,39,.38),inset 0 1px 0 rgba(255,255,255,.55)}
@@ -283,7 +283,7 @@ input,textarea{font-family:inherit}
 .jiao.landed{transform:rotate(var(--land-rot,0deg))}
 
 .result-area{min-height:60px;padding:0 4px}
-.result-title{font-family:var(--serif);font-size:var(--fs-2xl);font-weight:700;letter-spacing:10px;text-indent:10px;margin-bottom:8px}
+.result-title{font-family:var(--serif);font-size:var(--fs-2xl);font-weight:700;letter-spacing:8px;text-indent:8px;margin-bottom:8px}
 .result-title.sheng{color:var(--jade)}.result-title.xiao{color:var(--gold-bright)}.result-title.yin{color:var(--cinnabar)}
 .result-desc{font-size:var(--fs-sm);line-height:1.9;color:var(--cream-dim);max-width:440px;margin:0 auto;text-align:left}
 .result-desc.loading{color:var(--muted);font-style:italic;animation:pulseLoading 1.4s ease-in-out infinite}
@@ -436,7 +436,7 @@ input,textarea{font-family:inherit}
 .profile-empty p{font-size:var(--fs-sm);color:var(--muted);margin-bottom:12px;letter-spacing:1px;line-height:1.9}
 /* ── 紧凑输入行（引导页经纬度 / 其他城市） ── */
 .geo-row{display:flex;gap:8px}
-.geo-row input{flex:1;min-width:0;width:100%;padding:10px 12px;font-size:var(--fs-sm);color:var(--cream);
+.geo-row input{flex:1;min-width:0;width:100%;padding:10px 12px;font-size:16px;/* 输入框锁16px：防 iOS 聚焦自动缩放 */color:var(--cream);
   background:rgba(243,234,211,.05);border:1px solid var(--line-soft);border-radius:var(--r-md)}
 .geo-row input:focus{outline:none;border-color:var(--gold)}
 .ob-optional{color:var(--faint);font-size:var(--fs-xs);letter-spacing:1px}
@@ -587,7 +587,7 @@ input,textarea{font-family:inherit}
 
 /* ══════════════════════════════════════════════════════════
    v3 统一设计规范（参考 iOS HIG / Material 3 / 微信）
-   字号 12/14/16/18/22/28 · 触控 ≥44px · 圆角 10/14/18/22 · 动效 .15/.25/.34s
+   字号 11/12/14/16/18/22 · 触控 ≥44px · 圆角 10/14/18/22 · 动效 .15/.25/.34s
    ══════════════════════════════════════════════════════════ */
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{font-size:var(--fs-md);line-height:1.6}
@@ -604,15 +604,15 @@ button{transition:transform var(--dur-1) var(--ease),background-color var(--dur-
 .btn-gold.btn-sm{min-height:var(--tap);padding:0 20px;font-size:var(--fs-sm);letter-spacing:2px;text-indent:2px;border-radius:var(--r-sm)}
 .btn-ghost{min-height:48px;padding:0 20px;font-size:var(--fs-sm);letter-spacing:1px;border-radius:var(--r-sm)}
 .btn-ghost.btn-sm{min-height:var(--tap);padding:0 16px;font-size:var(--fs-sm)}
-.cast-btn{min-height:56px;padding:0;font-size:var(--fs-lg);letter-spacing:14px;text-indent:14px;border-radius:var(--r-md)}
+.cast-btn{min-height:56px;padding:0;font-size:var(--fs-lg);letter-spacing:12px;text-indent:12px;border-radius:var(--r-md)}
 .btn-sub{min-height:var(--tap);padding:0 4px;font-size:var(--fs-sm);letter-spacing:4px;text-indent:4px;border-radius:var(--r-sm);color:var(--gold-bright)}
 .cast-subrow{gap:10px;margin-top:12px}
 
 /* ── 输入：16px 防 iOS 聚焦缩放，高度 48 ── */
-input,textarea,select{font-size:var(--fs-md)}
-.question-box{height:48px;font-size:var(--fs-md);padding:0 16px}
-.form-row input[type="date"],.form-row input[type="time"],.form-row input[type="number"]{min-height:48px;padding:0 14px;font-size:var(--fs-md)}
-.geo-row input{min-height:48px;padding:0 14px;font-size:var(--fs-md)}
+input,textarea,select{font-size:16px}
+.question-box{height:48px;font-size:16px;padding:0 16px}
+.form-row input[type="date"],.form-row input[type="time"],.form-row input[type="number"]{min-height:48px;padding:0 14px;font-size:16px}
+.geo-row input{min-height:48px;padding:0 14px;font-size:16px}
 .form-row label,.bazi-row>label{font-size:var(--fs-sm);letter-spacing:1px;margin-bottom:8px}
 .seg button{min-height:var(--tap);padding:0;font-size:var(--fs-md)}
 .bazi-checkbox{min-height:var(--tap);font-size:var(--fs-sm) !important}
@@ -661,7 +661,7 @@ input,textarea,select{font-size:var(--fs-md)}
 .switch.on span{left:24px}
 
 /* ── 结果 / 阅读文本：16px 正文，行高 1.8 ── */
-.result-title{font-size:var(--fs-2xl);letter-spacing:8px;text-indent:8px;margin-bottom:8px}
+.result-title{font-size:var(--fs-2xl);letter-spacing:6px;text-indent:6px;margin-bottom:8px}
 .result-desc,.oracle-shenyi,.oracle-poem,.mbti-q,.mbti-sec,.mbti-summary,.fortune-result,.history-item,
 .disclaimer-body,#westernReport,#westernReport .w-line,#westernDictBox .w-dict-item p,.mbti-no-report{
   font-size:var(--fs-md);line-height:1.8;letter-spacing:.2px}
@@ -682,7 +682,7 @@ input,textarea,select{font-size:var(--fs-md)}
 .sheet-handle{margin:8px auto 0}
 .sheet-head{top:0;min-height:56px;margin:0 -20px 12px;padding:8px 20px}
 .sheet-head h3{font-size:var(--fs-lg);letter-spacing:3px}
-.sheet-close{position:relative;width:40px;height:40px;font-size:24px;line-height:1;flex:0 0 auto}
+.sheet-close{position:relative;width:40px;height:40px;font-size:22px;line-height:1;flex:0 0 auto}
 .sheet-close::after{content:"";position:absolute;inset:-4px}
 .mbti-type{font-size:var(--fs-xl)}
 .daily-verse-full{font-size:var(--fs-lg)}
@@ -877,7 +877,7 @@ input[type=range].yslider::-moz-range-thumb{width:20px;height:20px;border-radius
   border:1px solid var(--line);border-radius:999px;background:rgba(201,162,39,.08);text-align:center;text-decoration:none}
 .yi-back:active,.yi-ext:active{background:rgba(201,162,39,.2)}
 .yi-ext{font-size:var(--fs-xs);color:var(--gold-soft)}
-.yi-title{font-family:var(--serif);font-size:var(--fs-md);letter-spacing:6px;text-indent:6px;color:var(--cream)}
+.yi-title{font-family:var(--serif);font-size:var(--fs-md);letter-spacing:5px;text-indent:5px;color:var(--cream)}
 .yi-body{position:relative;flex:1 1 auto;min-height:0}
 .yi-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
   text-align:center;color:var(--muted);letter-spacing:2px;line-height:2}
