@@ -1,140 +1,10 @@
 // ============================================================
-// 紫微斗数简化排盘：农历换算 → 命身宫 → 五行局 → 十四主星 → 命主身主 → 生年四化
-// 问事页 chip「紫微」入口；交互与其它面板统一：排盘 → 掷筊请示 → 筊型决定详示/略示/守静
-// 安星诀已按典籍口诀 + 开源排盘实现交叉核验（紫微星用 5×30 查表法，不用商余公式）
-// 简化版口径：不排辅星（左辅右弼文昌文曲等）、不排大限流年、不排宫干；闰月按当月计；年界按农历正月初一
-// 农历表与 11-chenggu.js 同源（1900–2100）
+// 紫微斗数完整排盘：问事页 chip「紫微」入口
+// 排盘引擎：iztro v2.6.3（MIT License, SylarLong/iztro），js/13a-iztro.min.js
+//   命宫/身宫/五行局/十四主星/辅星煞星/生年四化/宫干/大限流年小限流月
+//   年界按农历正月初一（iztro 默认 yearDivide=normal）；身主以生年年支定
+// 界面与操作习惯与其它面板统一：排盘 → 掷筊请示 → 筊型决定详示/略示/守静
 // ============================================================
-
-var ZiweiCalc = (function () {
-  'use strict';
-  var LUNAR_INFO = [0x04bd8,0x04ae0,0x0a570,0x054d5,0x0d260,0x0d950,0x16554,0x056a0,0x09ad0,0x055d2,0x04ae0,0x0a5b6,0x0a4d0,0x0d250,0x1d255,0x0b540,0x0d6a0,0x18da3,0x095b0,0x14977,0x04970,0x0a4b0,0x1b0b6,0x06a50,0x06d40,0x1ab54,0x02b60,0x09570,0x052f2,0x04970,0x06566,0x0d4a0,0x0ea50,0x16a95,0x05ad0,0x02b60,0x186e3,0x092e0,0x1c8d7,0x0c950,0x0d4a0,0x1d8a6,0x0b550,0x056a0,0x1a5b4,0x025d0,0x092d0,0x0d2b2,0x0a950,0x0b557,0x06ca0,0x0b550,0x15355,0x04db0,0x025b0,0x18573,0x052b0,0x0a9a8,0x0e950,0x06aa0,0x0aea6,0x0ab50,0x04b60,0x0aae4,0x0a570,0x05260,0x0f263,0x0d950,0x05b57,0x056a0,0x096d0,0x04dd5,0x04ad0,0x0a4d0,0x0d4d4,0x0d250,0x0d558,0x0b540,0x0b6a0,0x195a6,0x095b0,0x049b0,0x0a974,0x0a4b0,0x0b27a,0x06a50,0x06d40,0x1ad47,0x0ab60,0x09570,0x04af5,0x04970,0x064b0,0x074a3,0x0ea50,0x06b58,0x05ac0,0x0ab60,0x096e5,0x092e0,0x0c960,0x0d954,0x0d4a0,0x0da50,0x07552,0x056a0,0x0abb7,0x025d0,0x092d0,0x0cab5,0x0a950,0x0b4a0,0x0bca4,0x0ad50,0x055d9,0x04ba0,0x0a5b0,0x15176,0x05270,0x0a930,0x07954,0x06aa0,0x0ad50,0x05b52,0x04b60,0x0a6e6,0x0a4f0,0x05260,0x0ea65,0x0d520,0x0daa0,0x076a3,0x096d0,0x04afb,0x04ad0,0x0a4d0,0x1d0b6,0x0d250,0x0d520,0x0dd45,0x0b5a0,0x056d0,0x055b2,0x049b0,0x0a577,0x0a4b0,0x0aa50,0x1b255,0x06d20,0x0ada0,0x14b63,0x09370,0x049f8,0x04970,0x064b0,0x168a6,0x0ea50,0x06b20,0x1a6c4,0x0aae0,0x092e0,0x0d2e3,0x0c960,0x0d557,0x0d4a0,0x0da50,0x05d55,0x056a0,0x0a6d0,0x055d4,0x092d0,0x0a9b8,0x0a950,0x0b4a0,0x0b6a6,0x0ad50,0x055a0,0x0aba4,0x0a5b0,0x052b0,0x0b273,0x06930,0x07337,0x06aa0,0x0ad50,0x14b55,0x04b60,0x0a570,0x054e4,0x0d160,0x0e968,0x0d520,0x0daa0,0x16aa6,0x056d0,0x04ae0,0x0a9d4,0x0a2d0,0x0d150,0x0f252,0x0d520];
-  var BASE = Date.UTC(1900, 0, 31);
-  function leapMonth(y) { return LUNAR_INFO[y - 1900] & 15; }
-  function leapDays(y) { return leapMonth(y) ? ((LUNAR_INFO[y - 1900] & 0x10000) ? 30 : 29) : 0; }
-  function monthDays(y, m) { return (LUNAR_INFO[y - 1900] & (0x10000 >> m)) ? 30 : 29; }
-  function yearDays(y) {
-    var s = 348, i;
-    for (i = 0x8000; i > 0x8; i >>= 1) s += (LUNAR_INFO[y - 1900] & i) ? 1 : 0;
-    return s + leapDays(y);
-  }
-  /* 公历 → 农历 {year, month, day, leap} */
-  function solarToLunar(y, m, d) {
-    if (y < 1900 || y > 2100) return null;
-    var off = Math.round((Date.UTC(y, m - 1, d) - BASE) / 864e5);
-    if (off < 0) return null;
-    var ly = 1900, n;
-    while (ly < 2101 && off >= (n = yearDays(ly))) { off -= n; ly++; }
-    if (ly > 2100) return null;
-    var lm = leapMonth(ly), isLeap = false, mo = 1, len;
-    for (; mo <= 12; mo++) {
-      len = monthDays(ly, mo);
-      if (off < len) break;
-      off -= len;
-      if (mo === lm) {
-        len = leapDays(ly);
-        if (off < len) { isLeap = true; break; }
-        off -= len;
-      }
-    }
-    return { year: ly, month: mo, day: off + 1, leap: isLeap };
-  }
-
-  var GAN = '甲乙丙丁戊己庚辛壬癸';
-  var ZHI = '子丑寅卯辰巳午未申酉戌亥';
-  var GONG = ['命宫', '兄弟', '夫妻', '子女', '财帛', '疾厄', '迁移', '交友', '官禄', '田宅', '福德', '父母'];
-  var JU_NAME = { 2: '水二局', 3: '木三局', 4: '金四局', 5: '土五局', 6: '火六局' };
-  /* 五行局表：行=年干对（甲己/乙庚/丙辛/丁壬/戊癸），列=命宫地支对（子丑/寅卯/辰巳/午未/申酉/戌亥） */
-  var JU_TABLE = [
-    [2, 6, 3, 5, 4, 6],
-    [6, 5, 4, 3, 2, 5],
-    [5, 3, 2, 4, 6, 3],
-    [3, 4, 6, 2, 5, 4],
-    [4, 2, 5, 6, 3, 2]
-  ];
-  var BRANCH_PAIR = [0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5];
-  /* 安紫微星 5局×30日 查表（值=地支 index） */
-  var ZIWEI_TABLE = [
-    [1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,0,0,1,1,2,2,3,3,4],          /* 水二局 */
-    [4,1,2,5,2,3,6,3,4,7,4,5,8,5,6,9,6,7,10,7,8,11,8,9,0,9,10,1,10,11],        /* 木三局 */
-    [11,4,1,2,0,5,2,3,1,6,3,4,2,7,4,5,3,8,5,6,4,9,6,7,5,10,7,8,6,11],          /* 金四局 */
-    [6,11,4,1,2,7,0,5,2,3,8,1,6,3,4,9,2,7,4,5,10,3,8,5,6,11,4,9,6,7],          /* 土五局 */
-    [9,6,11,4,1,2,10,7,0,5,2,3,11,8,1,6,3,4,0,9,2,7,4,5,1,10,3,8,5,6]           /* 火六局 */
-  ];
-  /* 命主（按命宫地支） */
-  var MINGZHU = ['贪狼', '巨门', '禄存', '文曲', '廉贞', '武曲', '破军', '武曲', '廉贞', '文曲', '禄存', '巨门'];
-  /* 身主（按年支；子年取火星） */
-  var SHENZHU = ['火星', '天相', '天梁', '天同', '文昌', '天机', '火星', '天相', '天梁', '天同', '文昌', '天机'];
-  /* 生年四化（按年干）：[禄, 权, 科, 忌] */
-  var SIHUA = [
-    ['廉贞', '破军', '武曲', '太阳'],
-    ['天机', '天梁', '紫微', '太阴'],
-    ['天同', '天机', '文昌', '廉贞'],
-    ['太阴', '天同', '天机', '巨门'],
-    ['贪狼', '太阴', '右弼', '天机'],
-    ['武曲', '贪狼', '天梁', '文曲'],
-    ['太阳', '武曲', '太阴', '天同'],
-    ['巨门', '太阳', '文曲', '文昌'],
-    ['天梁', '紫微', '左辅', '武曲'],
-    ['破军', '巨门', '太阴', '贪狼']
-  ];
-
-  function hourBranch(h) { return Math.floor((((h % 24) + 24) % 24 + 1) / 2) % 12; }
-
-  /* 排盘：solar={y,m,d}, hour=小时数；返回 chart 或 {error} */
-  function chart(sy, sm, sd, hour) {
-    var lunar = solarToLunar(sy, sm, sd);
-    if (!lunar) return { error: '生辰超出 1900–2100 范围，暂不支持排盘。' };
-    var yStem = (((lunar.year - 4) % 10) + 10) % 10;
-    var yBranch = (((lunar.year - 4) % 12) + 12) % 12;
-    var t = hourBranch(hour == null ? 12 : hour);
-    var Mm = (lunar.month + 1) % 12;
-    var ming = (((Mm - t) % 12) + 12) % 12;
-    var shen = (Mm + t) % 12;
-    var ju = JU_TABLE[yStem % 5][BRANCH_PAIR[ming]];
-    var zw = ZIWEI_TABLE[ju - 2][lunar.day - 1];
-    var tf = (((4 - zw) % 12) + 12) % 12;
-    /* 十四主星落宫 */
-    var stars = {}; /* 星名 -> 地支 */
-    function put(name, zhi) { stars[name] = (((zhi % 12) + 12) % 12); }
-    put('紫微', zw);
-    put('天机', zw - 1); put('太阳', zw - 3); put('武曲', zw - 4); put('天同', zw - 5); put('廉贞', zw - 8);
-    put('天府', tf);
-    put('太阴', tf + 1); put('贪狼', tf + 2); put('巨门', tf + 3); put('天相', tf + 4);
-    put('天梁', tf + 5); put('七杀', tf + 6); put('破军', tf + 10);
-    /* 十二宫 */
-    var palaces = [];
-    for (var i = 0; i < 12; i++) {
-      var z = (ming + i) % 12;
-      palaces.push({ zhi: z, zhiName: ZHI[z], gong: GONG[i], stars: [] });
-    }
-    var byZhi = {};
-    palaces.forEach(function (p) { byZhi[p.zhi] = p; });
-    Object.keys(stars).forEach(function (name) { byZhi[stars[name]].stars.push(name); });
-    var hua = SIHUA[yStem];
-    return {
-      lunar: lunar, hourBranch: t,
-      yearStem: yStem, yearBranch: yBranch,
-      yearGZ: GAN[yStem] + ZHI[yBranch],
-      ming: ming, shen: shen,
-      mingName: ZHI[ming], shenName: ZHI[shen],
-      ju: ju, juName: JU_NAME[ju],
-      ziwei: zw, tianfu: tf,
-      stars: stars, palaces: palaces,
-      mingzhu: MINGZHU[ming], shenzhu: SHENZHU[yBranch],
-      sihua: [
-        { hua: '化禄', star: hua[0] }, { hua: '化权', star: hua[1] },
-        { hua: '化科', star: hua[2] }, { hua: '化忌', star: hua[3] }
-      ]
-    };
-  }
-
-  return {
-    solarToLunar: solarToLunar, hourBranch: hourBranch, chart: chart,
-    GAN: GAN, ZHI: ZHI, GONG: GONG, JU_NAME: JU_NAME
-  };
-})();
-window.ZiweiCalc = ZiweiCalc;
 
 /* ── 十四主星短解 ── */
 var ZIWEI_STAR_TEXT = {
@@ -159,6 +29,28 @@ var ZIWEI_HUA_TEXT = {
   '化科': '科为名声贵人。所化之星添声名、得赏识，宜扬名不宜逐利。',
   '化忌': '忌为阻滞执念。所化之星须多留意，相关事务宜静不宜动，忌强求。'
 };
+/* ── 辅星煞星短解 ── */
+var ZIWEI_AUX_TEXT = {
+  '左辅': '贵人辅佐，得人心，多助力，宜借力行事。',
+  '右弼': '辅弼同心，谋事有人帮，宜合作、宜团队。',
+  '文昌': '主科名文书，利考试、文书、名声。',
+  '文曲': '主才艺口才，利艺术、表达、异路功名。',
+  '天魁': '天乙贵人，遇难呈祥，多得长辈提携。',
+  '天钺': '玉堂贵人，暗中助力，亦主女性贵人。',
+  '禄存': '主财禄积蓄，逢之主富，守财有道。',
+  '天马': '主奔波变动，利远行开拓，动中求财。',
+  '擎羊': '主刑伤果决，行事果断亦带刑克，忌冲动。',
+  '陀罗': '主拖延纠缠，是非口舌，宜忍耐守成。',
+  '火星': '主急躁爆发，来得快去得快，防意外血光。',
+  '铃星': '主阴沉计谋，暗中较劲，防小人算计。',
+  '地空': '主理想落空，宜精神层面追求，忌投机。',
+  '地劫': '主破耗劫夺，财来财去，宜守不宜贪。'
+};
+var ZIWEI_JI = ['左辅', '右弼', '文昌', '文曲', '天魁', '天钺', '禄存', '天马'];
+var ZIWEI_SHA = ['擎羊', '陀罗', '火星', '铃星', '地空', '地劫'];
+var ZIWEI_ZHI = '子丑寅卯辰巳午未申酉戌亥';
+var ZIWEI_HUA_ORDER = ['禄', '权', '科', '忌'];
+var ZIWEI_HUA_FULL = { '禄': '化禄', '权': '化权', '科': '化科', '忌': '化忌' };
 
 /* ── 状态 ── */
 var _ziweiChart = null;
@@ -182,7 +74,7 @@ function backToZiweiForm() {
   if (!el) return;
   el.innerHTML =
     '<div class="bazi-form" id="ziweiForm">' +
-    '<p class="mbti-intro">以农历生辰定命宫、布十四主星。简化版仅排主星与生年四化，不排辅星大限——排盘既毕，掷筊请示。</p>' +
+    '<p class="mbti-intro">完整排盘：十四主星、辅星煞星、生年四化、大限流年。排盘既毕，掷筊请示。</p>' +
     '<div class="profile-bar" id="ziweiProfileBar" data-bar="ziwei"></div>' +
     '<div class="bazi-error" id="ziweiError"></div>' +
     '<button class="btn-gold btn-block" onclick="submitZiweiForm()">排盘 · 掷筊</button>' +
@@ -207,7 +99,99 @@ function readZiweiBirth() {
   } catch (_) { b = null; }
   if (!b || !b.year || !b.month || !b.day) return { error: '请先录入生辰档案，再来排盘。' };
   var hour = (b.hour == null || b.hour === '') ? null : +b.hour;
-  return { birth: { y: +b.year, m: +b.month, d: +b.day, hour: hour, hourMissing: hour == null } };
+  return {
+    birth: {
+      y: +b.year, m: +b.month, d: +b.day,
+      hour: hour, hourMissing: hour == null,
+      gender: b.sex === 'F' ? '女' : '男'
+    }
+  };
+}
+
+function ziweiHourBranch(h) { return Math.floor((((h % 24) + 24) % 24 + 1) / 2) % 12; }
+
+/* 用 iztro 起盘，归一化为渲染用的 plain 结构 */
+function buildZiweiChart(birth) {
+  var iz = window.iztro;
+  if (!iz || !iz.astro || !iz.astro.bySolar) throw new Error('排盘引擎未就绪，请重试。');
+  var hour = birth.hour == null ? 12 : birth.hour;
+  var a = iz.astro.bySolar(
+    birth.y + '-' + birth.m + '-' + birth.d,
+    ziweiHourBranch(hour),
+    birth.gender, false, 'zh-CN'
+  );
+  function splitStars(p) {
+    var major = (p.majorStars || []).map(function (s) {
+      return { name: s.name, brightness: s.brightness || '', mutagen: s.mutagen || '' };
+    });
+    var ji = [], sha = [], zayao = [];
+    (p.minorStars || []).forEach(function (s) {
+      var it = { name: s.name, mutagen: s.mutagen || '' };
+      if (ZIWEI_JI.indexOf(s.name) >= 0) ji.push(it);
+      else if (ZIWEI_SHA.indexOf(s.name) >= 0) sha.push(it);
+      else zayao.push(it);
+    });
+    (p.adjectiveStars || []).forEach(function (s) { zayao.push({ name: s.name, mutagen: '' }); });
+    return { major: major, ji: ji, sha: sha, zayao: zayao };
+  }
+  var palaces = a.palaces.map(function (p) {
+    var sp = splitStars(p);
+    return {
+      name: p.name, gz: p.heavenlyStem + p.earthlyBranch,
+      zhiIdx: ZIWEI_ZHI.indexOf(p.earthlyBranch),
+      isMing: p.name === '命宫', isShen: !!p.isBodyPalace,
+      major: sp.major, ji: sp.ji, sha: sp.sha, zayao: sp.zayao,
+      decadalRange: (p.decadal && p.decadal.range) ? p.decadal.range.slice() : null
+    };
+  });
+  /* 生年四化：扫全盘带化之星 */
+  var sihua = [];
+  ZIWEI_HUA_ORDER.forEach(function (h) {
+    outer: for (var i = 0; i < palaces.length; i++) {
+      var pl = palaces[i];
+      var all = pl.major.concat(pl.ji, pl.sha);
+      for (var j = 0; j < all.length; j++) {
+        if (all[j].mutagen === h) { sihua.push({ hua: ZIWEI_HUA_FULL[h], star: all[j].name, gong: pl.name }); break outer; }
+      }
+    }
+  });
+  /* 大限流年：以今日起运 */
+  var now = new Date();
+  var h = a.horoscope(now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate());
+  function horoInfo(sec) {
+    if (!sec || sec.index == null || sec.index < 0) return null;
+    var pl = palaces[sec.index];
+    if (!pl) return null;
+    return {
+      gong: pl.name, gz: sec.heavenlyStem + sec.earthlyBranch,
+      sihua: (sec.mutagen || []).map(function (s, k) {
+        return { hua: ZIWEI_HUA_FULL[ZIWEI_HUA_ORDER[k]], star: s };
+      })
+    };
+  }
+  var daxian = horoInfo(h.decadal);
+  /* 本限岁数：找 range 含虚岁的宫 */
+  var nominalAge = h.age && h.age.nominalAge;
+  var curRange = null;
+  if (nominalAge != null) {
+    for (var k = 0; k < palaces.length; k++) {
+      var r = palaces[k].decadalRange;
+      if (r && nominalAge >= r[0] && nominalAge <= r[1]) { curRange = r; break; }
+    }
+  }
+  if (daxian) { daxian.age = nominalAge; daxian.range = curRange; }
+  return {
+    lunarDate: a.lunarDate, chineseDate: a.chineseDate,
+    zodiac: a.zodiac, wuju: a.fiveElementsClass,
+    mingzhu: a.soul, shenzhu: a.body,
+    gender: birth.gender, hourMissing: birth.hourMissing,
+    palaces: palaces, sihua: sihua,
+    daxian: daxian,
+    liunian: horoInfo(h.yearly),
+    xiaoxian: (h.age && h.age.index >= 0) ? { age: nominalAge, gong: palaces[h.age.index].name } : null,
+    liuyue: horoInfo(h.monthly),
+    year: now.getFullYear()
+  };
 }
 
 function submitZiweiForm() {
@@ -217,10 +201,11 @@ function submitZiweiForm() {
   if (r.error) { if (errEl) errEl.textContent = r.error; return; }
   var c;
   try {
-    c = ZiweiCalc.chart(r.birth.y, r.birth.m, r.birth.d, r.birth.hour == null ? 12 : r.birth.hour);
-  } catch (_) { c = { error: '排盘失败，请检查出生信息是否正确。' }; }
-  if (c.error) { if (errEl) errEl.textContent = c.error; return; }
-  c.hourMissing = r.birth.hourMissing;
+    c = buildZiweiChart(r.birth);
+  } catch (e) {
+    if (errEl) errEl.textContent = (e && e.message) || '排盘失败，请检查出生信息是否正确。';
+    return;
+  }
   _ziweiChart = c;
   var form = document.getElementById('ziweiForm');
   var reveal = document.getElementById('ziweiReveal');
@@ -231,60 +216,124 @@ function submitZiweiForm() {
 
 /* ── 命盘十二宫格（传统 4×4 布局，中央为命主身主） ── */
 var ZIWEI_CELL_POS = { 5: [1, 1], 6: [1, 2], 7: [1, 3], 8: [1, 4], 4: [2, 1], 9: [2, 4], 3: [3, 1], 10: [3, 4], 2: [4, 1], 1: [4, 2], 0: [4, 3], 11: [4, 4] };
+function ziweiHuaBadge(mutagen) {
+  return mutagen ? '<span class="ziwei-hua">' + escapeHtml(mutagen) + '</span>' : '';
+}
 function ziweiChartHTML(c) {
-  var byZhi = {};
-  c.palaces.forEach(function (p) { byZhi[p.zhi] = p; });
-  var huaStar = {};
-  c.sihua.forEach(function (s) { huaStar[s.star] = s.hua; });
   var cells = '';
   c.palaces.forEach(function (p) {
-    var z = p.zhi;
-    var pos = ZIWEI_CELL_POS[z];
-    var starHtml = p.stars.map(function (s) {
-      var hua = huaStar[s] ? '<span class="ziwei-hua">' + huaStar[s].replace('化', '') + '</span>' : '';
-      var cls = (z === c.ming || z === c.shen) ? 'ziwei-star hot' : 'ziwei-star';
-      return '<div class="' + cls + '">' + escapeHtml(s) + hua + '</div>';
+    var pos = ZIWEI_CELL_POS[p.zhiIdx];
+    if (!pos) return;
+    var starHtml = p.major.map(function (s) {
+      var cls = (p.isMing || p.isShen) ? 'ziwei-star hot' : 'ziwei-star';
+      return '<div class="' + cls + '">' + escapeHtml(s.name) + ziweiHuaBadge(s.mutagen) + '</div>';
     }).join('');
+    var fuHtml = p.ji.length
+      ? '<div class="zw-fu">' + p.ji.map(function (s) { return escapeHtml(s.name) + ziweiHuaBadge(s.mutagen); }).join(' ') + '</div>' : '';
+    var shaHtml = p.sha.length
+      ? '<div class="zw-sha">' + p.sha.map(function (s) { return escapeHtml(s.name) + ziweiHuaBadge(s.mutagen); }).join(' ') + '</div>' : '';
     var mark = '';
-    if (z === c.ming && z === c.shen) mark = '<span class="ziwei-mark">命身同宫</span>';
-    else if (z === c.ming) mark = '<span class="ziwei-mark">命宫</span>';
-    else if (z === c.shen) mark = '<span class="ziwei-mark">身宫</span>';
-    cells += '<div class="ziwei-cell' + (z === c.ming ? ' is-ming' : '') + '" style="grid-row:' + pos[0] + ';grid-column:' + pos[1] + '">' +
-      '<div class="ziwei-gong">' + escapeHtml(p.gong) + mark + '</div>' +
-      '<div class="ziwei-zhi">' + escapeHtml(p.zhiName) + '</div>' +
-      '<div class="ziwei-stars">' + starHtml + '</div></div>';
+    if (p.isMing && p.isShen) mark = '<span class="ziwei-mark">命身同宫</span>';
+    else if (p.isMing) mark = '<span class="ziwei-mark">命宫</span>';
+    else if (p.isShen) mark = '<span class="ziwei-mark">身宫</span>';
+    cells += '<div class="ziwei-cell' + (p.isMing ? ' is-ming' : '') + '" style="grid-row:' + pos[0] + ';grid-column:' + pos[1] + '">' +
+      '<div class="ziwei-gong">' + escapeHtml(p.name) + mark + '</div>' +
+      '<div class="ziwei-zhi">' + escapeHtml(p.gz) + '</div>' +
+      '<div class="ziwei-stars">' + starHtml + '</div>' + fuHtml + shaHtml + '</div>';
   });
-  var lunar = c.lunar;
-  var leapMark = lunar.leap ? '（闰月按当月计）' : '';
-  var hourMark = c.hourMissing ? '时辰未录，暂按午时起盘' : '';
-  return '<div class="ziwei-head"><div class="mbti-type">' + escapeHtml(c.yearGZ) + '年 · ' + escapeHtml(c.juName) + '</div>' +
-    '<div class="mbti-summary">农历' + lunar.year + '年' + lunar.month + '月' + lunar.day + '日' + leapMark + ' · ' + escapeHtml(c.mingName) + '宫安命 · ' + escapeHtml(c.shenName) + '宫安身' + (hourMark ? ' · ' + hourMark : '') + '</div></div>' +
+  var hourMark = c.hourMissing ? ' · 时辰未录，暂按午时起盘' : '';
+  return '<div class="ziwei-head"><div class="mbti-type">' + escapeHtml(c.wuju) + ' · ' + escapeHtml(c.gender) + '命</div>' +
+    '<div class="mbti-summary">农历' + escapeHtml(c.lunarDate) + ' · 生肖' + escapeHtml(c.zodiac) + hourMark + '</div></div>' +
     '<div class="ziwei-chart">' + cells +
     '<div class="ziwei-center"><div class="ziwei-center-row"><span>命主</span><strong>' + escapeHtml(c.mingzhu) + '</strong></div>' +
     '<div class="ziwei-center-row"><span>身主</span><strong>' + escapeHtml(c.shenzhu) + '</strong></div></div>' +
     '</div>';
 }
 
-function ziweiStarSections(c, brief) {
-  var mingP = c.palaces[0];
-  var shenP = null;
-  c.palaces.forEach(function (p) { if (p.zhi === c.shen) shenP = p; });
-  function starLine(p, label) {
-    if (!p.stars.length) {
-      var dui = c.palaces[(c.palaces.indexOf(p) + 6) % 12];
-      return '<div class="mbti-sec"><span class="mbti-sec-label">' + label + '（' + escapeHtml(p.zhiName) + '）</span>' +
-        '本宫无主星，借对宫' + escapeHtml(dui.gong) + '（' + escapeHtml(dui.zhiName) + '）' +
-        escapeHtml(dui.stars.join('、') || '无主星') + '参看。' +
-        (brief ? '' : '<br>' + escapeHtml(dui.stars.map(function (s) { return ZIWEI_STAR_TEXT[s] || ''; }).join(''))) + '</div>';
+/* ── 十二宫明细 + 大限流年 ── */
+function ziweiDetailHTML(c) {
+  var mingIdx = 0;
+  c.palaces.forEach(function (p, i) { if (p.isMing) mingIdx = i; });
+  var rows = '';
+  for (var k = 0; k < 12; k++) {
+    var p = c.palaces[(mingIdx + k) % 12];
+    function nm(list, withBright) {
+      return list.map(function (s) {
+        return escapeHtml(s.name) + (withBright && s.brightness ? '（' + escapeHtml(s.brightness) + '）' : '') + ziweiHuaBadge(s.mutagen);
+      }).join('、');
     }
-    return '<div class="mbti-sec"><span class="mbti-sec-label">' + label + '（' + escapeHtml(p.zhiName) + '）' + escapeHtml(p.stars.join('、')) + '</span>' +
-      (brief ? '' : escapeHtml(p.stars.map(function (s) { return ZIWEI_STAR_TEXT[s] || ''; }).join(''))) + '</div>';
+    var mark = (p.isMing && p.isShen) ? ' <span class="ziwei-mark">命身同宫</span>'
+      : p.isMing ? ' <span class="ziwei-mark">命宫</span>'
+      : p.isShen ? ' <span class="ziwei-mark">身宫</span>' : '';
+    var range = p.decadalRange ? ' <span class="zw-drange">大限' + p.decadalRange[0] + '–' + p.decadalRange[1] + '岁</span>' : '';
+    rows += '<div class="zw-drow"><div class="zw-dhead">' + escapeHtml(p.name) + ' ' + escapeHtml(p.gz) + mark + range + '</div>' +
+      (p.major.length ? '<div class="zw-dline"><b>主星</b>' + nm(p.major, true) + '</div>' : '<div class="zw-dline"><b>主星</b><span class="zw-empty">空宫，借对宫参看</span></div>') +
+      (p.ji.length ? '<div class="zw-dline"><b>吉星</b>' + nm(p.ji, false) + '</div>' : '') +
+      (p.sha.length ? '<div class="zw-dline"><b>煞星</b>' + nm(p.sha, false) + '</div>' : '') +
+      (p.zayao.length ? '<div class="zw-dline"><b>杂曜</b>' + escapeHtml(p.zayao.map(function (s) { return s.name; }).join('、')) + '</div>' : '') +
+      '</div>';
   }
-  var html = starLine(mingP, '命宫') + starLine(shenP, '身宫');
+  var horo = '';
+  if (c.daxian) {
+    var d = c.daxian;
+    horo += '<div class="zw-hrow"><span>本限</span>' +
+      (d.range ? d.range[0] + '–' + d.range[1] + '岁 · ' : '') + '大限入' + escapeHtml(d.gong) + '（' + escapeHtml(d.gz) + '）</div>' +
+      '<div class="zw-hrow"><span>大限四化</span>' + d.sihua.map(function (s) { return escapeHtml(s.star + s.hua); }).join(' · ') + '</div>';
+  }
+  if (c.liunian) {
+    var y = c.liunian;
+    horo += '<div class="zw-hrow"><span>流年</span>' + c.year + ' ' + escapeHtml(y.gz) + ' · 流年入' + escapeHtml(y.gong) + '</div>' +
+      '<div class="zw-hrow"><span>流年四化</span>' + y.sihua.map(function (s) { return escapeHtml(s.star + s.hua); }).join(' · ') + '</div>';
+  }
+  if (c.xiaoxian) horo += '<div class="zw-hrow"><span>小限</span>' + c.xiaoxian.age + '岁入' + escapeHtml(c.xiaoxian.gong) + '</div>';
+  if (c.liuyue) horo += '<div class="zw-hrow"><span>流月</span>' + escapeHtml(c.liuyue.gz) + '入' + escapeHtml(c.liuyue.gong) + '</div>';
+  return (horo ? '<div class="zw-horo">' + horo + '</div>' : '') +
+    '<div class="zw-detail"><div class="zw-dtitle">十二宫星曜明细</div>' + rows + '</div>';
+}
+
+function ziweiStarSections(c, brief) {
+  function palaceByMing() {
+    for (var i = 0; i < c.palaces.length; i++) if (c.palaces[i].isMing) return c.palaces[i];
+    return c.palaces[0];
+  }
+  function palaceByShen() {
+    for (var i = 0; i < c.palaces.length; i++) if (c.palaces[i].isShen) return c.palaces[i];
+    return null;
+  }
+  function starLine(p, label) {
+    var head = '<span class="mbti-sec-label">' + label + '（' + escapeHtml(p.gz) + '）';
+    if (!p.major.length) {
+      var dui = c.palaces[(c.palaces.indexOf(p) + 6) % 12];
+      return '<div class="mbti-sec">' + head + '空宫</span>' +
+        '本宫无主星，借对宫' + escapeHtml(dui.name) + '（' + escapeHtml(dui.gz) + '）' +
+        escapeHtml(dui.major.map(function (s) { return s.name; }).join('、') || '无主星') + '参看。' +
+        (brief ? '' : '<br>' + escapeHtml(dui.major.map(function (s) { return ZIWEI_STAR_TEXT[s.name] || ''; }).join(''))) + '</div>';
+    }
+    head += escapeHtml(p.major.map(function (s) { return s.name; }).join('、')) + '</span>';
+    var body = brief ? '' : escapeHtml(p.major.map(function (s) { return ZIWEI_STAR_TEXT[s.name] || ''; }).join(''));
+    var aux = '';
+    if (!brief) {
+      var items = p.ji.concat(p.sha).filter(function (s) { return ZIWEI_AUX_TEXT[s.name]; });
+      if (items.length) aux = '<br>' + escapeHtml(items.map(function (s) { return s.name + '：' + ZIWEI_AUX_TEXT[s.name]; }).join(''));
+    }
+    return '<div class="mbti-sec">' + head + body + aux + '</div>';
+  }
+  var mingP = palaceByMing();
+  var shenP = palaceByShen();
+  var html = starLine(mingP, '命宫') + (shenP && shenP !== mingP ? starLine(shenP, '身宫') : '');
   html += '<div class="mbti-sec"><span class="mbti-sec-label">生年四化</span>' +
     c.sihua.map(function (s) {
-      return escapeHtml(s.hua + '：' + s.star) + (brief ? '' : '——' + escapeHtml(ZIWEI_HUA_TEXT[s.hua] || ''));
+      return escapeHtml(s.hua + '：' + s.star + '（' + s.gong + '）') + (brief ? '' : '——' + escapeHtml(ZIWEI_HUA_TEXT[s.hua] || ''));
     }).join('<br>') + '</div>';
+  if (!brief && c.daxian) {
+    var d = c.daxian;
+    html += '<div class="mbti-sec"><span class="mbti-sec-label">大限 · 流年</span>' +
+      '今行大限' + (d.range ? d.range[0] + '–' + d.range[1] + '岁' : '') + '入' + escapeHtml(d.gong) + '（' + escapeHtml(d.gz) + '），' +
+      '大限四化' + escapeHtml(d.sihua.map(function (s) { return s.star + s.hua; }).join('、')) + '。' +
+      (c.liunian ? '流年' + c.year + escapeHtml(c.liunian.gz) + '入' + escapeHtml(c.liunian.gong) + '，' +
+        '流年四化' + escapeHtml(c.liunian.sihua.map(function (s) { return s.star + s.hua; }).join('、')) + '。' : '') +
+      '运限所至，吉凶参看所入宫位星曜。</div>';
+  }
   html += '<div class="mbti-sec"><span class="mbti-sec-label">命主 · 身主</span>命主' +
     escapeHtml(c.mingzhu) + '、身主' + escapeHtml(c.shenzhu) + '。命主掌先天格局之枢，身主掌后天行运之重。</div>';
   return html;
@@ -343,7 +392,8 @@ function renderZiweiReveal(type) {
     reportEl.innerHTML = '<div class="mbti-no-report">两筊皆阴，神明未允此问。命盘暂且封存，静心之后再来。</div>';
     return;
   }
-  var html = ziweiChartHTML(c) + ziweiStarSections(c, type !== 'sheng');
+  var brief = type !== 'sheng';
+  var html = ziweiChartHTML(c) + ziweiDetailHTML(c) + ziweiStarSections(c, brief);
   if (type === 'sheng') {
     html += '<div class="mbti-brief-note">聖筊既定，命盘详示如上。星曜指引方向，行止仍在人为。</div>';
   } else {
@@ -351,6 +401,6 @@ function renderZiweiReveal(type) {
   }
   reportEl.innerHTML = html;
   try {
-    if (typeof saveReportHTML === 'function') saveReportHTML('yumiao_report_ziwei_v1', '紫微斗数', 'ziweiReport');
+    if (typeof saveReportHTML === 'function') saveReportHTML('yumiao_report_ziwei_v2', '紫微斗数', 'ziweiReport');
   } catch (_) {}
 }
