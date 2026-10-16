@@ -554,7 +554,15 @@
     }
     lazy('openChenggu', ['js/11a-chenggu-verses.js', 'js/11b-chenggu-modern.js', 'js/11-chenggu.js']);
     lazy('openTarotPanel', ['js/12-tarot.js']);
-    lazy('openZiweiPanel', ['js/13a-iztro.min.js', 'js/13-ziwei.js']);
+    lazy('openZiweiPanel', ['js/13-ziwei.js']);
+    /* 供各模块按需加载：与上面的预加载共用同一份去重表 */
+    window.loadScript = loadScript;
+    /* 紫微引擎 800KB 较大，页面空闲时预加载，点 chip 时只剩界面模块要加载 */
+    (function preloadZiweiEngine() {
+      function go() { try { loadScript('js/13a-iztro.min.js').catch(function () {}); } catch (_) {} }
+      if ('requestIdleCallback' in window) requestIdleCallback(go, { timeout: 8000 });
+      else setTimeout(go, 4000);
+    })();
     lazy('openWesternPanel', ['js/08-western-astrology.js']);
     lazy('submitWesternForm', ['js/08-western-astrology.js']);
     lazy('backToWesternForm', ['js/08-western-astrology.js']);
