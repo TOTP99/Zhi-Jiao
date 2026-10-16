@@ -946,3 +946,17 @@ input[type=range].yslider::-moz-range-thumb{width:20px;height:20px;border-radius
   border:1px solid var(--gold-deep);border-radius:8px;background:radial-gradient(circle at 50% 40%,rgba(201,162,39,.10),rgba(201,162,39,.02))}
 .ziwei-center-row span{font-size:var(--fs-xs);color:var(--muted);margin-right:6px;letter-spacing:2px}
 .ziwei-center-row strong{font-size:var(--fs-md);color:var(--gold-bright);letter-spacing:2px}
+/* 紫微完整盘：辅星/煞星行、明细、大限卡片 */
+.zw-fu{font-size:10px;color:var(--gold-bright);letter-spacing:1px;line-height:1.6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zw-sha{font-size:10px;color:#d98a8a;letter-spacing:1px;line-height:1.6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zw-horo{border:1px solid var(--gold-deep);border-radius:8px;background:rgba(201,162,39,.05);padding:8px 10px;margin:10px 0}
+.zw-hrow{font-size:var(--fs-sm);color:var(--cream);line-height:1.9}
+.zw-hrow span{display:inline-block;min-width:64px;color:var(--gold-bright);letter-spacing:2px;font-size:var(--fs-xs)}
+.zw-detail{margin:10px 0}
+.zw-dtitle{font-size:var(--fs-sm);color:var(--gold-bright);letter-spacing:2px;margin:6px 0}
+.zw-drow{border-top:1px solid var(--line-soft);padding:7px 0}
+.zw-dhead{font-size:var(--fs-sm);font-weight:700;color:var(--cream);letter-spacing:1px}
+.zw-drange{font-size:10px;color:var(--muted);font-weight:400;margin-left:6px}
+.zw-dline{font-size:var(--fs-xs);color:var(--muted);line-height:1.8}
+.zw-dline b{display:inline-block;min-width:34px;color:var(--gold-deep);font-weight:700;margin-right:6px}
+.zw-empty{color:var(--muted)}
