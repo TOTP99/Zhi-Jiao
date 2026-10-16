@@ -898,3 +898,51 @@ input[type=range].yslider::-moz-range-thumb{width:20px;height:20px;border-radius
   font-size:var(--fs-sm);letter-spacing:1px;color:var(--gold-bright);border:1px solid var(--line);border-radius:var(--r-sm);
   background:rgba(201,162,39,.08)}
 .mbti-cast-btn:active,.mbti-reset:active{transform:scale(.97);background:rgba(201,162,39,.18)}
+
+/* ═════ 塔罗牌占卜 ═════ */
+.tarot-step{padding:2px 0 0}
+.tarot-spread-row{display:flex;gap:10px;margin:14px 0 6px}
+.tarot-spread-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 8px;line-height:1.5}
+.tarot-spread-btn strong{font-size:var(--fs-md);letter-spacing:4px;text-indent:4px}
+.tarot-spread-btn span{font-size:var(--fs-xs);letter-spacing:1px;opacity:.75;font-weight:400}
+.tarot-prog{color:var(--gold-bright);font-weight:600}
+.tarot-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}
+.tarot-back{aspect-ratio:3/4.6;border-radius:8px;border:1px solid var(--gold-deep);
+  background:radial-gradient(circle at 50% 38%,#2b2413 0%,#171309 62%,#0e0b06 100%);
+  display:flex;align-items:center;justify-content:center;min-height:64px;cursor:pointer;
+  transition:transform .15s,opacity .25s}
+.tarot-back span{color:var(--gold);font-size:20px;opacity:.85}
+.tarot-back:active{transform:scale(.94)}
+.tarot-back.picked{opacity:.18;pointer-events:none}
+.tarot-back.picked span{opacity:0}
+.tarot-actions{display:flex;justify-content:center;gap:10px;margin:10px 0 4px}
+.tarot-result{display:flex;flex-direction:column;gap:10px;margin:12px 0}
+.tarot-card{border:1px solid var(--line);border-radius:var(--r-md);background:var(--card);
+  padding:14px 12px;text-align:center;position:relative}
+.tarot-card-pos{font-size:var(--fs-xs);letter-spacing:3px;color:var(--muted);margin-bottom:6px}
+.tarot-card-emblem{font-size:26px;color:var(--gold);line-height:1;margin-bottom:4px}
+.tarot-card.rev .tarot-card-emblem{transform:rotate(180deg);display:inline-block}
+.tarot-card-no{font-size:var(--fs-xs);color:var(--faint);letter-spacing:2px}
+.tarot-card-name{font-size:var(--fs-lg);font-weight:700;letter-spacing:6px;text-indent:6px;color:var(--cream);margin:2px 0 6px}
+.tarot-card-ori{display:inline-block;font-size:var(--fs-xs);letter-spacing:2px;padding:2px 10px;border-radius:999px;margin-bottom:8px}
+.tarot-card-ori.is-up{color:#7bc98a;border:1px solid rgba(123,201,138,.4)}
+.tarot-card-ori.is-rev{color:#e08a8a;border:1px solid rgba(224,138,138,.4)}
+.tarot-card-keys{font-size:var(--fs-sm);color:var(--gold-bright);letter-spacing:1px;line-height:1.8}
+
+/* ═════ 紫微斗数 ═════ */
+.ziwei-head{margin:6px 0 2px}
+.ziwei-chart{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,minmax(78px,auto));gap:6px;margin:12px 0}
+.ziwei-cell{border:1px solid var(--line-soft);border-radius:8px;background:var(--card);padding:7px 6px;overflow:hidden}
+.ziwei-cell.is-ming{border-color:var(--gold-deep);background:rgba(201,162,39,.06)}
+.ziwei-gong{font-size:var(--fs-xs);color:var(--muted);letter-spacing:1px;white-space:nowrap}
+.ziwei-mark{color:var(--gold-bright);font-size:10px;margin-left:3px;white-space:nowrap}
+.ziwei-zhi{font-size:var(--fs-md);font-weight:700;color:var(--cream);margin:1px 0}
+.ziwei-stars{line-height:1.7}
+.ziwei-star{font-size:var(--fs-sm);color:var(--gold-bright);letter-spacing:1px}
+.ziwei-star.hot{color:var(--gold);font-weight:700}
+.ziwei-hua{display:inline-block;font-size:10px;line-height:1.5;border:1px solid var(--gold-deep);border-radius:4px;
+  padding:0 3px;margin-left:3px;color:var(--gold);vertical-align:1px}
+.ziwei-center{grid-row:2/4;grid-column:2/4;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:10px;
+  border:1px solid var(--gold-deep);border-radius:8px;background:radial-gradient(circle at 50% 40%,rgba(201,162,39,.10),rgba(201,162,39,.02))}
+.ziwei-center-row span{font-size:var(--fs-xs);color:var(--muted);margin-right:6px;letter-spacing:2px}
+.ziwei-center-row strong{font-size:var(--fs-md);color:var(--gold-bright);letter-spacing:2px}
