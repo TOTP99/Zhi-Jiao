@@ -1,9 +1,10 @@
 // ============================================================
-// 紫微斗数完整排盘：问事页 chip「紫微」入口
-// 排盘引擎：iztro v2.6.3（MIT License, SylarLong/iztro），js/13a-iztro.min.js
-//   命宫/身宫/五行局/十四主星/辅星煞星/生年四化/宫干/大限流年小限流月
-//   年界按农历正月初一（iztro 默认 yearDivide=normal）；身主以生年年支定
-// 界面与操作习惯与其它面板统一：排盘 → 掷筊请示 → 筊型决定详示/略示/守静
+// 紫微斗数：问事页 chip「紫微」入口，先选简版/繁版
+//   简版：js/13b-ziwei-simple.js（手写简化排盘：十四主星+生年四化），按需加载
+//   繁版：本文件 + js/13a-iztro.min.js（排盘引擎，原样引入）；本文件只做取数、分组与渲染
+//     命宫/身宫/五行局/十四主星/辅星煞星/生年四化/宫干/大限流年小限流月
+//     年界按农历正月初一；身主以生年年支定
+// 界面与操作习惯与其它面板统一：选择版本 → 排盘 → 掷筊请示 → 筊型决定详示/略示/守静
 // ============================================================
 
 /* ── 十四主星短解 ── */
@@ -58,10 +59,54 @@ var _ziweiChart = null;
 function ziweiBody() { return document.getElementById('ziweiBody'); }
 
 function openZiweiPanel() {
-  _ziweiChart = null;
-  backToZiweiForm();
+  backToZiweiModeChooser();
   if (typeof window.renderProfileBar === 'function') window.renderProfileBar('ziweiProfileBar');
   ModalUI.open('ziwei');
+}
+/* 简版 / 繁版 选择 */
+function backToZiweiModeChooser() {
+  var el = ziweiBody();
+  if (!el) return;
+  el.innerHTML =
+    '<div class="bazi-form" id="ziweiChoose">' +
+    '<p class="mbti-intro">紫微斗数排盘，请选择版本。</p>' +
+    '<div class="profile-bar" id="ziweiProfileBar" data-bar="ziwei"></div>' +
+    '<button class="btn-gold btn-block" onclick="chooseZiweiMode(\'simple\')">简版 · 十四主星速排</button>' +
+    '<div style="height:10px"></div>' +
+    '<button class="btn-gold btn-block" onclick="chooseZiweiMode(\'full\')">繁版 · 完整星曜大限</button>' +
+    '<p class="mbti-intro" style="margin-top:10px">繁版含辅星煞星、生年四化、大限流年；引擎较大，首次加载需稍候。</p>' +
+    '</div>';
+  if (typeof window.renderProfileBar === 'function') window.renderProfileBar('ziweiProfileBar');
+}
+function chooseZiweiMode(mode) {
+  var el = ziweiBody();
+  if (mode === 'simple') {
+    if (window._zwSimpleLoading) return;
+    if (typeof window.zwSimpleOpenPanel === 'function') { window.zwSimpleOpenPanel(); return; }
+    window._zwSimpleLoading = true;
+    if (el) el.innerHTML = '<div class="bazi-form"><p class="mbti-intro">简版加载中…</p></div>';
+    window.loadScript('js/13b-ziwei-simple.js').then(function () {
+      window._zwSimpleLoading = false;
+      if (typeof window.zwSimpleOpenPanel === 'function') window.zwSimpleOpenPanel();
+      else backToZiweiModeChooser();
+    }).catch(function () {
+      window._zwSimpleLoading = false;
+      if (el) el.innerHTML = '<div class="bazi-form"><div class="bazi-error">简版加载失败，请检查网络后重试。</div>' +
+        '<button class="btn-ghost btn-sm" onclick="backToZiweiModeChooser()">返回</button></div>';
+    });
+    return;
+  }
+  /* 繁版：引擎在后台预加载过，这里只等它就绪，加等待提示 */
+  if (window.iztro && window.iztro.astro) { backToZiweiForm(); return; }
+  if (el) el.innerHTML = '<div class="bazi-form"><p class="mbti-intro">排盘引擎加载中…</p></div>';
+  window.loadScript('js/13a-iztro.min.js').then(function () {
+    if (window.iztro && window.iztro.astro) backToZiweiForm();
+    else throw new Error('engine not ready');
+  }).catch(function () {
+    var e2 = ziweiBody();
+    if (e2) e2.innerHTML = '<div class="bazi-form"><div class="bazi-error">引擎加载失败，请检查网络后重试。</div>' +
+      '<button class="btn-ghost btn-sm" onclick="backToZiweiModeChooser()">返回</button></div>';
+  });
 }
 function closeZiweiPanel() {
   ModalUI.close('ziwei');
@@ -86,6 +131,7 @@ function backToZiweiForm() {
     '<div class="mbti-reveal-actions">' +
     '<button class="btn-ghost btn-sm" id="ziweiRecast" onclick="castZiweiJiao()" style="display:none;">再次掷筊</button>' +
     '<button class="btn-ghost btn-sm" onclick="backToZiweiForm()">重新排盘</button>' +
+'<button class="btn-ghost btn-sm" onclick="backToZiweiModeChooser()">返回选择</button>' +
     '</div></div>';
   if (typeof window.renderProfileBar === 'function') window.renderProfileBar('ziweiProfileBar');
 }
@@ -110,7 +156,7 @@ function readZiweiBirth() {
 
 function ziweiHourBranch(h) { return Math.floor((((h % 24) + 24) % 24 + 1) / 2) % 12; }
 
-/* 用 iztro 起盘，归一化为渲染用的 plain 结构 */
+/* 起盘，归一化为渲染用的 plain 结构 */
 function buildZiweiChart(birth) {
   var iz = window.iztro;
   if (!iz || !iz.astro || !iz.astro.bySolar) throw new Error('排盘引擎未就绪，请重试。');
@@ -199,19 +245,25 @@ function submitZiweiForm() {
   if (errEl) errEl.textContent = '';
   var r = readZiweiBirth();
   if (r.error) { if (errEl) errEl.textContent = r.error; return; }
-  var c;
-  try {
-    c = buildZiweiChart(r.birth);
-  } catch (e) {
-    if (errEl) errEl.textContent = (e && e.message) || '排盘失败，请检查出生信息是否正确。';
-    return;
-  }
-  _ziweiChart = c;
-  var form = document.getElementById('ziweiForm');
-  var reveal = document.getElementById('ziweiReveal');
-  if (form) form.style.display = 'none';
-  if (reveal) reveal.style.display = '';
-  castZiweiJiao();
+  var btn = document.querySelector('#ziweiForm .btn-gold');
+  if (btn) { btn.disabled = true; btn.textContent = '排盘中…'; }
+  /* 让按钮状态先刷出来，再做同步排盘计算，避免点下去没反应 */
+  setTimeout(function () {
+    var c;
+    try {
+      c = buildZiweiChart(r.birth);
+    } catch (e) {
+      if (btn) { btn.disabled = false; btn.textContent = '排盘 · 掷筊'; }
+      if (errEl) errEl.textContent = (e && e.message) || '排盘失败，请检查出生信息是否正确。';
+      return;
+    }
+    _ziweiChart = c;
+    var form = document.getElementById('ziweiForm');
+    var reveal = document.getElementById('ziweiReveal');
+    if (form) form.style.display = 'none';
+    if (reveal) reveal.style.display = '';
+    castZiweiJiao();
+  }, 30);
 }
 
 /* ── 命盘十二宫格（传统 4×4 布局，中央为命主身主） ── */
