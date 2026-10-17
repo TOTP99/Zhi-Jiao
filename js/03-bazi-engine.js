@@ -65,7 +65,9 @@
     }
     function julianDay(date) { return date.getTime() / 86400000 + 2440587.5; }
     function solarLongitude(date) {
-      const jd = julianDay(date);
+      // 输入为 UT；太阳位置公式要 TT（+ΔT，约 69 秒），并取视黄经（减光行差与章动），
+      // 否则节气时刻会比官方偏早十几分钟。
+      const jd = julianDay(date) + 69 / 86400;
       const T = (jd - 2451545.0) / 36525.0;
       const L0 = mod(280.46646 + 36000.76983 * T + 0.0003032 * T * T, 360);
       const M = mod(357.52911 + 35999.05029 * T - 0.0001537 * T * T, 360);
@@ -73,7 +75,8 @@
       const C = (1.914602 - 0.004817 * T - 0.000014 * T * T) * Math.sin(rad)
         + (0.019993 - 0.000101 * T) * Math.sin(2 * rad)
         + 0.000289 * Math.sin(3 * rad);
-      return mod(L0 + C, 360);
+      const omega = (125.04 - 1934.136 * T) * Math.PI / 180;
+      return mod(L0 + C - 0.00569 - 0.00478 * Math.sin(omega), 360);
     }
     function angularDiff(a, b) { return mod(a - b + 180, 360) - 180; }
     const JIEQI_NAMES = ["立春","惊蛰","清明","立夏","芒种","小暑","立秋","白露","寒露","立冬","大雪","小寒"];

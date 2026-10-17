@@ -45,16 +45,48 @@
     const Mp=wNorm(134.9634+477198.8676*T)*Math.PI/180;
     const D=wNorm(297.8502+445267.1115*T)*Math.PI/180;
     const moon=wNorm(218.3165+481267.8813*T+6.289*Math.sin(Mp)+1.274*Math.sin(2*D-Mp)+0.658*Math.sin(2*D)+0.214*Math.sin(2*Mp));
-    const mean=function(a0,a1){return wNorm(a0+a1*T);};
+    const g=wGeocentric(T);
     return {
       sun:sun, moon:moon,
-      mercury:wNorm(mean(252.2509,149472.6746)+23.4*Math.sin(mean(174.7948,149472.515)*Math.PI/180)),
-      venus:wNorm(mean(181.9798,58517.8156)+0.78*Math.sin(mean(50.4161,58517.298)*Math.PI/180)),
-      mars:wNorm(mean(355.433,19140.3023)+10.69*Math.sin(mean(19.373,19140.3)*Math.PI/180)),
-      jupiter:wNorm(mean(34.3515,3034.9057)+5.55*Math.sin(mean(19.895,3034.69)*Math.PI/180)),
-      saturn:wNorm(mean(50.0774,1222.1138)+6.41*Math.sin(mean(317.02,1222.11)*Math.PI/180)),
-      uranus:mean(314.055,428.49), neptune:mean(304.349,218.486), pluto:mean(238.929,145.208)
+      mercury:g.mercury, venus:g.venus, mars:g.mars, jupiter:g.jupiter,
+      saturn:g.saturn, uranus:g.uranus, neptune:g.neptune, pluto:g.pluto
     };
+  }
+  // 行星地心黄经：JPL 近似开普勒根数（E.M. Standish，1800–2050），地球取地月质心；
+  // 日心直角坐标相减得地心位置，再加岁差换算到当日黄道。精度约数角分，足够定星座与落宫。
+  const W_ELEMS={
+    earth:  [1.00000261,0.00000562, 0.01671123,-0.00004392, -0.00001531,-0.01294668, 100.46457166,35999.37244981, 102.93768193,0.32327364, 0,0],
+    mercury:[0.38709927,0.00000037, 0.20563593,0.00001906, 7.00497902,-0.00594749, 252.25032350,149472.67411175, 77.45779628,0.16047689, 48.33076593,-0.12534081],
+    venus:  [0.72333566,0.00000390, 0.00677672,-0.00004107, 3.39467605,-0.00078890, 181.97909950,58517.81538729, 131.60246718,0.00268329, 76.67984255,-0.27769418],
+    mars:   [1.52371034,0.00001847, 0.09339410,0.00007882, 1.84969142,-0.00813131, -4.55343205,19140.30268499, -23.94362959,0.44441088, 49.55953891,-0.29257343],
+    jupiter:[5.20288700,-0.00011607, 0.04838624,-0.00013253, 1.30439695,-0.00183714, 34.39644051,3034.74612775, 14.72847983,0.21252668, 100.47390909,0.20469106],
+    saturn: [9.53667594,-0.00125060, 0.05386179,-0.00050991, 2.48599187,0.00193609, 49.95424423,1222.49362201, 92.59887831,-0.41897216, 113.66242448,-0.28867794],
+    uranus: [19.18916464,-0.00196176, 0.04725744,-0.00004397, 0.77263783,-0.00242939, 313.23810451,428.48202785, 170.95427630,0.40805281, 74.01692503,0.04240589],
+    neptune:[30.06992276,0.00026291, 0.00859048,0.00005105, 1.77004347,0.00035372, -55.12002969,218.45945325, 44.96476227,-0.32241464, 131.78422574,-0.00508664],
+    pluto:  [39.48211675,-0.00031596, 0.24882730,0.00005170, 17.14001206,0.00004818, 238.92903833,145.20780515, 224.06891629,-0.04062942, 110.30393684,-0.01183482]
+  };
+  function wHelio(name,T){
+    const e=W_ELEMS[name], R=Math.PI/180;
+    const a=e[0]+e[1]*T, ecc=e[2]+e[3]*T, I=(e[4]+e[5]*T)*R, L=e[6]+e[7]*T, wp=e[8]+e[9]*T, Om=(e[10]+e[11]*T)*R;
+    const w=wp*R-Om;
+    let M=((L-wp)%360+540)%360-180; M*=R;
+    let E=M+ecc*Math.sin(M);
+    for(let i=0;i<30;i++){ const d=(E-ecc*Math.sin(E)-M)/(1-ecc*Math.cos(E)); E-=d; if(Math.abs(d)<1e-12)break; }
+    const xp=a*(Math.cos(E)-ecc), yp=a*Math.sqrt(1-ecc*ecc)*Math.sin(E);
+    const cw=Math.cos(w), sw=Math.sin(w), cO=Math.cos(Om), sO=Math.sin(Om), cI=Math.cos(I);
+    return {
+      x:(cw*cO-sw*sO*cI)*xp+(-sw*cO-cw*sO*cI)*yp,
+      y:(cw*sO+sw*cO*cI)*xp+(-sw*sO+cw*cO*cI)*yp
+    };
+  }
+  function wGeocentric(T){
+    const earth=wHelio('earth',T), out={};
+    const prec=1.396971*T+0.0003086*T*T; // 自 J2000 起的黄经岁差（度）
+    ['mercury','venus','mars','jupiter','saturn','uranus','neptune','pluto'].forEach(function(k){
+      const p=wHelio(k,T);
+      out[k]=wNorm(Math.atan2(p.y-earth.y,p.x-earth.x)*180/Math.PI+prec);
+    });
+    return out;
   }
   function wSidereal(jd,lng){ const T=(jd-2451545.0)/36525; return wNorm(280.46061837+360.98564736629*(jd-2451545.0)+0.000387933*T*T+lng); }
   function wAscendant(jd,lat,lng){
@@ -62,8 +94,9 @@
     const ramc=wSidereal(jd,lng)*Math.PI/180;
     const eps=(23.4393-0.0000004*(jd-2451545))*Math.PI/180;
     const phi=lat*Math.PI/180;
-    const y=-Math.cos(ramc);
-    const x=Math.sin(ramc)*Math.cos(eps)+Math.tan(phi)*Math.sin(eps);
+    // 上升点：ASC = atan2(cos RAMC, −(sin RAMC·cos ε + tan φ·sin ε))（旧写法差 180°，得到的是下降点）
+    const y=Math.cos(ramc);
+    const x=-(Math.sin(ramc)*Math.cos(eps)+Math.tan(phi)*Math.sin(eps));
     return wNorm(Math.atan2(y,x)*180/Math.PI);
   }
   function wHouseOf(lon,asc){ if(asc==null) return null; return ((wSignIdx(lon)-wSignIdx(asc)+12)%12)+1; }
