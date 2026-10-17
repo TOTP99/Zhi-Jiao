@@ -140,6 +140,7 @@
       <div class="method-chips" role="tablist" aria-label="问卜方式">
         <button type="button" class="mchip" data-m="mbti" onclick="pickMethod('mbti', this)"><span>MBTI</span></button>
         <button type="button" class="mchip" data-m="tarot" onclick="pickMethod('tarot', this)"><span>塔罗</span></button>
+        <button type="button" class="mchip" data-m="wuge" onclick="pickMethod('wuge', this)"><span>姓名</span></button>
         <button type="button" class="mchip" data-m="casual" onclick="pickMethod('casual', this)"><span>108 问</span></button>
       </div>
 
@@ -392,6 +393,14 @@
   <div id="tarotBody"></div>
 </div>
 
+<!-- ══════════ 姓名五格 ══════════ -->
+<div class="sheet-backdrop" id="wugeBackdrop" onclick="closeSheetByBtn(this)"></div>
+<div class="sheet" id="wugeModal" role="dialog" aria-label="姓名五格">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head"><h3>姓名五格</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
+  <div id="wugeBody"></div>
+</div>
+
 <!-- ══════════ 西方星盘 ══════════ -->
 <div class="sheet-backdrop" id="westernBackdrop" onclick="closeSheetByBtn(this)"></div>
 <div class="sheet" id="westernModal" role="dialog" aria-label="西方星盘">
@@ -546,6 +555,7 @@
     lazy('openChenggu', ['js/11a-chenggu-verses.js', 'js/11b-chenggu-modern.js', 'js/11-chenggu.js']);
     lazy('openTarotPanel', ['js/12-tarot.js']);
     lazy('openWesternPanel', ['js/08-western-astrology.js']);
+    lazy('openWugePanel', ['js/13-wuge.js']);
     lazy('submitWesternForm', ['js/08-western-astrology.js']);
     lazy('backToWesternForm', ['js/08-western-astrology.js']);
     lazy('toggleWesternDict', ['js/08-western-astrology.js']);

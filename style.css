@@ -929,3 +929,27 @@ input[type=range].yslider::-moz-range-thumb{width:20px;height:20px;border-radius
 .tarot-card-ori.is-rev{color:#e08a8a;border:1px solid rgba(224,138,138,.4)}
 .tarot-card-keys{font-size:var(--fs-sm);color:var(--gold-bright);letter-spacing:1px;line-height:1.8}
 
+/* ═════ 姓名五格 ═════ */
+.wuge-form{margin:12px 0}
+.wuge-name-input{text-align:center;letter-spacing:6px;font-size:var(--fs-lg)}
+.wuge-note{font-size:var(--fs-xs);color:var(--muted);line-height:1.8;margin:8px 2px 0}
+.wuge-err{color:#e08a8a;font-size:var(--fs-sm);margin:0 2px 8px;letter-spacing:1px}
+.wuge-name-line{display:flex;justify-content:center;gap:14px;margin:6px 0 12px}
+.wuge-char{display:flex;flex-direction:column;align-items:center;gap:2px}
+.wuge-char b{font-size:var(--fs-xl);color:var(--cream)}
+.wuge-char i{font-style:normal;font-size:var(--fs-xs);color:var(--gold-bright)}
+.wuge-ge-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:10px 0}
+.wuge-ge{border:1px solid var(--line-soft);border-radius:8px;background:var(--card);padding:8px 4px;text-align:center}
+.wuge-ge-head span{display:block;font-size:var(--fs-xs);color:var(--muted);letter-spacing:2px}
+.wuge-ge-head b{font-size:var(--fs-lg);color:var(--cream)}
+.wuge-ge-shuli{font-size:10px;color:var(--muted);margin-top:4px;line-height:1.6}
+.wuge-ge-jx{font-size:var(--fs-sm);font-weight:700;margin-top:4px;letter-spacing:2px}
+.wuge-ge-jx.is-ji{color:#7bc98a}
+.wuge-ge-jx.is-xiong{color:#e08a8a}
+.wuge-ge-jx.is-banji{color:var(--gold-bright)}
+.wuge-sancai{display:flex;justify-content:space-between;align-items:center;border:1px solid var(--gold-deep);border-radius:8px;background:rgba(201,162,39,.05);padding:8px 12px;margin:10px 0}
+.wuge-sancai span{font-size:var(--fs-sm);color:var(--cream);letter-spacing:2px}
+.wuge-sancai b{font-size:var(--fs-md);letter-spacing:2px}
+.wuge-sancai b.is-ji{color:#7bc98a}
+.wuge-sancai b.is-xiong{color:#e08a8a}
+.wuge-sancai b.is-banji{color:var(--gold-bright)}
