@@ -181,19 +181,6 @@
   }
 
   /* ── 问卜方式 chips ── */
-  window.pickMethod = function (m, el) {
-    document.querySelectorAll('.mchip').forEach(function (c) { c.classList.remove('on'); });
-    if (el) el.classList.add('on');
-    if (typeof window.selectQuestionMenuItem === 'function') {
-      window.selectQuestionMenuItem(m);
-    }
-    if (m === 'manual') {
-      setTimeout(function () {
-        var q = $('question');
-        if (q) q.focus();
-      }, 120);
-    }
-  };
   /* ── 生辰档案 ── */
   var CITY_PRESETS = {
     shenyang: { tz: 8, lng: 123.4, lat: 41.8, tzName: 'Asia/Shanghai', label: '沈阳' },
