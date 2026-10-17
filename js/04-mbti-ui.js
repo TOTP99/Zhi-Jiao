@@ -1,6 +1,5 @@
 // ============================================================
-// MBTI 快测 UI 与掷筊揭晓逻辑
-// 原始行号（拆分前单文件 script.js 中的位置）: 1987-2434
+// MBTI 快测 UI
 // ============================================================
   // ---- MBTI 隐藏式快测（48题，是/否；答案本地存储）----
   const MBTI_STORAGE_KEY = 'yumiao_mbti_answers_v3';
@@ -228,7 +227,7 @@
       return n;
     })();
     if (baseDone >= 48 && !mbtiExtraMode && done >= 48) {
-      el.innerHTML = `四十八问已毕 · <button type="button" class="mbti-reset" style="min-height:0;padding:0 6px;border:none;background:none;text-decoration:underline;" onclick="startMbtiExtra()">再测 24 题更准</button> · <button type="button" class="mbti-reset" style="min-height:0;padding:0 6px;border:none;background:none;text-decoration:underline;" onclick="document.getElementById('mbtiCastBtn')&&document.getElementById('mbtiCastBtn').focus()">不想，直接掷筊</button>`;
+      el.innerHTML = `四十八问已毕 · <button type="button" class="mbti-reset" style="min-height:0;padding:0 6px;border:none;background:none;text-decoration:underline;" onclick="startMbtiExtra()">再测 24 题更准</button> · <button type="button" class="mbti-reset" style="min-height:0;padding:0 6px;border:none;background:none;text-decoration:underline;" onclick="showMbtiResult()">不想，直接看结果</button>`;
     } else if (done >= total) {
       if (total > 48) {
         const v = checkTrapValidity();
@@ -236,7 +235,7 @@
           ? `七十二问已毕，真实性核验已通过（${v.passed}/${v.total}），人格更稳更真实`
           : `七十二问已毕，但真实性核验未通过（${v.passed}/${v.total}），结果仅供参考`;
       } else {
-        el.textContent = `四十八问已毕，人格已现，可掷筊请示详细解读`;
+        el.textContent = `四十八问已毕，人格已现，可查看详细解读`;
       }
     } else {
       el.textContent = `已完成 ${done}/${total}`;
@@ -291,7 +290,7 @@
         <div class="mbti-type">${escapeHtml(report.type)} · ${escapeHtml(report.name)}${report.primaryPercent ? '（约 ' + report.primaryPercent + '%）' : ''}</div>
         ${secNote}
         ${validityNote}
-        <div class="mbti-quick-note">性格已定，掷筊只决定给出多少解读——聖筊详版，笑筊简版，陰筊仅示类型。</div>
+        <div class="mbti-quick-note">性格已定，点击下方按钮查看完整解读。</div>
       `;
       el.classList.add('show');
     } catch (_) {
@@ -323,7 +322,7 @@
     backToMbtiQuiz();
     ModalUI.open('mbti');
   }
-  // ---- 48 问答毕后：掷筊请示，依筊型决定是否揭晓人格报告 ----
+  // ---- 48 问答毕后：直接显示完整人格报告 ----
   function buildEngineAnswers() {
     const out = {};
     const maxQ = mbtiExtraMode ? 72 : 48;
@@ -343,56 +342,18 @@
     const modal = document.getElementById('mbtiModal');
     if (modal) { modal.classList.remove('is-reveal'); modal.scrollTop = 0; }
   }
-  function castMbtiJiao() {
+  function showMbtiResult() {
     const done = Object.keys(mbtiAnswers).length;
     if (done < MBTI_QUESTIONS.length) return;
-    const castBtn = document.getElementById('mbtiCastBtn');
-    const recastBtn = document.getElementById('mbtiRecast');
     const list = document.getElementById('mbtiList');
     const reveal = document.getElementById('mbtiReveal');
-    const jiaoLabel = document.getElementById('mbtiJiaoLabel');
     const reportEl = document.getElementById('mbtiReport');
-    const display = document.getElementById('mbtiJiaoDisplay');
-    if (!reveal || !display) return;
-    if (castBtn) castBtn.disabled = true;
-    if (recastBtn) recastBtn.style.display = 'none';
+    if (!reveal || !reportEl) return;
     if (list) list.style.display = 'none';
     reveal.style.display = 'flex';
     const modalEl = document.getElementById('mbtiModal');
     if (modalEl) { modalEl.classList.add('is-reveal'); modalEl.scrollTop = 0; }
-    if (jiaoLabel) { jiaoLabel.textContent = ''; jiaoLabel.className = 'mbti-jiao-label'; }
-    if (reportEl) reportEl.innerHTML = '';
-    getAudioCtx();
-    display.innerHTML = '';
-    const type = rollJiaoType();
-    const [left, right] = facesForType(type);
-    const jiao1 = document.createElement('div');
-    const jiao2 = document.createElement('div');
-    jiao1.className = 'jiao spinning';
-    jiao2.className = 'jiao spinning';
-    display.appendChild(jiao1);
-    display.appendChild(jiao2);
-    setTimeout(() => {
-      try {
-        jiao1.classList.remove('spinning');
-        jiao2.classList.remove('spinning');
-        jiao1.classList.add(left === 1 ? 'yang' : 'yin');
-        jiao2.classList.add(right === 1 ? 'yang' : 'yin');
-        jiao1.style.setProperty('--land-rot', ((Math.random() * 14) - 7).toFixed(1) + 'deg');
-        jiao2.style.setProperty('--land-rot', ((Math.random() * 14) - 7).toFixed(1) + 'deg');
-        jiao1.classList.add('landed');
-        jiao2.classList.add('landed');
-        try { playJiaoLand(); } catch (_) {}
-        renderMbtiReveal(type);
-      } catch (_) {
-        if (reportEl) {
-          reportEl.innerHTML = '<div class="mbti-no-report">掷筊失败，只能遵从内心，随遇而安。</div>';
-        }
-      } finally {
-        if (castBtn) castBtn.disabled = false;
-        if (recastBtn) recastBtn.style.display = 'inline-block';
-      }
-    }, 1000);
+    renderMbtiFull();
   }
   function openMbtiDict() {
     const types = (window.MBTI && MBTI.types) || {};
@@ -416,26 +377,20 @@
       delete reportEl.dataset.prevHtml;
     }
   }
-  function renderMbtiReveal(type) {
-    const meta = typeMeta[type] || typeMeta.xiao;
-    const jiaoLabel = document.getElementById('mbtiJiaoLabel');
+  function renderMbtiFull() {
     const reportEl = document.getElementById('mbtiReport');
-    if (jiaoLabel) {
-      jiaoLabel.className = 'mbti-jiao-label ' + meta.class;
-      jiaoLabel.textContent = `${meta.label} · ${meta.meaning}`;
-    }
     if (!reportEl) return;
     let result;
     try {
       const maxQ = mbtiExtraMode ? 72 : 48;
       result = MBTI.test(buildEngineAnswers(), { maxQuestions: maxQ });
     } catch (_) {
-      reportEl.innerHTML = '<div class="mbti-no-report">卦象已应，然文书暂难誊录，请稍后再掷一次。</div>';
+      reportEl.innerHTML = '<div class="mbti-no-report">结果暂难呈现，请稍后再试。</div>';
       return;
     }
     const report = result && result.report;
     if (!report) {
-      reportEl.innerHTML = '<div class="mbti-no-report">结果模糊难辨，请重新掷筊一次。</div>';
+      reportEl.innerHTML = '<div class="mbti-no-report">结果模糊难辨，请重新作答。</div>';
       return;
     }
     saveProfileSummary('mbti', `${report.type}·${report.name}`);
@@ -453,27 +408,13 @@
         ? `<div class="mbti-sec"><span class="mbti-sec-label">真实性</span><span class="tag-ok">通过</span>12 题核验已通过（${v.passed}/12），以上为核验后更真实的人格结果。</div>`
         : `<div class="mbti-sec"><span class="mbti-sec-label">真实性</span><span class="tag-warn">存疑</span>12 题核验未通过（${v.passed}/12），作答专注度或一致性偏低，以上结果仅供参考，建议静心重测加测题。</div>`;
     }
-    if (type === 'sheng') {
-      reportEl.innerHTML = `
-        <div class="mbti-type">${escapeHtml(report.type)} · ${escapeHtml(report.name)}${report.primaryPercent ? '（约 ' + report.primaryPercent + '%）' : ''}</div><div class="mbti-summary">${escapeHtml(report.summary)}</div>
-        ${report.mystic ? `<div class="mbti-sec"><span class="mbti-sec-label">神断</span>${escapeHtml(report.mystic)}</div>` : ''}
-        ${secHTML}
-        ${trapNoteHTML}
-        <div class="mbti-sec"><span class="mbti-sec-label">优势</span>${report.strengths.map(escapeHtml).join('、')}</div><div class="mbti-sec"><span class="mbti-sec-label">盲点</span>${report.blindSpots.map(escapeHtml).join('、')}</div><div class="mbti-sec"><span class="mbti-sec-label">工作</span>${escapeHtml(report.work)}</div><div class="mbti-sec"><span class="mbti-sec-label">关系</span>${escapeHtml(report.relationship)}</div><div class="mbti-sec"><span class="mbti-sec-label">压力</span>${escapeHtml(report.stress)}</div>
-        ${dictBtn}
-      `;
-    } else if (type === 'xiao') {
-      reportEl.innerHTML = `
-        <div class="mbti-type">${escapeHtml(report.type)} · ${escapeHtml(report.name)}${report.primaryPercent ? '（约 ' + report.primaryPercent + '%）' : ''}</div><div class="mbti-summary">${escapeHtml(report.summary)}</div>
-        ${secHTML}
-        <div class="mbti-brief-note">两筊皆阳，天机含笑未决，此为简版倾向，仅供参考，非定论。</div>
-        ${dictBtn}
-      `;
-    } else {
-      reportEl.innerHTML = `
-        <div class="mbti-type">${escapeHtml(report.type)} · ${escapeHtml(report.name)}</div><div class="mbti-brief-note">两筊皆阴，神明未允此问，此相尚待印证，仅供参考，宜静心后再掷以求更明确之应。</div>
-        ${dictBtn}
-      `;
-    }
+    reportEl.innerHTML = `
+      <div class="mbti-type">${escapeHtml(report.type)} · ${escapeHtml(report.name)}${report.primaryPercent ? '（约 ' + report.primaryPercent + '%）' : ''}</div><div class="mbti-summary">${escapeHtml(report.summary)}</div>
+      ${report.mystic ? `<div class="mbti-sec"><span class="mbti-sec-label">神断</span>${escapeHtml(report.mystic)}</div>` : ''}
+      ${secHTML}
+      ${trapNoteHTML}
+      <div class="mbti-sec"><span class="mbti-sec-label">优势</span>${report.strengths.map(escapeHtml).join('、')}</div><div class="mbti-sec"><span class="mbti-sec-label">盲点</span>${report.blindSpots.map(escapeHtml).join('、')}</div><div class="mbti-sec"><span class="mbti-sec-label">工作</span>${escapeHtml(report.work)}</div><div class="mbti-sec"><span class="mbti-sec-label">关系</span>${escapeHtml(report.relationship)}</div><div class="mbti-sec"><span class="mbti-sec-label">压力</span>${escapeHtml(report.stress)}</div>
+      ${dictBtn}
+    `;
     if (typeof saveReportHTML === 'function') saveReportHTML('yumiao_report_mbti_v1', 'MBTI人格', 'mbtiReport');
   }

@@ -632,6 +632,7 @@
   function openWesternPanel(){
     backToWesternForm();
     ModalUI.open('western');
+    westernFabShow();
   }
   function closeWesternPanel(){
     const dict = document.getElementById('westernDictBox');
@@ -639,7 +640,94 @@
     if (dict) { dict.style.display = 'none'; dict.innerHTML = ''; }
     if (report) report.style.display = '';
     ModalUI.close('western');
+    westernFabHide();
     if (typeof clearQuestionSelectionToDefault === 'function') clearQuestionSelectionToDefault();
+  }
+  var _fabPos = null, _fabDrag = null, _fabWasDragged = false;
+  function westernFabEl(){ return document.getElementById('westernFab'); }
+  function westernFabShow(){
+    const fab = westernFabEl();
+    if (!fab) return;
+    fab.classList.remove('hidden');
+    if (!_fabPos) {
+      try { _fabPos = JSON.parse(localStorage.getItem('yumiao_western_fab_v1') || 'null'); } catch (_) {}
+    }
+    if (_fabPos && typeof _fabPos.x === 'number') {
+      fab.style.left = _fabPos.x + 'px';
+      fab.style.top = _fabPos.y + 'px';
+      fab.style.right = 'auto'; fab.style.bottom = 'auto';
+    } else {
+      fab.style.left = '50%'; fab.style.top = 'auto';
+      fab.style.right = 'auto'; fab.style.bottom = 'calc(90px + env(safe-area-inset-bottom))';
+      fab.style.transform = 'translateX(-50%)';
+    }
+    westernFabBind();
+  }
+  function westernFabHide(){
+    const fab = westernFabEl();
+    if (fab) fab.classList.add('hidden');
+  }
+  function westernFabTap(){
+    if (_fabWasDragged) { _fabWasDragged = false; return; }
+    submitWesternForm();
+    westernFabHide();
+  }
+  function westernFabBind(){
+    const fab = westernFabEl();
+    if (!fab || fab._fabBound) return;
+    fab._fabBound = true;
+    const start = function(x, y){
+      const r = fab.getBoundingClientRect();
+      _fabDrag = { sx: x, sy: y, ox: r.left, oy: r.top, moved: false };
+      fab.classList.add('dragging');
+      fab.style.transform = 'none';
+      fab.style.right = 'auto'; fab.style.bottom = 'auto';
+    };
+    const move = function(x, y){
+      if (!_fabDrag) return;
+      const dx = x - _fabDrag.sx, dy = y - _fabDrag.sy;
+      if (Math.abs(dx) > 6 || Math.abs(dy) > 6) _fabDrag.moved = true;
+      if (!_fabDrag.moved) return;
+      const r = fab.getBoundingClientRect();
+      let nx = _fabDrag.ox + dx, ny = _fabDrag.oy + dy;
+      nx = Math.max(0, Math.min(window.innerWidth - r.width, nx));
+      ny = Math.max(0, Math.min(window.innerHeight - r.height, ny));
+      fab.style.left = nx + 'px';
+      fab.style.top = ny + 'px';
+    };
+    const end = function(){
+      if (!_fabDrag) return;
+      if (_fabDrag.moved) {
+        _fabWasDragged = true;
+        const r = fab.getBoundingClientRect();
+        _fabPos = { x: Math.round(r.left), y: Math.round(r.top) };
+        try { localStorage.setItem('yumiao_western_fab_v1', JSON.stringify(_fabPos)); } catch (_) {}
+        setTimeout(function(){ _fabWasDragged = false; }, 300);
+      }
+      fab.classList.remove('dragging');
+      _fabDrag = null;
+    };
+    fab.addEventListener('touchstart', function(e){
+      const t = e.touches[0];
+      start(t.clientX, t.clientY);
+    }, { passive: true });
+    fab.addEventListener('touchmove', function(e){
+      const t = e.touches[0];
+      move(t.clientX, t.clientY);
+      if (_fabDrag && _fabDrag.moved) e.preventDefault();
+    }, { passive: false });
+    fab.addEventListener('touchend', end);
+    fab.addEventListener('mousedown', function(e){
+      start(e.clientX, e.clientY);
+      const mm = function(ev){ move(ev.clientX, ev.clientY); };
+      const mu = function(){
+        document.removeEventListener('mousemove', mm);
+        document.removeEventListener('mouseup', mu);
+        end();
+      };
+      document.addEventListener('mousemove', mm);
+      document.addEventListener('mouseup', mu);
+    });
   }
   function backToWesternForm(){
     const viz = document.getElementById('westernChartViz');
@@ -655,6 +743,7 @@
     if (form) form.style.display = '';
     if (chartWrap) chartWrap.classList.remove('hidden', 'chart-leaving');
     if (typeof window.renderProfileBar === 'function') window.renderProfileBar('westernProfileBar');
+    westernFabShow();
   }
   function submitWesternForm(){
     const errEl = document.getElementById('westernError');

@@ -1,10 +1,4 @@
-// ============================================================
-// 塔罗牌占卜：选牌阵 → 抽牌 → 翻牌 → 牌义 → 掷筊请示
-// 问事页 chip「塔罗」入口；交互与 MBTI/八字/星座面板统一：
-// 点 chip → 问事框填占位 → 打开面板 → 揭晓后筊型决定详示/略示/守静
-// ============================================================
-
-/* ── 二十二张大阿卡纳 ── */
+// 塔罗牌占卜：选牌阵 → 抽牌 → 直接显示完整牌义
 var TAROT_MAJOR = [
   { no: '0',   name: '愚者',   up: '新的开始 · 赤子之心 · 勇敢一跃', rev: '鲁莽冒进 · 犹豫不决 · 原地踏步',
     text: '愚者立于崖边，一步即是新程。正位宜放手一搏，天地会接住真诚的勇气；逆位则提醒：看清脚下再迈步，勿把冲动当作天命。' },
@@ -52,13 +46,10 @@ var TAROT_MAJOR = [
     text: '世界牌是旅程的终点，也是起点。正位主圆满成就，一段功课修完；逆位提醒：还差最后一小步，别在终点前自己画地为牢。' }
 ];
 
-/* ── 状态 ── */
-var _tarotSpread = 'single';   // single | three
+var _tarotSpread = 'single';
 var _tarotNeed = 1;
-var _tarotDeck = [];           // 洗牌后的牌序（索引）
-var _tarotDrawn = [];          // 已抽 [{card, reversed}]
-var _tarotJiaoDone = false;
-
+var _tarotDeck = [];
+var _tarotDrawn = [];
 var TAROT_POS_SINGLE = ['指引'];
 var TAROT_POS_THREE = ['过去', '现在', '未来'];
 
@@ -74,8 +65,6 @@ function tarotShuffle() {
 function tarotPosLabels() {
   return _tarotSpread === 'three' ? TAROT_POS_THREE : TAROT_POS_SINGLE;
 }
-
-/* ── 入口 ── */
 function openTarotPanel() {
   tarotToSpread();
   ModalUI.open('tarot');
@@ -86,23 +75,20 @@ function closeTarotPanel() {
   if (typeof fillQuestionText === 'function') fillQuestionText('');
 }
 function tarotBody() { return document.getElementById('tarotBody'); }
-
-/* ── 第一步：选牌阵 ── */
 function tarotToSpread() {
   _tarotSpread = 'single'; _tarotNeed = 1;
-  _tarotDeck = []; _tarotDrawn = []; _tarotJiaoDone = false;
+  _tarotDeck = []; _tarotDrawn = [];
   var el = tarotBody();
   if (!el) return;
   el.innerHTML =
     '<div class="tarot-step">' +
-    '<p class="mbti-intro">二十二张大阿卡纳，心诚则显。默念所问，选定牌阵——牌既明示，再掷筊请示可否。</p>' +
+    '<p class="mbti-intro">二十二张大阿卡纳，心诚则显。默念所问，选定牌阵。</p>' +
     '<div class="tarot-spread-row">' +
     '<button type="button" class="btn-gold tarot-spread-btn" onclick="tarotChooseSpread(\'single\')"><strong>单张指引</strong><span>一牌断当下</span></button>' +
     '<button type="button" class="btn-gold tarot-spread-btn" onclick="tarotChooseSpread(\'three\')"><strong>三张牌阵</strong><span>过去 · 现在 · 未来</span></button>' +
     '</div></div>';
+  try { tarotSaveState(); } catch (_) {}
 }
-
-/* ── 第二步：抽牌 ── */
 function tarotChooseSpread(s) {
   _tarotSpread = s;
   _tarotNeed = (s === 'three') ? 3 : 1;
@@ -138,13 +124,11 @@ function tarotPick(i) {
     setTimeout(tarotRenderReveal, 450);
   }
 }
-
-/* ── 第三步：翻牌揭晓 ── */
 function tarotRenderReveal() {
   var el = tarotBody();
   if (!el) return;
   var labels = tarotPosLabels();
-  var html = '<div class="tarot-step"><p class="mbti-intro">牌面已定，静观其义。</p><div class="tarot-result">';
+  var html = '<div class="tarot-step"><p class="mbti-intro">牌面已定，牌义如下。</p><div class="tarot-result">';
   for (var i = 0; i < _tarotDrawn.length; i++) {
     var d = _tarotDrawn[i];
     var pos = labels[i] || ('第' + (i + 1) + '张');
@@ -158,100 +142,25 @@ function tarotRenderReveal() {
       '<div class="tarot-card-keys">' + escapeHtml(d.reversed ? d.card.rev : d.card.up) + '</div>' +
       '</div>';
   }
-  html += '</div>' +
-    '<div class="mbti-reveal" id="tarotReveal" style="display:none;">' +
-    '<div class="jiao-display" id="tarotJiaoDisplay"></div>' +
-    '<div class="mbti-jiao-label" id="tarotJiaoLabel"></div>' +
-    '<div class="mbti-report" id="tarotReport"></div>' +
-    '<div class="mbti-reveal-actions">' +
-    '<button class="btn-ghost btn-sm" id="tarotRecast" onclick="castTarotJiao()" style="display:none;">再次掷筊</button>' +
-    '<button class="btn-ghost btn-sm" onclick="tarotToSpread()">重新抽牌</button>' +
-    '</div></div>' +
-    '<div class="tarot-actions"><button type="button" class="btn-gold btn-block" id="tarotCastBtn" onclick="tarotCastFirst()">牌已明示 · 掷筊请示</button></div>' +
-    '</div>';
-  el.innerHTML = html;
-}
-function tarotCastFirst() {
-  var btn = document.getElementById('tarotCastBtn');
-  if (btn) btn.style.display = 'none';
-  var rev = document.getElementById('tarotReveal');
-  if (rev) rev.style.display = '';
-  castTarotJiao();
-}
-
-/* ── 筊请示：聖筊详示 / 笑筊略示 / 陰筊守静 ── */
-function castTarotJiao() {
-  var recastBtn = document.getElementById('tarotRecast');
-  var jiaoLabel = document.getElementById('tarotJiaoLabel');
-  var reportEl = document.getElementById('tarotReport');
-  var display = document.getElementById('tarotJiaoDisplay');
-  if (!display) return;
-  if (recastBtn) recastBtn.style.display = 'none';
-  if (jiaoLabel) { jiaoLabel.textContent = ''; jiaoLabel.className = 'mbti-jiao-label'; }
-  if (reportEl) reportEl.innerHTML = '';
-  getAudioCtx();
-  display.innerHTML = '';
-  var type = rollJiaoType();
-  var faces = facesForType(type);
-  var left = faces[0], right = faces[1];
-  var jiao1 = document.createElement('div');
-  var jiao2 = document.createElement('div');
-  jiao1.className = 'jiao spinning';
-  jiao2.className = 'jiao spinning';
-  display.appendChild(jiao1);
-  display.appendChild(jiao2);
-  setTimeout(function () {
-    try {
-      jiao1.classList.remove('spinning');
-      jiao2.classList.remove('spinning');
-      jiao1.classList.add(left === 1 ? 'yang' : 'yin');
-      jiao2.classList.add(right === 1 ? 'yang' : 'yin');
-      jiao1.style.setProperty('--land-rot', ((Math.random() * 14) - 7).toFixed(1) + 'deg');
-      jiao2.style.setProperty('--land-rot', ((Math.random() * 14) - 7).toFixed(1) + 'deg');
-      jiao1.classList.add('landed');
-      jiao2.classList.add('landed');
-      try { playJiaoLand(); } catch (_) {}
-      renderTarotReveal(type);
-    } catch (_) {
-      if (reportEl) reportEl.innerHTML = '<div class="mbti-no-report">掷筊失败，只能遵从内心，随遇而安。</div>';
-    } finally {
-      if (recastBtn) recastBtn.style.display = 'inline-block';
-    }
-  }, 1000);
-}
-function renderTarotReveal(type) {
-  var meta = typeMeta[type] || typeMeta.xiao;
-  var jiaoLabel = document.getElementById('tarotJiaoLabel');
-  var reportEl = document.getElementById('tarotReport');
-  if (jiaoLabel) {
-    jiaoLabel.className = 'mbti-jiao-label ' + meta.class;
-    jiaoLabel.textContent = meta.label + ' · ' + meta.meaning;
-  }
-  if (!reportEl) return;
-  if (type === 'yin') {
-    reportEl.innerHTML = '<div class="mbti-no-report">两筊皆阴，神明未允此问。牌义暂且封存，静心之后再来。</div>';
-    return;
-  }
-  var labels = tarotPosLabels();
-  var html = '';
+  html += '</div><div class="mbti-report" id="tarotReport">';
   for (var i = 0; i < _tarotDrawn.length; i++) {
     var d = _tarotDrawn[i];
     var pos = labels[i] || ('第' + (i + 1) + '张');
     var ori = d.reversed ? '逆位' : '正位';
     html += '<div class="mbti-sec"><span class="mbti-sec-label">' + escapeHtml(pos) + ' · ' + escapeHtml(d.card.name) + '（' + ori + '）</span>' +
-      escapeHtml(d.reversed ? d.card.rev : d.card.up);
-    if (type === 'sheng') {
-      html += '<br>' + escapeHtml(d.card.text);
-    }
-    html += '</div>';
+      escapeHtml(d.reversed ? d.card.rev : d.card.up) + '<br>' + escapeHtml(d.card.text) + '</div>';
   }
-  if (type === 'sheng') {
-    html += '<div class="mbti-brief-note">聖筊既定，牌义详示如上。然牌示方向，行止仍在人为。</div>';
-  } else {
-    html += '<div class="mbti-brief-note">笑筊略示：且作参考，细处未明，可再诚心一问。</div>';
-  }
-  reportEl.innerHTML = html;
+  html += '<div class="mbti-brief-note">牌示方向，行止仍在人为。</div></div>' +
+    '<div class="tarot-actions"><button type="button" class="btn-ghost btn-sm" onclick="tarotToSpread()">重新抽牌</button></div>' +
+    '</div>';
+  el.innerHTML = html;
   try {
     if (typeof saveReportHTML === 'function') saveReportHTML('yumiao_report_tarot_v1', '塔罗牌阵', 'tarotReport');
+  } catch (_) {}
+  try { tarotSaveState(); } catch (_) {}
+}
+function tarotSaveState() {
+  try {
+    localStorage.setItem('yumiao_tarot_v1', JSON.stringify({ spread: _tarotSpread, drawn: _tarotDrawn.map(function(d){ return { no: d.card.no, reversed: d.reversed }; }) }));
   } catch (_) {}
 }

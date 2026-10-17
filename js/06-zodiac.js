@@ -207,52 +207,44 @@
     saveProfileSummary('zodiac', `${zodiacSelected.name}·${zodiacSelected.element}象`);
     document.getElementById('zodiacForm').style.display = 'none';
     document.getElementById('zodiacReveal').style.display = 'flex';
-    castZodiacJiao();
+    renderZodiacFull();
   }
-  function castZodiacJiao() {
-    if (!zodiacSelected) {
-      refreshZodiacFromBirth();
-      if (!zodiacSelected) return;
-    }
-    const recastBtn = document.getElementById('zodiacRecast');
-    const jiaoLabel = document.getElementById('zodiacJiaoLabel');
+  function renderZodiacFull() {
     const reportEl = document.getElementById('zodiacReport');
-    const display = document.getElementById('zodiacJiaoDisplay');
-    if (!display) return;
-    if (recastBtn) recastBtn.style.display = 'none';
-    if (jiaoLabel) { jiaoLabel.textContent = ''; jiaoLabel.className = 'mbti-jiao-label'; }
-    if (reportEl) reportEl.innerHTML = '';
-    try { getAudioCtx(); } catch (_) {}
-    display.innerHTML = '';
-    const type = rollJiaoType();
-    const faces = facesForType(type);
-    const left = faces[0], right = faces[1];
-    const jiao1 = document.createElement('div');
-    const jiao2 = document.createElement('div');
-    jiao1.className = 'jiao spinning';
-    jiao2.className = 'jiao spinning';
-    display.appendChild(jiao1);
-    display.appendChild(jiao2);
-    setTimeout(function () {
-      try {
-        jiao1.classList.remove('spinning');
-        jiao2.classList.remove('spinning');
-        jiao1.classList.add(left === 1 ? 'yang' : 'yin');
-        jiao2.classList.add(right === 1 ? 'yang' : 'yin');
-        jiao1.style.setProperty('--land-rot', ((Math.random() * 14) - 7).toFixed(1) + 'deg');
-        jiao2.style.setProperty('--land-rot', ((Math.random() * 14) - 7).toFixed(1) + 'deg');
-        jiao1.classList.add('landed');
-        jiao2.classList.add('landed');
-        try { playJiaoLand(); } catch (_) {}
-        renderZodiacReveal(type);
-      } catch (err) {
-        if (reportEl) {
-          reportEl.innerHTML = '<div class="mbti-no-report">掷筊失败，请再试一次。</div>';
-        }
-      } finally {
-        if (recastBtn) recastBtn.style.display = 'inline-block';
-      }
-    }, 1000);
+    const z = zodiacSelected;
+    if (!reportEl || !z) return;
+    const range = z.from[0] === 12
+      ? ('12.' + z.from[1] + '–1.' + z.to[1])
+      : (z.from[0] + '.' + z.from[1] + '–' + z.to[0] + '.' + z.to[1]);
+    const dom = zodiacDomainScores();
+    reportEl.innerHTML =
+      '<div class="mbti-type">' + z.icon + ' ' + escapeHtml(z.name) + ' · ' + escapeHtml(z.en) + '</div>' +
+      '<div class="mbti-summary">' + escapeHtml(z.element) + '象 · ' + escapeHtml(z.modality || '') + ' · ' + escapeHtml(z.planet || '') + '守护<br>' +
+      escapeHtml(z.keywords) + ' · 生日 ' + escapeHtml(range) + '</div>' +
+      '<div class="mbti-sec"><span class="mbti-sec-label">性格</span>' + escapeHtml(z.trait) + '</div>' +
+      '<div class="mbti-sec"><span class="mbti-sec-label">配对</span>' + escapeHtml(z.pair) + '</div>' +
+      '<div class="mbti-sec"><span class="mbti-sec-label">神断</span>' + escapeHtml(pickVariant(z.mystic, z.key + '|' + zodiacSeed())) + '</div>' +
+      '<div class="mbti-sec"><span class="mbti-sec-label">今日</span>' + escapeHtml(zodiacFortuneText('today')) + '</div>' +
+      '<div class="mbti-sec"><span class="mbti-sec-label">四维</span>' +
+        '事业 ' + dom.career.stars + '　财运 ' + dom.wealth.stars + '<br>' +
+        '感情 ' + dom.love.stars + '　健康 ' + dom.health.stars +
+      '</div>' +
+      '<div class="mbti-sec"><span class="mbti-sec-label">月运</span>' + escapeHtml(zodiacFortuneText('month')) + '</div>' +
+      '<div class="mbti-sec"><span class="mbti-sec-label">年运</span>' + escapeHtml(zodiacFortuneText('year')) + '</div>' +
+      '<div class="mbti-sec"><span class="mbti-sec-label">水逆</span>' + escapeHtml(mercuryRetroText()) + '</div>' +
+      '<div class="mbti-sec"><span class="mbti-sec-label">开运</span>' + escapeHtml(z.openLuck || '') +
+        '　幸运色：' + escapeHtml(z.luckyColor || '—') +
+        '　幸运数：' + escapeHtml(z.luckyNum || '—') + '</div>' +
+      '<div class="mbti-sec"><span class="mbti-sec-label">事业</span>' + escapeHtml(z.career || '') + '</div>' +
+      '<div class="mbti-sec"><span class="mbti-sec-label">反差</span>' + escapeHtml(z.contrast) + '</div>' +
+      '<div class="mbti-sec"><span class="mbti-sec-label">槽点</span>' + escapeHtml(z.slots || '') + '</div>' +
+      '<div class="mbti-sec"><span class="mbti-sec-label">智商</span>' + escapeHtml(z.iq) + '</div>' +
+      '<div class="mbti-sec"><span class="mbti-sec-label">脾气</span>' + escapeHtml(z.temper) + '</div>' +
+      '<div class="mbti-sec"><span class="mbti-sec-label">恋爱</span>' + escapeHtml(z.love) + '</div>' +
+      '<div class="mbti-sec"><span class="mbti-sec-label">聊天</span>' + escapeHtml(z.chat || '') + '</div>' +
+      '<div class="mbti-sec"><span class="mbti-sec-label">麻将</span>' + escapeHtml(z.mahjong) + '</div>' +
+      '<div class="mbti-brief-note">星座与运势仅供娱乐参考，不构成任何决策建议。</div>';
+    if (typeof saveReportHTML === 'function') saveReportHTML('yumiao_report_zodiac_v1', '星座分析', 'zodiacReport');
   }
   function zodiacSeed() {
     const z = zodiacSelected;
@@ -336,68 +328,6 @@
       love: mk(7),
       health: mk(11)
     };
-  }
-  function renderZodiacReveal(type) {
-    const meta = typeMeta[type] || typeMeta.xiao;
-    const jiaoLabel = document.getElementById('zodiacJiaoLabel');
-    const reportEl = document.getElementById('zodiacReport');
-    const z = zodiacSelected;
-    if (jiaoLabel) {
-      jiaoLabel.className = 'mbti-jiao-label ' + meta.class;
-      jiaoLabel.textContent = meta.label + ' · ' + meta.meaning;
-    }
-    if (!reportEl || !z) return;
-    const range = z.from[0] === 12
-      ? ('12.' + z.from[1] + '–1.' + z.to[1])
-      : (z.from[0] + '.' + z.from[1] + '–' + z.to[0] + '.' + z.to[1]);
-    if (type === 'yin') {
-      reportEl.innerHTML =
-        '<div class="mbti-type">' + z.icon + ' ' + escapeHtml(z.name) + ' · ' + escapeHtml(z.en) + '</div>' +
-        '<div class="mbti-summary">' + escapeHtml(z.element) + '象 · ' + escapeHtml(z.keywords) + ' · ' + escapeHtml(range) + '</div>' +
-        '<div class="mbti-brief-note">两筊皆阴，神明未允细问。仅示星座本身，详细运势请静心后再掷。</div>';
-      return;
-    }
-    if (type === 'xiao') {
-      reportEl.innerHTML =
-        '<div class="mbti-type">' + z.icon + ' ' + escapeHtml(z.name) + ' · ' + escapeHtml(z.en) + '</div>' +
-        '<div class="mbti-summary">' + escapeHtml(z.element) + '象 · ' + escapeHtml(z.planet || '') + '守护 · ' + escapeHtml(z.keywords) + '</div>' +
-        '<div class="mbti-sec"><span class="mbti-sec-label">性格</span>' + escapeHtml(z.trait) + '</div>' +
-        '<div class="mbti-sec"><span class="mbti-sec-label">今日</span>' + escapeHtml(zodiacFortuneText('today')) + '</div>' +
-        '<div class="mbti-sec"><span class="mbti-sec-label">开运</span>' + escapeHtml(z.openLuck || '') + '</div>' +
-        '<div class="mbti-sec"><span class="mbti-sec-label">神断</span>' + escapeHtml(pickVariant(z.mystic, z.key + '|' + zodiacSeed())) + '</div>' +
-        '<div class="mbti-brief-note">两筊皆阳，此为简版，仅供参考。再掷或求聖筊可阅详版。</div>';
-      return;
-    }
-    // 聖筊详版
-    const dom = zodiacDomainScores();
-    reportEl.innerHTML =
-      '<div class="mbti-type">' + z.icon + ' ' + escapeHtml(z.name) + ' · ' + escapeHtml(z.en) + '</div>' +
-      '<div class="mbti-summary">' + escapeHtml(z.element) + '象 · ' + escapeHtml(z.modality || '') + ' · ' + escapeHtml(z.planet || '') + '守护<br>' +
-      escapeHtml(z.keywords) + ' · 生日 ' + escapeHtml(range) + '</div>' +
-      '<div class="mbti-sec"><span class="mbti-sec-label">性格</span>' + escapeHtml(z.trait) + '</div>' +
-      '<div class="mbti-sec"><span class="mbti-sec-label">配对</span>' + escapeHtml(z.pair) + '</div>' +
-      '<div class="mbti-sec"><span class="mbti-sec-label">神断</span>' + escapeHtml(pickVariant(z.mystic, z.key + '|' + zodiacSeed())) + '</div>' +
-      '<div class="mbti-sec"><span class="mbti-sec-label">今日</span>' + escapeHtml(zodiacFortuneText('today')) + '</div>' +
-      '<div class="mbti-sec"><span class="mbti-sec-label">四维</span>' +
-        '事业 ' + dom.career.stars + '　财运 ' + dom.wealth.stars + '<br>' +
-        '感情 ' + dom.love.stars + '　健康 ' + dom.health.stars +
-      '</div>' +
-      '<div class="mbti-sec"><span class="mbti-sec-label">月运</span>' + escapeHtml(zodiacFortuneText('month')) + '</div>' +
-      '<div class="mbti-sec"><span class="mbti-sec-label">年运</span>' + escapeHtml(zodiacFortuneText('year')) + '</div>' +
-      '<div class="mbti-sec"><span class="mbti-sec-label">水逆</span>' + escapeHtml(mercuryRetroText()) + '</div>' +
-      '<div class="mbti-sec"><span class="mbti-sec-label">开运</span>' + escapeHtml(z.openLuck || '') +
-        '　幸运色：' + escapeHtml(z.luckyColor || '—') +
-        '　幸运数：' + escapeHtml(z.luckyNum || '—') + '</div>' +
-      '<div class="mbti-sec"><span class="mbti-sec-label">事业</span>' + escapeHtml(z.career || '') + '</div>' +
-      '<div class="mbti-sec"><span class="mbti-sec-label">反差</span>' + escapeHtml(z.contrast) + '</div>' +
-      '<div class="mbti-sec"><span class="mbti-sec-label">槽点</span>' + escapeHtml(z.slots || '') + '</div>' +
-      '<div class="mbti-sec"><span class="mbti-sec-label">智商</span>' + escapeHtml(z.iq) + '</div>' +
-      '<div class="mbti-sec"><span class="mbti-sec-label">脾气</span>' + escapeHtml(z.temper) + '</div>' +
-      '<div class="mbti-sec"><span class="mbti-sec-label">恋爱</span>' + escapeHtml(z.love) + '</div>' +
-      '<div class="mbti-sec"><span class="mbti-sec-label">聊天</span>' + escapeHtml(z.chat || '') + '</div>' +
-      '<div class="mbti-sec"><span class="mbti-sec-label">麻将</span>' + escapeHtml(z.mahjong) + '</div>' +
-      '<div class="mbti-brief-note">星座与运势仅供娱乐参考，不构成任何决策建议。擲筊只决定详略，不改变星座本身。</div>';
-    if (typeof saveReportHTML === 'function') saveReportHTML('yumiao_report_zodiac_v1', '星座分析', 'zodiacReport');
   }
   function openZodiacDict() {
     let html = '<div class="mbti-intro" style="margin-bottom:8px;">十二星座词典（图标 · 中英文 · 日期 · 元素）。点返回可回到结果。</div>';

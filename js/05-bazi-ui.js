@@ -1,8 +1,8 @@
 // ============================================================
-// 八字表单/滚轮/掷筊揭晓 + 共用签文渲染与历史记录
+// 八字表单/滚轮/结果展示 + 共用签文渲染与历史记录
 // 原始行号（拆分前单文件 script.js 中的位置）: 2435-3211
 // ============================================================
-  // ---- 八字 & 神煞：表单收集 -> 排盘 -> 掷筊请示，依筊型决定详细/简版/不显示 ----
+  // ---- 八字 & 神煞：表单收集 -> 排盘 -> 直接显示完整结果 ----
   let baziResult = null;
   // ============================================================
   // 共用出生信息（八字 / 星座 / 西方星盘自动对齐）
@@ -69,48 +69,29 @@
     const reveal = document.getElementById('baziReveal');
     if (form) form.style.display = 'none';
     if (reveal) reveal.style.display = 'flex';
-    castBaziJiao();
+    renderBaziFull();
   }
-  function castBaziJiao() {
-    if (!baziResult) return;
-    const recastBtn = document.getElementById('baziRecast');
-    const jiaoLabel = document.getElementById('baziJiaoLabel');
+  function renderBaziFull() {
     const reportEl = document.getElementById('baziReport');
-    const display = document.getElementById('baziJiaoDisplay');
-    if (!display) return;
-    if (recastBtn) recastBtn.style.display = 'none';
-    if (jiaoLabel) { jiaoLabel.textContent = ''; jiaoLabel.className = 'mbti-jiao-label'; }
-    if (reportEl) reportEl.innerHTML = '';
-    getAudioCtx();
-    display.innerHTML = '';
-    const type = rollJiaoType();
-    const [left, right] = facesForType(type);
-    const jiao1 = document.createElement('div');
-    const jiao2 = document.createElement('div');
-    jiao1.className = 'jiao spinning';
-    jiao2.className = 'jiao spinning';
-    display.appendChild(jiao1);
-    display.appendChild(jiao2);
-    setTimeout(() => {
-      try {
-        jiao1.classList.remove('spinning');
-        jiao2.classList.remove('spinning');
-        jiao1.classList.add(left === 1 ? 'yang' : 'yin');
-        jiao2.classList.add(right === 1 ? 'yang' : 'yin');
-        jiao1.style.setProperty('--land-rot', ((Math.random() * 14) - 7).toFixed(1) + 'deg');
-        jiao2.style.setProperty('--land-rot', ((Math.random() * 14) - 7).toFixed(1) + 'deg');
-        jiao1.classList.add('landed');
-        jiao2.classList.add('landed');
-        try { playJiaoLand(); } catch (_) {}
-        renderBaziReveal(type);
-      } catch (_) {
-        if (reportEl) {
-          reportEl.innerHTML = '<div class="mbti-no-report">掷筊失败，只能遵从内心，随遇而安。</div>';
-        }
-      } finally {
-        if (recastBtn) recastBtn.style.display = 'inline-block';
-      }
-    }, 1000);
+    if (!reportEl || !baziResult) return;
+    const r = baziResult;
+    const p = r.pillars;
+    const trueSolarNote = r.input && r.input.trueSolar
+      ? `<div class="mbti-brief-note">已按真太阳时排盘（经度 ${r.input.longitude}°）</div>`
+      : '';
+    const shenshaText = r.shensha.items.length
+      ? r.shensha.items.map(it => `${it.name}(${it.positionNames.join('、')})`).join('、')
+      : '未见明显神煞入命';
+    const relationsText = r.relations.length
+      ? r.relations.map(rel => `${BAZI_POS_LABEL[rel.a]}-${BAZI_POS_LABEL[rel.b]} ${rel.type}`).join('、')
+      : '四柱之间无明显六合六冲';
+    const f = buildFortuneTexts(r);
+    reportEl.innerHTML = `
+      <div class="mbti-type">${escapeHtml(r.bazi)}</div><div class="mbti-summary">日主 ${escapeHtml(r.dayMaster.stem)}（${escapeHtml(r.dayMaster.element)}）· ${escapeHtml(r.dayMaster.level)}</div>
+      ${trueSolarNote}
+      <div class="mbti-sec"><span class="mbti-sec-label">四柱</span>${escapeHtml(formatBaziPillar('年', p.year))}；${escapeHtml(formatBaziPillar('月', p.month))}；${escapeHtml(formatBaziPillar('日', p.day))}；${escapeHtml(formatBaziPillar('时', p.hour))}</div><div class="mbti-sec"><span class="mbti-sec-label">五行</span>木${r.fiveElements['木']} 火${r.fiveElements['火']} 土${r.fiveElements['土']} 金${r.fiveElements['金']} 水${r.fiveElements['水']}</div><div class="mbti-sec"><span class="mbti-sec-label">十神</span>年：${escapeHtml(r.tenGods.year)}；月：${escapeHtml(r.tenGods.month)}；时：${escapeHtml(r.tenGods.hour)}</div><div class="mbti-sec"><span class="mbti-sec-label">神煞</span>${escapeHtml(shenshaText)}</div><div class="mbti-sec"><span class="mbti-sec-label">地支</span>${escapeHtml(relationsText)}</div><div class="mbti-sec"><span class="mbti-sec-label">总论</span>${escapeHtml(f.zonglun)}</div><div class="mbti-sec"><span class="mbti-sec-label">财运</span>${escapeHtml(f.wealth)}</div><div class="mbti-sec"><span class="mbti-sec-label">婚姻</span>${escapeHtml(f.marriage)}</div><div class="mbti-sec"><span class="mbti-sec-label">事业</span>${escapeHtml(f.career)}</div><div class="mbti-sec"><span class="mbti-sec-label">健康</span>${escapeHtml(f.health)}</div><div class="mbti-sec"><span class="mbti-sec-label">大运</span>${escapeHtml(f.dayun)}</div><div class="mbti-sec"><span class="mbti-sec-label">流年</span>${escapeHtml(f.liunian)}</div><div class="mbti-brief-note">${escapeHtml(r.dayMaster.note)}</div><div style="text-align:center;margin-top:10px;"><button class="mbti-cast-btn" onclick="openShenshaDict()">神煞词典</button></div>
+    `;
+    if (typeof saveReportHTML === 'function') saveReportHTML('yumiao_report_bazi_v1', '八字命盘', 'baziReport');
   }
   const BAZI_POS_LABEL = { year: '年柱', month: '月柱', day: '日柱', hour: '时柱' };
   // 神煞词典：[白话释义, 神秘注语] —— 注语同名恒定
@@ -318,47 +299,6 @@
       reportEl.innerHTML = reportEl.dataset.prevHtml;
       delete reportEl.dataset.prevHtml;
     }
-  }
-  function renderBaziReveal(type) {
-    const meta = typeMeta[type] || typeMeta.xiao;
-    const jiaoLabel = document.getElementById('baziJiaoLabel');
-    const reportEl = document.getElementById('baziReport');
-    if (jiaoLabel) {
-      jiaoLabel.className = 'mbti-jiao-label ' + meta.class;
-      jiaoLabel.textContent = `${meta.label} · ${meta.meaning}`;
-    }
-    if (!reportEl || !baziResult) return;
-    if (type === 'yin') {
-      reportEl.innerHTML =
-        '<div class="mbti-no-report">两筊皆阴，神明未允此问。命理之相尚待重新省思，此次暂不显示排盘结果，可静心后再掷。</div>';
-      return;
-    }
-    const r = baziResult;
-    const p = r.pillars;
-    const trueSolarNote = r.input && r.input.trueSolar
-      ? `<div class="mbti-brief-note">已按真太阳时排盘（经度 ${r.input.longitude}°）</div>`
-      : '';
-    if (type === 'sheng') {
-      const shenshaText = r.shensha.items.length
-        ? r.shensha.items.map(it => `${it.name}(${it.positionNames.join('、')})`).join('、')
-        : '未见明显神煞入命';
-      const relationsText = r.relations.length
-        ? r.relations.map(rel => `${BAZI_POS_LABEL[rel.a]}-${BAZI_POS_LABEL[rel.b]} ${rel.type}`).join('、')
-        : '四柱之间无明显六合六冲';
-      const f = buildFortuneTexts(r);
-      reportEl.innerHTML = `
-        <div class="mbti-type">${escapeHtml(r.bazi)}</div><div class="mbti-summary">日主 ${escapeHtml(r.dayMaster.stem)}（${escapeHtml(r.dayMaster.element)}）· ${escapeHtml(r.dayMaster.level)}</div>
-        ${trueSolarNote}
-        <div class="mbti-sec"><span class="mbti-sec-label">四柱</span>${escapeHtml(formatBaziPillar('年', p.year))}；${escapeHtml(formatBaziPillar('月', p.month))}；${escapeHtml(formatBaziPillar('日', p.day))}；${escapeHtml(formatBaziPillar('时', p.hour))}</div><div class="mbti-sec"><span class="mbti-sec-label">五行</span>木${r.fiveElements['木']} 火${r.fiveElements['火']} 土${r.fiveElements['土']} 金${r.fiveElements['金']} 水${r.fiveElements['水']}</div><div class="mbti-sec"><span class="mbti-sec-label">十神</span>年：${escapeHtml(r.tenGods.year)}；月：${escapeHtml(r.tenGods.month)}；时：${escapeHtml(r.tenGods.hour)}</div><div class="mbti-sec"><span class="mbti-sec-label">神煞</span>${escapeHtml(shenshaText)}</div><div class="mbti-sec"><span class="mbti-sec-label">地支</span>${escapeHtml(relationsText)}</div><div class="mbti-sec"><span class="mbti-sec-label">总论</span>${escapeHtml(f.zonglun)}</div><div class="mbti-sec"><span class="mbti-sec-label">财运</span>${escapeHtml(f.wealth)}</div><div class="mbti-sec"><span class="mbti-sec-label">婚姻</span>${escapeHtml(f.marriage)}</div><div class="mbti-sec"><span class="mbti-sec-label">事业</span>${escapeHtml(f.career)}</div><div class="mbti-sec"><span class="mbti-sec-label">健康</span>${escapeHtml(f.health)}</div><div class="mbti-sec"><span class="mbti-sec-label">大运</span>${escapeHtml(f.dayun)}</div><div class="mbti-sec"><span class="mbti-sec-label">流年</span>${escapeHtml(f.liunian)}</div><div class="mbti-brief-note">${escapeHtml(r.dayMaster.note)}</div><div style="text-align:center;margin-top:10px;"><button class="mbti-cast-btn" onclick="openShenshaDict()">神煞词典</button></div>
-      `;
-    } else {
-      reportEl.innerHTML = `
-        <div class="mbti-type">${escapeHtml(r.bazi)}</div><div class="mbti-summary">日主 ${escapeHtml(r.dayMaster.stem)}（${escapeHtml(r.dayMaster.element)}）· ${escapeHtml(r.dayMaster.level)}</div>
-        ${trueSolarNote}
-        <div class="mbti-brief-note">两筊皆阳，天机含笑未决，此为简版排盘，仅供参考，非定论。</div>
-      `;
-    }
-    if (typeof saveReportHTML === 'function') saveReportHTML('yumiao_report_bazi_v1', '八字命盘', 'baziReport');
   }
   // 打开 MBTI/八字/星座 等扩展面板后，若用户中途关闭而未完成，
   // 主输入框不应残留该扩展的占位文字（否则误按下方掷筊会把它当成真实问题提交）。

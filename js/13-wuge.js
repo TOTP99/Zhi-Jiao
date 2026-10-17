@@ -826,14 +826,16 @@ function closeWugePanel() {
 function wugeToForm() {
   var el = wugeBody();
   if (!el) return;
+  var lastName = '';
+  try { lastName = JSON.parse(localStorage.getItem('yumiao_wuge_v1') || '{}').name || ''; } catch (_) {}
   el.innerHTML =
     '<div class="tarot-step">' +
-    '<p class="mbti-intro">输入姓名，按《康熙字典》笔画起五格三才。默念所问——格既定，再掷筊请示可否。</p>' +
+    '<p class="mbti-intro">输入姓名，按《康熙字典》笔画起五格三才。</p>' +
     '<div class="wuge-form">' +
-    '<input type="text" id="wugeName" class="question-box wuge-name-input" maxlength="4" placeholder="请输入姓名（2–4 字）" autocomplete="off">' +
+    '<input type="text" id="wugeName" class="question-box wuge-name-input" maxlength="4" placeholder="请输入姓名（2–4 字）" autocomplete="off" value="' + escapeHtml(lastName) + '">' +
     '<p class="wuge-note">以康熙字典繁体笔画计；简体字自动按繁体折算（如刘→劉 15 画）。生僻字暂不支持。</p>' +
     '</div>' +
-    '<div class="tarot-actions"><button type="button" class="btn-gold btn-block" onclick="submitWugeForm()">起格 · 掷筊请示</button></div>' +
+    '<div class="tarot-actions"><button type="button" class="btn-gold btn-block" onclick="submitWugeForm()">起格测算</button></div>' +
     '</div>';
   var inp = document.getElementById('wugeName');
   if (inp) {
@@ -862,7 +864,6 @@ function submitWugeForm() {
     return;
   }
   _wugeResult = r;
-  _wugeJiaoDone = false;
   wugeRenderResult();
 }
 function wugeRenderResult() {
@@ -887,106 +888,29 @@ function wugeRenderResult() {
   }
   var scjx = WG_SANCAI[r.sancai] || '—';
   var scCls = /大吉|中吉|吉/.test(scjx) && !/凶/.test(scjx) ? 'is-ji' : (/凶/.test(scjx) && !/吉/.test(scjx) ? 'is-xiong' : 'is-banji');
+  var detailHtml = '';
+  for (var g = 0; g < ges.length; g++) {
+    var gi = ges[g];
+    detailHtml += '<div class="mbti-sec"><span class="mbti-sec-label">' + gi.label + ' ' + gi.num + ' 画 · 数理 ' + gi.shuli + '（' + escapeHtml(gi.ming) + '）' + gi.jx + '</span>' + escapeHtml(gi.duan) + '</div>';
+  }
+  detailHtml += '<div class="mbti-sec"><span class="mbti-sec-label">三才 ' + escapeHtml(r.wxT + ' ' + r.wxR + ' ' + r.wxD) + ' · ' + escapeHtml(scjx) + '</span>三才者，天地人三道之配。相生则顺，相克则逆，人格为枢，宜细参之。</div>';
+  detailHtml += '<div class="mbti-brief-note">数有定而运无常，行止仍在人为。</div>';
   el.innerHTML =
     '<div class="tarot-step">' +
     '<div class="wuge-name-line">' + strokeLine + '</div>' +
     '<div class="wuge-ge-grid">' + geHtml + '</div>' +
     '<div class="wuge-sancai"><span>三才 ' + escapeHtml(r.wxT + ' ' + r.wxR + ' ' + r.wxD) + '</span><b class="' + scCls + '">' + escapeHtml(scjx) + '</b></div>' +
-    '<div class="mbti-reveal" id="wugeReveal" style="display:none;">' +
-    '<div class="jiao-display" id="wugeJiaoDisplay"></div>' +
-    '<div class="mbti-jiao-label" id="wugeJiaoLabel"></div>' +
-    '<div class="mbti-report" id="wugeReport"></div>' +
-    '<div class="mbti-reveal-actions">' +
-    '<button class="btn-ghost btn-sm" id="wugeRecast" onclick="castWugeJiao()" style="display:none;">再次掷筊</button>' +
-    '<button class="btn-ghost btn-sm" onclick="wugeToForm()">重测姓名</button>' +
-    '</div></div>' +
-    '<div class="tarot-actions"><button type="button" class="btn-gold btn-block" id="wugeCastBtn" onclick="wugeCastFirst()">格已定 · 掷筊请示</button></div>' +
+    '<div class="mbti-report" id="wugeReport">' + detailHtml + '</div>' +
+    '<div class="tarot-actions"><button type="button" class="btn-ghost btn-sm" onclick="wugeToForm()">重测姓名</button></div>' +
     '</div>';
-}
-function wugeCastFirst() {
-  var btn = document.getElementById('wugeCastBtn');
-  if (btn) btn.style.display = 'none';
-  var rev = document.getElementById('wugeReveal');
-  if (rev) rev.style.display = '';
-  castWugeJiao();
-}
-function castWugeJiao() {
-  var recastBtn = document.getElementById('wugeRecast');
-  var jiaoLabel = document.getElementById('wugeJiaoLabel');
-  var reportEl = document.getElementById('wugeReport');
-  var display = document.getElementById('wugeJiaoDisplay');
-  if (!display) return;
-  if (recastBtn) recastBtn.style.display = 'none';
-  if (jiaoLabel) { jiaoLabel.textContent = ''; jiaoLabel.className = 'mbti-jiao-label'; }
-  if (reportEl) reportEl.innerHTML = '';
-  getAudioCtx();
-  display.innerHTML = '';
-  var type = rollJiaoType();
-  var faces = facesForType(type);
-  var left = faces[0], right = faces[1];
-  var jiao1 = document.createElement('div');
-  var jiao2 = document.createElement('div');
-  jiao1.className = 'jiao spinning';
-  jiao2.className = 'jiao spinning';
-  display.appendChild(jiao1);
-  display.appendChild(jiao2);
-  setTimeout(function () {
-    try {
-      jiao1.classList.remove('spinning');
-      jiao2.classList.remove('spinning');
-      jiao1.classList.add(left === 1 ? 'yang' : 'yin');
-      jiao2.classList.add(right === 1 ? 'yang' : 'yin');
-      jiao1.style.setProperty('--land-rot', ((Math.random() * 14) - 7).toFixed(1) + 'deg');
-      jiao2.style.setProperty('--land-rot', ((Math.random() * 14) - 7).toFixed(1) + 'deg');
-      jiao1.classList.add('landed');
-      jiao2.classList.add('landed');
-      try { playJiaoLand(); } catch (_) {}
-      renderWugeReveal(type);
-    } catch (_) {
-      if (reportEl) reportEl.innerHTML = '<div class="mbti-no-report">掷筊失败，只能遵从内心，随遇而安。</div>';
-    } finally {
-      if (recastBtn) recastBtn.style.display = 'inline-block';
-    }
-  }, 1000);
-}
-function renderWugeReveal(type) {
-  var meta = typeMeta[type] || typeMeta.xiao;
-  var jiaoLabel = document.getElementById('wugeJiaoLabel');
-  var reportEl = document.getElementById('wugeReport');
-  var r = _wugeResult;
-  if (jiaoLabel) {
-    jiaoLabel.className = 'mbti-jiao-label ' + meta.class;
-    jiaoLabel.textContent = meta.label + ' · ' + meta.meaning;
-  }
-  if (!reportEl || !r) return;
-  if (type === 'yin') {
-    reportEl.innerHTML = '<div class="mbti-no-report">两筊皆阴，神明未允此问。格象暂且封存，静心之后再来。</div>';
-    return;
-  }
-  var ges = [
-    wgGeInfo(r.tiange, '天格'), wgGeInfo(r.renge, '人格'),
-    wgGeInfo(r.dige, '地格'), wgGeInfo(r.zongge, '总格'),
-    wgGeInfo(r.waige, '外格')
-  ];
-  var html = '';
-  for (var g = 0; g < ges.length; g++) {
-    var gi = ges[g];
-    html += '<div class="mbti-sec"><span class="mbti-sec-label">' + gi.label + ' ' + gi.num + ' 画 · 数理 ' + gi.shuli + '（' + escapeHtml(gi.ming) + '）' + gi.jx + '</span>';
-    if (type === 'sheng') html += escapeHtml(gi.duan);
-    html += '</div>';
-  }
-  var scjx = WG_SANCAI[r.sancai] || '—';
-  html += '<div class="mbti-sec"><span class="mbti-sec-label">三才 ' + escapeHtml(r.wxT + ' ' + r.wxR + ' ' + r.wxD) + ' · ' + escapeHtml(scjx) + '</span>';
-  if (type === 'sheng') html += '三才者，天地人三道之配。相生则顺，相克则逆，人格为枢，宜细参之。';
-  html += '</div>';
-  if (type === 'sheng') {
-    html += '<div class="mbti-brief-note">聖筊既定，格象详示如上。然数有定而运无常，行止仍在人为。</div>';
-  } else {
-    html += '<div class="mbti-brief-note">笑筊略示：格之大略如上，细处未明，可再诚心一问。</div>';
-  }
-  reportEl.innerHTML = html;
   try {
     if (typeof saveReportHTML === 'function') saveReportHTML('yumiao_report_wuge_v1', '姓名五格', 'wugeReport');
   } catch (_) {}
+  try { wugeSaveState(); } catch (_) {}
 }
-var _wugeResult = null, _wugeJiaoDone = false;
+function wugeSaveState() {
+  try {
+    localStorage.setItem('yumiao_wuge_v1', JSON.stringify({ name: _wugeResult ? _wugeResult.name : '' }));
+  } catch (_) {}
+}
+var _wugeResult = null;
