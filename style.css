@@ -910,20 +910,21 @@ input[type=range].yslider::-moz-range-thumb{width:20px;height:20px;border-radius
 .tarot-prog{color:var(--gold-bright);font-weight:600}
 .tarot-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}
 .tarot-back{aspect-ratio:3/4.6;border-radius:8px;border:1px solid var(--gold-deep);
-  background:radial-gradient(circle at 50% 38%,#2b2413 0%,#171309 62%,#0e0b06 100%);
+  background:#1a1410;padding:0;overflow:hidden;
   display:flex;align-items:center;justify-content:center;min-height:64px;cursor:pointer;
   transition:transform .15s,opacity .25s}
-.tarot-back span{color:var(--gold);font-size:20px;opacity:.85}
+.tarot-back img{display:block;width:100%;height:100%;object-fit:cover}
 .tarot-back:active{transform:scale(.94)}
 .tarot-back.picked{opacity:.18;pointer-events:none}
-.tarot-back.picked span{opacity:0}
+.tarot-back.picked img{opacity:0}
 .tarot-actions{display:flex;justify-content:center;gap:10px;margin:10px 0 4px}
 .tarot-result{display:flex;flex-direction:column;gap:10px;margin:12px 0}
 .tarot-card{border:1px solid var(--line);border-radius:var(--r-md);background:var(--card);
   padding:14px 12px;text-align:center;position:relative}
 .tarot-card-pos{font-size:var(--fs-xs);letter-spacing:3px;color:var(--muted);margin-bottom:6px}
-.tarot-card-emblem{font-size:26px;color:var(--gold);line-height:1;margin-bottom:4px}
-.tarot-card.rev .tarot-card-emblem{transform:rotate(180deg);display:inline-block}
+.tarot-card-img{margin:0 auto 6px;width:120px}
+.tarot-card-img img{display:block;width:100%;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.45);border:1px solid rgba(201,161,59,.35)}
+.tarot-card-img.rev img{transform:rotate(180deg)}
 .tarot-card-no{font-size:var(--fs-xs);color:var(--faint);letter-spacing:2px}
 .tarot-card-name{font-size:var(--fs-lg);font-weight:700;letter-spacing:6px;text-indent:6px;color:var(--cream);margin:2px 0 6px}
 .tarot-card-ori{display:inline-block;font-size:var(--fs-xs);letter-spacing:2px;padding:2px 10px;border-radius:999px;margin-bottom:8px}
