@@ -576,7 +576,6 @@
       wrap.addEventListener('click', onTap);
     })();
     function idlePreload() {
-      loadScript('js/07-error-monitoring.js');
       loadScript('js/09-fortune-wheel.js');
     }
     if (window.requestIdleCallback) requestIdleCallback(idlePreload, { timeout: 4000 });
