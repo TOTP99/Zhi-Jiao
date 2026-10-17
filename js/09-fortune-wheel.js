@@ -116,7 +116,7 @@
       const span = document.createElement('span');
       span.textContent = seg.label;
       const mid = -90 + (i + 0.5) * (360 / n);
-      span.style.transform = 'rotate(' + mid + 'deg) translate(0, -88px) rotate(90deg)';
+      span.style.transform = 'rotate(' + mid + 'deg) translate(0, -132px) rotate(90deg)';
       labels.appendChild(span);
     });
   }
