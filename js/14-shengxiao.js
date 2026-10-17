@@ -34,11 +34,17 @@
         '<div class="mbti-report"><div class="mbti-sec"><span class="mbti-sec-label">本年运势</span>' + info.luck + '</div></div>';
     }
     if (typeof ModalUI !== 'undefined' && ModalUI.open) ModalUI.open('shengxiao');
-    else document.getElementById('shengxiaoModal').classList.add('show');
+    else {
+      document.getElementById('shengxiaoBackdrop').classList.add('show');
+      document.getElementById('shengxiaoModal').classList.add('show');
+    }
   }
   function closeShengxiao() {
     if (typeof ModalUI !== 'undefined' && ModalUI.close) ModalUI.close('shengxiao');
-    else document.getElementById('shengxiaoModal').classList.remove('show');
+    else {
+      document.getElementById('shengxiaoBackdrop').classList.remove('show');
+      document.getElementById('shengxiaoModal').classList.remove('show');
+    }
   }
   window.openShengxiao = openShengxiao;
   window.closeShengxiao = closeShengxiao;
