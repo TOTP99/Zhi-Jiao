@@ -1,4 +1,6 @@
-// 塔罗牌占卜：选牌阵 → 抽牌 → 直接显示完整牌义
+// 牌号 → taro/ 图片文件名
+var TAROT_ROMAN = { '0':'00','I':'01','II':'02','III':'03','IV':'04','V':'05','VI':'06','VII':'07','VIII':'08','IX':'09','X':'10','XI':'11','XII':'12','XIII':'13','XIV':'14','XV':'15','XVI':'16','XVII':'17','XVIII':'18','XIX':'19','XX':'20','XXI':'21' };
+function tarotImgFile(no) { return (TAROT_ROMAN[no] || '00') + '.webp'; }
 var TAROT_MAJOR = [
   { no: '0',   name: '愚者',   up: '新的开始 · 赤子之心 · 勇敢一跃', rev: '鲁莽冒进 · 犹豫不决 · 原地踏步',
     text: '愚者立于崖边，一步即是新程。正位宜放手一搏，天地会接住真诚的勇气；逆位则提醒：看清脚下再迈步，勿把冲动当作天命。' },
@@ -101,7 +103,7 @@ function tarotRenderDraw() {
   if (!el) return;
   var backs = '';
   for (var i = 0; i < _tarotDeck.length; i++) {
-    backs += '<button type="button" class="tarot-back" data-i="' + i + '" onclick="tarotPick(' + i + ')" aria-label="抽牌"><span>✦</span></button>';
+    backs += '<button type="button" class="tarot-back" data-i="' + i + '" onclick="tarotPick(' + i + ')" aria-label="抽牌"><img src="taro/back.webp" alt="牌背" loading="lazy"></button>';
   }
   el.innerHTML =
     '<div class="tarot-step">' +
@@ -135,7 +137,7 @@ function tarotRenderReveal() {
     var ori = d.reversed ? '逆位' : '正位';
     html += '<div class="tarot-card' + (d.reversed ? ' rev' : '') + '">' +
       '<div class="tarot-card-pos">' + escapeHtml(pos) + '</div>' +
-      '<div class="tarot-card-emblem">✦</div>' +
+      '<div class="tarot-card-img' + (d.reversed ? ' rev' : '') + '"><img src="taro/' + tarotImgFile(d.card.no) + '" alt="' + escapeHtml(d.card.name) + '" loading="lazy"></div>' +
       '<div class="tarot-card-no">' + escapeHtml(d.card.no) + '</div>' +
       '<div class="tarot-card-name">' + escapeHtml(d.card.name) + '</div>' +
       '<div class="tarot-card-ori ' + (d.reversed ? 'is-rev' : 'is-up') + '">' + ori + '</div>' +
