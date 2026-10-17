@@ -109,8 +109,9 @@ input,textarea{font-family:inherit}
 .splash-title{font-family:var(--serif);font-size:28px;font-weight:900;letter-spacing:10px;text-indent:10px;
   margin:20px 0 8px;color:var(--cream)}
 .splash-sub{font-size:var(--fs-sm);letter-spacing:6px;color:var(--gold-soft)}
-.splash-line{margin:22px auto 0;width:120px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);position:relative}
-.splash-line span{position:absolute;left:50%;top:-2.5px;width:6px;height:6px;background:var(--gold);transform:translateX(-50%) rotate(45deg)}
+.splash-progress{margin:26px auto 0;display:flex;gap:14px;justify-content:center}
+.splash-progress span{width:26px;height:3px;border-radius:2px;background:rgba(201,162,39,.18);transition:background .4s}
+.splash-progress span.on{background:var(--gold);box-shadow:0 0 8px rgba(201,162,39,.6)}
 
 /* ══════════ 新手引导 ══════════ */
 #onboard{
@@ -484,7 +485,8 @@ input,textarea{font-family:inherit}
   padding:2px 9px;border-radius:4px;margin-bottom:8px;letter-spacing:2px;font-weight:700}
 .fortune-result .fr-catline{margin-top:8px;font-size:var(--fs-xs);color:var(--muted);font-style:italic}
 /* 再转一次：底部通栏，固定在判词下方，不遮挡任何内容 */
-.fortune-again{width:100%;margin-top:2px}
+.fortune-again{width:100%;margin-top:2px;position:sticky;bottom:0;z-index:2;
+  background:linear-gradient(180deg,rgba(20,17,11,0) 0%,#14110b 35%);padding-top:14px}
 
 /* 问卜菜单 */
 .question-menu{position:absolute;top:calc(100% + 8px);left:0;right:0;z-index:30;
