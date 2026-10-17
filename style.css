@@ -485,8 +485,9 @@ input,textarea{font-family:inherit}
   padding:2px 9px;border-radius:4px;margin-bottom:8px;letter-spacing:2px;font-weight:700}
 .fortune-result .fr-catline{margin-top:8px;font-size:var(--fs-xs);color:var(--muted);font-style:italic}
 /* 再转一次：底部通栏，固定在判词下方，不遮挡任何内容 */
-.fortune-again{width:100%;margin-top:2px;position:sticky;bottom:0;z-index:2;
-  background:linear-gradient(180deg,rgba(20,17,11,0) 0%,#14110b 35%);padding-top:14px}
+.fortune-again-head{margin-left:auto;margin-right:8px;padding:6px 14px;border-radius:20px;
+  background:linear-gradient(180deg,#e8c86a,#c9a13b);color:#3a2c0a;font-size:var(--fs-xs);
+  font-weight:700;border:none;cursor:pointer;white-space:nowrap}
 
 /* 问卜菜单 */
 .question-menu{position:absolute;top:calc(100% + 8px);left:0;right:0;z-index:30;
