@@ -103,9 +103,9 @@
           g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.14);
           osc.connect(g); g.connect(ctx.destination);
           osc.start(t0); osc.stop(t0 + 0.15);
-        } catch (_) {}
+        } catch (e) { console.warn('[yumiao] 09:106', e); }
       }, 2950);
-    } catch (_) {}
+    } catch (e) { console.warn('[yumiao] 09:108', e); }
   }
   function buildFortuneWheelUI() {
     const labels = document.getElementById('fortuneLabels');

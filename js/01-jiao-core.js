@@ -692,7 +692,7 @@
     } catch (_) { return []; }
   })();
   function saveHistory() {
-    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history)); } catch (_) {}
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history)); } catch (e) { console.warn('[yumiao] history save', e); }
   }
   // ---- 性格 / 八字 / 星座 测试摘要：本地浏览器存储，供"记录"面板展示 ----
   // 若某项已测过，记录面板会以「不超过 20 字」的极简说明 + 时间戳展示，无需重新测试即可一眼看到此前结果。
@@ -770,7 +770,7 @@
     try {
       const local = pickFallbackOracle(question, t);
       if (isValidOracle(local)) return local;
-    } catch (_) {}
+    } catch (e) { console.warn('[yumiao] pickFallbackOracle', e); }
     return pickGuardianOracle(t, cat);
   }
   function escapeHtml(s) {

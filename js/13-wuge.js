@@ -827,7 +827,7 @@ function wugeToForm() {
   var el = wugeBody();
   if (!el) return;
   var lastName = '';
-  try { lastName = JSON.parse(localStorage.getItem('yumiao_wuge_v1') || '{}').name || ''; } catch (_) {}
+  try { lastName = JSON.parse(localStorage.getItem('yumiao_wuge_v1') || '{}').name || ''; } catch (e) { console.warn('[yumiao] 13:830', e); }
   el.innerHTML =
     '<div class="tarot-step">' +
     '<p class="mbti-intro">输入姓名，按《康熙字典》笔画起五格三才。</p>' +
@@ -905,12 +905,12 @@ function wugeRenderResult() {
     '</div>';
   try {
     if (typeof saveReportHTML === 'function') saveReportHTML('yumiao_report_wuge_v1', '姓名五格', 'wugeReport');
-  } catch (_) {}
-  try { wugeSaveState(); } catch (_) {}
+  } catch (e) { console.warn('[yumiao] wuge save report', e); }
+  try { wugeSaveState(); } catch (e) { console.warn('[yumiao] 13:909', e); }
 }
 function wugeSaveState() {
   try {
     localStorage.setItem('yumiao_wuge_v1', JSON.stringify({ name: _wugeResult ? _wugeResult.name : '' }));
-  } catch (_) {}
+  } catch (e) { console.warn('[yumiao] 13:914', e); }
 }
 var _wugeResult = null;

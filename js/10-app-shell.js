@@ -40,7 +40,7 @@
     var views = $('views');
     if (views) views.scrollTop = 0;
     window.scrollTo(0, 0);
-    try { if (navigator.vibrate) navigator.vibrate(8); } catch (_) {}
+    try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) { console.warn('[yumiao] 10:43', e); }
   }
   window.switchTab = switchTab;
 
@@ -66,8 +66,8 @@
     ov.classList.add('show');
     ov.setAttribute('aria-hidden', 'false');
     lockScroll(true);
-    try { history.pushState({ yumiaoYi: 1 }, ''); } catch (_) {}
-    try { if (navigator.vibrate) navigator.vibrate(8); } catch (_) {}
+    try { history.pushState({ yumiaoYi: 1 }, ''); } catch (e) { console.warn('[yumiao] 10:69', e); }
+    try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) { console.warn('[yumiao] 10:70', e); }
   };
   function hideYi() {
     var ov = $('yiOverlay'), fr = yiFrameEl();
@@ -80,7 +80,7 @@
   window.closeYi = function () {
     if (!yiOpen) return;
     var st = null;
-    try { st = history.state; } catch (_) {}
+    try { st = history.state; } catch (e) { console.warn('[yumiao] 10:83', e); }
     if (st && st.yumiaoYi) history.back();   /* 交给 popstate 统一收尾，保持历史栈干净 */
     else hideYi();
   };
@@ -110,7 +110,7 @@
     if (st) st.textContent = on ? '已开启' : '已关闭';
   }
   window.toggleSound = function () {
-    try { localStorage.setItem(LS_SOUND, soundOn() ? 'off' : 'on'); } catch (_) {}
+    try { localStorage.setItem(LS_SOUND, soundOn() ? 'off' : 'on'); } catch (e) { console.warn('[yumiao] 10:113', e); }
     refreshSoundUI();
     toast(soundOn() ? '仪式音效已开启' : '仪式音效已关闭');
   };
@@ -203,7 +203,7 @@
     try { return JSON.parse(localStorage.getItem(LS_BIRTH) || 'null'); } catch (_) { return null; }
   }
   function saveBirth(obj) {
-    try { localStorage.setItem(LS_BIRTH, JSON.stringify(obj)); } catch (_) {}
+    try { localStorage.setItem(LS_BIRTH, JSON.stringify(obj)); } catch (e) { console.warn('[yumiao] 10:206', e); }
     renderProfile();
   }
   function birthLabel(b) {
@@ -232,7 +232,7 @@
     if (!el) return;
     opts = opts || {};
     el.setAttribute('data-bar', '1');
-    try { el.setAttribute('data-bar-opts', JSON.stringify(opts)); } catch (_) {}
+    try { el.setAttribute('data-bar-opts', JSON.stringify(opts)); } catch (e) { console.warn('[yumiao] 10:235', e); }
     var b = readBirth();
     if (!b || !b.year) {
       el.innerHTML = '<div class="profile-empty"><p>尚未录入生辰档案<br>录入一次，八字 · 星座 · 星盘皆可共用</p>' +
@@ -242,7 +242,8 @@
     var sexLabel = b.sex === 'F' ? '女' : '男';
     var cityLabel = (b.city && CITY_PRESETS[b.city]) ? CITY_PRESETS[b.city].label : '其他城市';
     var t = (b.hour != null && b.hour !== '') ? ' ' + b.hour + '时' + (b.minute ? b.minute + '分' : '') : '';
-    var sub = sexLabel + ' · ' + cityLabel + ' · 时区' + (b.tzOffset >= 0 ? '+' : '') + b.tzOffset;
+    var tzNum = (b.tzOffset === '' || b.tzOffset == null) ? NaN : Number(b.tzOffset);
+    var sub = sexLabel + ' · ' + cityLabel + (isFinite(tzNum) ? ' · 时区' + (tzNum >= 0 ? '+' : '') + tzNum : '');
     var extraText = opts.extra || '';
     if (!extraText && opts.extraFn && typeof window[opts.extraFn] === 'function') {
       try { extraText = window[opts.extraFn]() || ''; } catch (_) { extraText = ''; }
@@ -256,14 +257,14 @@
   window.refreshProfileBars = function () {
     document.querySelectorAll('.profile-bar[data-bar]').forEach(function (el) {
       var opts = {};
-      try { opts = JSON.parse(el.getAttribute('data-bar-opts') || '{}'); } catch (_) {}
+      try { opts = JSON.parse(el.getAttribute('data-bar-opts') || '{}'); } catch (e) { console.warn('[yumiao] 10:260', e); }
       window.renderProfileBar(el, opts);
     });
   };
   var _origSaveBirth = saveBirth;
   saveBirth = function (obj) {
     _origSaveBirth(obj);
-    try { window.refreshProfileBars(); } catch (_) {}
+    try { window.refreshProfileBars(); } catch (e) { console.warn('[yumiao] refreshProfileBars', e); }
   };
 
   /* ── 新手引导 ── */
@@ -311,7 +312,7 @@
     }
   }
   function finishOnboard() {
-    try { localStorage.setItem(LS_ONBOARDED, '1'); } catch (_) {}
+    try { localStorage.setItem(LS_ONBOARDED, '1'); } catch (e) { console.warn('[yumiao] 10:315', e); }
     var ob = $('onboard');
     if (ob) ob.classList.remove('show');
     setTimeout(function () { if (ob) ob.setAttribute('aria-hidden', 'true'); }, 450);
@@ -379,7 +380,7 @@
     });
     if (skip) skip.addEventListener('click', finishOnboard);
     var done = false;
-    try { done = localStorage.getItem(LS_ONBOARDED) === '1'; } catch (_) {}
+    try { done = localStorage.getItem(LS_ONBOARDED) === '1'; } catch (e) { console.warn('[yumiao] 10:383', e); }
     if (!done) {
       var ob = $('onboard');
       showObStep(0);
@@ -438,11 +439,11 @@
     try {
       var saved = JSON.parse(localStorage.getItem(LS_DAILY) || 'null');
       drawn = !!(saved && saved.date === todayKey());
-    } catch (_) {}
+    } catch (e) { console.warn('[yumiao] daily state', e); }
     return { idx: idx, verse: verse, drawn: drawn };
   }
   function markDrawn(idx) {
-    try { localStorage.setItem(LS_DAILY, JSON.stringify({ date: todayKey(), idx: idx })); } catch (_) {}
+    try { localStorage.setItem(LS_DAILY, JSON.stringify({ date: todayKey(), idx: idx })); } catch (e) { console.warn('[yumiao] 10:446', e); }
   }
   function renderDailyCard() {
     var d = getDaily();
@@ -479,7 +480,7 @@
         '<span>吉数 <b>' + d.verse.n + '</b></span>';
     }
     openSheet('dailySheet', 'dailyBackdrop');
-    try { if (navigator.vibrate) navigator.vibrate(15); } catch (_) {}
+    try { if (navigator.vibrate) navigator.vibrate(15); } catch (e) { console.warn('[yumiao] 10:483', e); }
   }
   window.openDailySheet = openDailySheet;
   window.closeDailySheet = function () { closeSheet('dailySheet', 'dailyBackdrop'); };
@@ -536,7 +537,7 @@
     };
     var fn = window[closerMap[id]];
     if (typeof fn === 'function' && !fn._yumiaoStub) {
-      try { fn(); } catch (_) {}
+      try { fn(); } catch (e) { console.warn('[yumiao] sheet closer', e); }
     }
     if (sheet.classList.contains('show')) {
       sheet.classList.remove('show');
@@ -546,8 +547,8 @@
         bd = sheet.previousElementSibling;
       }
       if (bd) bd.classList.remove('show');
-      try { if (typeof unlockPageScroll === 'function') unlockPageScroll(); } catch (_) {}
-      try { lockScroll(false); } catch (_) {}
+      try { if (typeof unlockPageScroll === 'function') unlockPageScroll(); } catch (e) { console.warn('[yumiao] 10:550', e); }
+      try { lockScroll(false); } catch (e) { console.warn('[yumiao] 10:551', e); }
     }
   };
   window.openMemberSheet = function () { openSheet('memberSheet', 'memberBackdrop'); };
@@ -632,7 +633,7 @@
         cv.toBlob(function (blob) {
           if (!blob) { downloadCanvas(cv, name); return; }
           var file = null;
-          try { file = new File([blob], name, { type: 'image/png' }); } catch (_) {}
+          try { file = new File([blob], name, { type: 'image/png' }); } catch (e) { console.warn('[yumiao] 10:636', e); }
           if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
             navigator.share({ files: [file], title: '御猫灵局' }).catch(function () {
               downloadCanvas(cv, name);
@@ -643,7 +644,7 @@
         }, 'image/png');
         return;
       }
-    } catch (_) {}
+    } catch (e) { console.warn('[yumiao] 10:647', e); }
     downloadCanvas(cv, name);
   }
   window.shareReading = function () {
@@ -682,7 +683,7 @@
         if (k && k.indexOf('yumiao_') === 0) keys.push(k);
       }
       keys.forEach(function (k) { localStorage.removeItem(k); });
-    } catch (_) {}
+    } catch (e) { console.warn('[yumiao] 10:686', e); }
     toast('已清除，页面即将刷新');
     setTimeout(function () { location.reload(); }, 900);
   };

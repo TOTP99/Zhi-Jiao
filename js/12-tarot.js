@@ -87,7 +87,7 @@ function tarotToSpread() {
     '<button type="button" class="btn-gold tarot-spread-btn" onclick="tarotChooseSpread(\'single\')"><strong>单张指引</strong><span>一牌断当下</span></button>' +
     '<button type="button" class="btn-gold tarot-spread-btn" onclick="tarotChooseSpread(\'three\')"><strong>三张牌阵</strong><span>过去 · 现在 · 未来</span></button>' +
     '</div></div>';
-  try { tarotSaveState(); } catch (_) {}
+  try { tarotSaveState(); } catch (e) { console.warn('[yumiao] 12:90', e); }
 }
 function tarotChooseSpread(s) {
   _tarotSpread = s;
@@ -156,11 +156,11 @@ function tarotRenderReveal() {
   el.innerHTML = html;
   try {
     if (typeof saveReportHTML === 'function') saveReportHTML('yumiao_report_tarot_v1', '塔罗牌阵', 'tarotReport');
-  } catch (_) {}
-  try { tarotSaveState(); } catch (_) {}
+  } catch (e) { console.warn('[yumiao] tarot save report', e); }
+  try { tarotSaveState(); } catch (e) { console.warn('[yumiao] 12:160', e); }
 }
 function tarotSaveState() {
   try {
     localStorage.setItem('yumiao_tarot_v1', JSON.stringify({ spread: _tarotSpread, drawn: _tarotDrawn.map(function(d){ return { no: d.card.no, reversed: d.reversed }; }) }));
-  } catch (_) {}
+  } catch (e) { console.warn('[yumiao] 12:165', e); }
 }

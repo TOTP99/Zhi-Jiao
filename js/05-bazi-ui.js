@@ -451,7 +451,7 @@
         } catch (__) {
           try {
             descEl.textContent = '护法示下：宜顺其自然，耐心等待天时。';
-          } catch (___) {}
+          } catch (e) { console.warn('[yumiao] 05:454', e); }
         }
       } finally {
         if (myToken === castToken) {
@@ -524,7 +524,7 @@
         if (!raw) return;
         const r = JSON.parse(raw);
         if (r && r.html && r.html.length > 50) reports.push(r);
-      } catch (_) {}
+      } catch (e) { console.warn('[yumiao] report parse', e); }
     });
     if (reports.length === 0) {
       try {
@@ -575,7 +575,7 @@
       return;
     }
     list.innerHTML = profileBar + history.map(h => `
-      <div class="history-item"><span>${historyTimeLabel(h)} · ${escapeHtml(h.q)}${h.snippet ? `<br><span style="color:var(--muted);font-size:11px;">${escapeHtml(h.snippet)}</span>` : ''}</span><span class="history-result ${h.result.cls}">${h.result.text}（${window.beastIconHTML ? window.beastIconHTML(window.beastKeyByName ? window.beastKeyByName(h.beast) : '', 'sm') : ''}${escapeHtml(h.beast)}）</span></div>
+      <div class="history-item"><span>${historyTimeLabel(h)} · ${escapeHtml(h.q)}${h.snippet ? `<br><span style="color:var(--muted);font-size:11px;">${escapeHtml(h.snippet)}</span>` : ''}</span><span class="history-result ${escapeHtml(String(h.result.cls))}">${escapeHtml(String(h.result.text))}（${window.beastIconHTML ? window.beastIconHTML(window.beastKeyByName ? window.beastKeyByName(h.beast) : '', 'sm') : ''}${escapeHtml(h.beast)}）</span></div>
     `).join('');
   }
   function toggleHistory() {

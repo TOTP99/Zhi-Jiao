@@ -181,7 +181,7 @@
     if (bd) bd.classList.add('show');
     if (m) m.classList.add('show');
     lock(true);
-    try { if (navigator.vibrate) navigator.vibrate(15); } catch (_) {}
+    try { if (navigator.vibrate) navigator.vibrate(15); } catch (e) { console.warn('[yumiao] 11:184', e); }
   };
   window.closeChenggu = function () {
     var m = $('chengguModal'), bd = $('chengguBackdrop');
