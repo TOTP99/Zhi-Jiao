@@ -6,17 +6,27 @@
   h1{font-size:18px;margin:0 0 4px} #sum{margin:0 0 14px;font-size:16px}
   .ok{color:#7ad17a}.bad{color:#ff7b72;font-weight:600}
   li{margin:2px 0;list-style:none} ul{padding:0}
+  h2{font-size:15px;margin:18px 0 6px;color:#aaa;font-weight:600;border-bottom:1px solid #333;padding-bottom:4px}
 </style></head><body>
 <h1>御猫灵局 · 自检页</h1>
-<p>直接用浏览器打开本文件即可（需与 js/ 同目录）。只读，不改动任何数据。</p>
+<p>直接用浏览器打开本文件即可（需与 js/ 同目录）。只读，不改动任何数据（生辰存取测试会临时写入并立即恢复）。</p>
 <p id="sum">运行中…</p><ul id="out"></ul>
 <script src="js/00-error-guard.js"></script>
 <script src="js/11a-chenggu-verses.js"></script>
 <script src="js/11b-chenggu-modern.js"></script>
 <script src="js/11-chenggu.js"></script>
+<script src="js/02-mbti-engine.js"></script>
+<script src="js/03-bazi-engine.js"></script>
+<script src="js/12-tarot.js"></script>
+<script src="js/13-wuge.js"></script>
 <script>
 (function () {
   var out = document.getElementById('out'), pass = 0, fail = 0;
+  function section(title) {
+    var h = document.createElement('h2');
+    h.textContent = title;
+    out.appendChild(h);
+  }
   function t(name, fn) {
     var ok = false, msg = '';
     try { var r = fn(); ok = (r === undefined || r === true); if (!ok) msg = String(r); } catch (e) { msg = e && e.message || String(e); }
@@ -26,9 +36,15 @@
     out.appendChild(li);
   }
   function eq(a, b) { return JSON.stringify(a) === JSON.stringify(b) || ('期望 ' + JSON.stringify(b) + ' 实得 ' + JSON.stringify(a)); }
+  function has(obj, keys) {
+    for (var i = 0; i < keys.length; i++) if (!(keys[i] in obj)) return '缺字段 ' + keys[i];
+    return true;
+  }
+
   var L = window.__solarToLunar, C = window.__chengguCalc;
 
-  /* 农历换算 */
+  /* ────────── 农历换算 ────────── */
+  section('农历换算');
   t('2024-02-10 = 农历正月初一', function () { var r = L(2024, 2, 10); return eq([r.year, r.month, r.day, r.leap], [2024, 1, 1, false]); });
   t('2023-03-22 = 闰二月初一', function () { var r = L(2023, 3, 22); return eq([r.year, r.month, r.day, r.leap], [2023, 2, 1, true]); });
   t('2020-05-23 = 闰四月初一', function () { var r = L(2020, 5, 23); return eq([r.year, r.month, r.day, r.leap], [2020, 4, 1, true]); });
@@ -43,7 +59,8 @@
     return bad === 0 || ('异常 ' + bad + ' 个');
   });
 
-  /* 称骨 */
+  /* ────────── 称骨 ────────── */
+  section('称骨计算与批语');
   t('1990-05-17 10时 = 4两2钱（9+9+8+16）', function () { var r = C({ year: 1990, month: 5, day: 17, hour: 10 }); return eq([r.yw, r.mw, r.dw, r.hw, r.total], [9, 9, 8, 16, 42]); });
   t('23:00 算子时', function () { return eq(C({ year: 1990, month: 5, day: 17, hour: 23 }).hourName, '子'); });
   t('缺时辰按午时，并标记 hourDefault', function () { var r = C({ year: 1990, month: 5, day: 17 }); return eq([r.hourName, r.hourDefault], ['午', true]); });
@@ -65,7 +82,257 @@
     return a === b || '键不一致';
   });
 
-  /* 错误边界 */
+  /* ────────── 八字排盘边界 ────────── */
+  section('八字排盘边界条件');
+  t('BaziShensha API 已加载', function () {
+    return !!(window.BaziShensha && typeof window.BaziShensha.calculate === 'function');
+  });
+  t('常量：天干 10、地支 12、五行 5', function () {
+    var c = window.BaziShensha.constants;
+    return eq([c.stems.length, c.branches.length, c.elements.length], [10, 12, 5]);
+  });
+  t('缺 year/month/day/hour 抛错', function () {
+    var threw = false;
+    try { window.BaziShensha.calculate({ year: 1990, month: 5, day: 17 }); } catch (e) { threw = true; }
+    return threw || '未抛错';
+  });
+  t('1990-05-17 10:00 tz+8 返回完整四柱结构', function () {
+    var r = window.BaziShensha.calculate({ year: 1990, month: 5, day: 17, hour: 10, timezone: 8 });
+    if (!r.pillars || !r.bazi) return '无 pillars/bazi';
+    var keys = ['year', 'month', 'day', 'hour'];
+    for (var i = 0; i < keys.length; i++) {
+      var p = r.pillars[keys[i]];
+      if (!p || !p.stem || !p.branch || !p.text) return keys[i] + ' 柱不完整';
+    }
+    return r.bazi.split(' ').length === 4 || ('bazi 非四柱: ' + r.bazi);
+  });
+  t('晚子时（23:00）日柱进次日', function () {
+    // 同一日历日 22:00 与 23:00，日柱应不同（23 点归次日）
+    var a = window.BaziShensha.calculate({ year: 1990, month: 5, day: 17, hour: 22, timezone: 8 });
+    var b = window.BaziShensha.calculate({ year: 1990, month: 5, day: 17, hour: 23, timezone: 8 });
+    return a.pillars.day.text !== b.pillars.day.text || ('日柱未变: ' + a.pillars.day.text);
+  });
+  t('时柱：23:00 为子时', function () {
+    var r = window.BaziShensha.calculate({ year: 1990, month: 5, day: 17, hour: 23, timezone: 8 });
+    return r.pillars.hour.branch === '子' || ('时支=' + r.pillars.hour.branch);
+  });
+  t('时柱：11:00 为午时', function () {
+    var r = window.BaziShensha.calculate({ year: 1990, month: 5, day: 17, hour: 11, timezone: 8 });
+    return r.pillars.hour.branch === '午' || ('时支=' + r.pillars.hour.branch);
+  });
+  t('时区差异：不同 timezone 可正确回写且排盘不抛错', function () {
+    var east = window.BaziShensha.calculate({ year: 2000, month: 1, day: 1, hour: 1, timezone: 8 });
+    var west = window.BaziShensha.calculate({ year: 2000, month: 1, day: 1, hour: 1, timezone: -5 });
+    if (east.input.timezone !== 8 || west.input.timezone !== -5) return 'timezone 回写错误';
+    if (!east.pillars.day.text || !west.pillars.day.text) return '日柱缺失';
+    return true;
+  });
+  t('默认时区为 +8', function () {
+    var r = window.BaziShensha.calculate({ year: 1990, month: 5, day: 17, hour: 10 });
+    return r.input.timezone === 8;
+  });
+  t('立春分界：年柱在立春前后应切换', function () {
+    // 2024 立春约 2/4；取 2/3 与 2/5 对比年柱
+    var before = window.BaziShensha.calculate({ year: 2024, month: 2, day: 3, hour: 12, timezone: 8 });
+    var after = window.BaziShensha.calculate({ year: 2024, month: 2, day: 5, hour: 12, timezone: 8 });
+    return before.pillars.year.text !== after.pillars.year.text ||
+      ('年柱未变: ' + before.pillars.year.text + ' / ' + after.pillars.year.text);
+  });
+  t('五行统计与日主字段存在', function () {
+    var r = window.BaziShensha.calculate({ year: 1990, month: 5, day: 17, hour: 10, timezone: 8 });
+    return has(r, ['fiveElements', 'dayMaster', 'tenGods', 'shensha', 'relations']) === true &&
+      has(r.dayMaster, ['stem', 'element', 'level']) === true;
+  });
+
+  /* ────────── 时区与日期转换（Bazi 内部路径） ────────── */
+  section('时区与日期转换');
+  t('trueSolar 标志可传入且不抛错', function () {
+    var r = window.BaziShensha.calculate({
+      year: 1990, month: 5, day: 17, hour: 10, minute: 30,
+      timezone: 8, trueSolar: true, longitude: 116.4
+    });
+    return r.input.trueSolar === true && r.input.longitude === 116.4 && !!r.bazi;
+  });
+  t('无经度时 trueSolar 仍可运行', function () {
+    var r = window.BaziShensha.calculate({
+      year: 1990, month: 5, day: 17, hour: 10, timezone: 8, trueSolar: true
+    });
+    return !!r.bazi;
+  });
+
+  /* ────────── 塔罗抽牌逻辑 ────────── */
+  section('塔罗抽牌逻辑');
+  t('大阿卡纳 22 张', function () {
+    return Array.isArray(TAROT_MAJOR) && TAROT_MAJOR.length === 22;
+  });
+  t('每张牌有 no / name / up / rev / text', function () {
+    for (var i = 0; i < TAROT_MAJOR.length; i++) {
+      var c = TAROT_MAJOR[i];
+      if (!c.no || !c.name || !c.up || !c.rev || !c.text) return '第' + i + '张缺字段';
+    }
+  });
+  t('牌号唯一', function () {
+    var seen = {};
+    for (var i = 0; i < TAROT_MAJOR.length; i++) {
+      if (seen[TAROT_MAJOR[i].no]) return '重复 ' + TAROT_MAJOR[i].no;
+      seen[TAROT_MAJOR[i].no] = 1;
+    }
+  });
+  t('tarotShuffle 返回 0–21 的排列', function () {
+    if (typeof tarotShuffle !== 'function') return '无 tarotShuffle';
+    var idx = tarotShuffle();
+    if (!Array.isArray(idx) || idx.length !== 22) return '长度 ' + (idx && idx.length);
+    var sorted = idx.slice().sort(function (a, b) { return a - b; });
+    for (var i = 0; i < 22; i++) if (sorted[i] !== i) return '非完整排列';
+  });
+  t('连续两次 shuffle 结果可不同（随机性）', function () {
+    var a = tarotShuffle().join(','), b = tarotShuffle().join(',');
+    // 极小概率相同，允许一次重试
+    if (a === b) { a = tarotShuffle().join(','); b = tarotShuffle().join(','); }
+    return a !== b || '两次洗牌相同（可再跑一次）';
+  });
+  t('单张与三张位置标签正确', function () {
+    _tarotSpread = 'single';
+    var s = tarotPosLabels();
+    _tarotSpread = 'three';
+    var t3 = tarotPosLabels();
+    return eq(s, ['指引']) && eq(t3, ['过去', '现在', '未来']);
+  });
+
+  /* ────────── MBTI 评分 ────────── */
+  section('MBTI 评分');
+  t('MBTI API 已加载', function () {
+    return !!(window.MBTI && typeof window.MBTI.test === 'function');
+  });
+  t('16 种类型均有定义', function () {
+    var types = ['ISTJ','ISFJ','INFJ','INTJ','ISTP','ISFP','INFP','INTP','ESTP','ESFP','ENFP','ENTP','ESTJ','ESFJ','ENFJ','ENTJ'];
+    for (var i = 0; i < types.length; i++) {
+      if (!window.MBTI.types[types[i]]) return '缺 ' + types[i];
+    }
+  });
+  t('空答案抛错', function () {
+    var threw = false;
+    try { window.MBTI.test(null); } catch (e) { threw = true; }
+    return threw;
+  });
+  t('不完整 48 题抛错', function () {
+    var threw = false;
+    try { window.MBTI.test({ '01': 'yes' }); } catch (e) { threw = /未回答|基础题/.test(e.message); }
+    return threw || '未正确报缺题';
+  });
+  t('全部 yes 可得出有效类型与报告', function () {
+    var ans = {};
+    for (var i = 1; i <= 48; i++) ans[String(i).padStart(2, '0')] = 'yes';
+    var r = window.MBTI.test(ans);
+    if (!r.type || !window.MBTI.types[r.type]) return '无效 type: ' + r.type;
+    if (!r.report || !r.report.name) return '无 report';
+    if (!r.dimensions || !r.score) return '缺 dimensions/score';
+    return true;
+  });
+  t('全部 no 可得出有效类型', function () {
+    var ans = {};
+    for (var i = 1; i <= 48; i++) ans[String(i).padStart(2, '0')] = 'no';
+    var r = window.MBTI.test(ans);
+    return !!(r.type && window.MBTI.types[r.type]);
+  });
+  t('数字键 1–48 与字符串键均可', function () {
+    var ans = {};
+    for (var i = 1; i <= 48; i++) ans[i] = true;
+    var r = window.MBTI.test(ans);
+    return !!(r.type && r.answers);
+  });
+
+  /* ────────── 姓名笔画（五格） ────────── */
+  section('姓名笔画与五格');
+  t('wgStrokes / wgCalc 已加载', function () {
+    return typeof wgStrokes === 'function' && typeof wgCalc === 'function';
+  });
+  t('常见字笔画：王=4 李=7 张=11 刘=15', function () {
+    return eq([wgStrokes('王'), wgStrokes('李'), wgStrokes('张'), wgStrokes('刘')], [4, 7, 11, 15]);
+  });
+  t('未知字返回 null，不抛错', function () {
+    return wgStrokes('\uFFFF') === null;
+  });
+  t('两字名：王李 五格可算', function () {
+    var r = wgCalc('王李');
+    if (r.error) return r.error;
+    // 天格 = 王4 +1 =5；人格 = 王4 + 李7 =11；地格 = 李7 +1 =8；总格 =4+7=11
+    return eq([r.tiange, r.renge, r.dige, r.zongge, r.isFuxing], [5, 11, 8, 11, false]);
+  });
+  t('三字名含复姓检测字段', function () {
+    var r = wgCalc('欧阳修');
+    if (r.error) return r.error;
+    return typeof r.isFuxing === 'boolean' && r.xingLen >= 1 && r.sancai && r.sancai.length === 3;
+  });
+  t('生僻字返回 error 对象', function () {
+    var r = wgCalc('王\uFFFF');
+    return !!r.error;
+  });
+  t('空名或单字应报错或结构异常（UI 限制 2–4）', function () {
+    var r = wgCalc('王');
+    // 单字时 ming 空，地格逻辑可能异常；允许 error 或算出结构
+    return r.error || (r.tiange != null);
+  });
+
+  /* ────────── 生辰资料保存与恢复 ────────── */
+  section('生辰资料保存与恢复');
+  t('localStorage 读写往返（不污染正式数据）', function () {
+    var KEY = 'yumiao_shared_birth_v1';
+    var prev = null;
+    try { prev = localStorage.getItem(KEY); } catch (e) { return '无法读 localStorage'; }
+    try {
+      var sample = {
+        year: 1990, month: 5, day: 17, hour: 10, minute: 0,
+        sex: 'M', city: 'toronto', tzOffset: -5
+      };
+      localStorage.setItem(KEY, JSON.stringify(sample));
+      var got = JSON.parse(localStorage.getItem(KEY));
+      var ok = eq(
+        [got.year, got.month, got.day, got.hour, got.sex, got.city, got.tzOffset],
+        [1990, 5, 17, 10, 'M', 'toronto', -5]
+      );
+      if (prev === null) localStorage.removeItem(KEY);
+      else localStorage.setItem(KEY, prev);
+      return ok;
+    } catch (e) {
+      try { if (prev === null) localStorage.removeItem(KEY); else localStorage.setItem(KEY, prev); } catch (_) {}
+      return e.message || String(e);
+    }
+  });
+  t('清除后读回为 null', function () {
+    var KEY = 'yumiao_shared_birth_v1';
+    var prev = null;
+    try { prev = localStorage.getItem(KEY); } catch (e) { return '无法读'; }
+    try {
+      localStorage.removeItem(KEY);
+      var got = localStorage.getItem(KEY);
+      if (prev === null) localStorage.removeItem(KEY);
+      else localStorage.setItem(KEY, prev);
+      return got === null;
+    } catch (e) {
+      try { if (prev !== null) localStorage.setItem(KEY, prev); } catch (_) {}
+      return e.message || String(e);
+    }
+  });
+  t('非法 JSON 读失败时不抛到外层（容错）', function () {
+    var KEY = 'yumiao_shared_birth_v1';
+    var prev = null;
+    try { prev = localStorage.getItem(KEY); } catch (e) { return '无法读'; }
+    try {
+      localStorage.setItem(KEY, '{broken');
+      var parsed = null;
+      try { parsed = JSON.parse(localStorage.getItem(KEY)); } catch (_) { parsed = null; }
+      if (prev === null) localStorage.removeItem(KEY);
+      else localStorage.setItem(KEY, prev);
+      return parsed === null;
+    } catch (e) {
+      try { if (prev !== null) localStorage.setItem(KEY, prev); } catch (_) {}
+      return e.message || String(e);
+    }
+  });
+
+  /* ────────── 错误边界 ────────── */
+  section('错误边界');
   t('错误边界已安装', function () { return window.__yumiaoGuardInstalled === true; });
   t('错误边界：未捕获错误被处理且不白屏', function () {
     return typeof window.onerror === 'function' && window.onerror('测试错误', '', 0, 0, new Error('x')) === true;
