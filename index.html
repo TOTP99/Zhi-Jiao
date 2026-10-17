@@ -283,6 +283,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 6.5h14M5 12h5.5M13.5 12H19M5 17.5h14"/></svg>
       <span>周易</span>
     </button>
+    <button type="button" class="tab" data-tab="shengxiao" onclick="openShengxiao()" aria-haspopup="dialog">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v10M8 10l4-3 4 3"/></svg>
+      <span>生肖</span>
+    </button>
     <button type="button" class="tab" data-tab="me" onclick="switchTab('me')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20a6.5 6.5 0 0113 0"/></svg>
       <span>我的</span>
@@ -317,6 +321,14 @@
     <div class="fortune-cat"><img src="pics/zen-cat.webp" alt="禅猫打坐" draggable="false"></div>
     <div class="fortune-result" id="fortuneResult"><span class="dim">小猫转动圆盘中…</span></div>
   </div>
+</div>
+
+<!-- ══════════ 生肖 ══════════ -->
+<div class="sheet-backdrop" id="shengxiaoBackdrop" onclick="closeSheetByBtn(this)"></div>
+<div class="sheet" id="shengxiaoModal" role="dialog" aria-label="生肖">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head"><h3>生肖</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
+  <div class="sheet-scroll"><div id="shengxiaoBody"></div></div>
 </div>
 
 <!-- ══════════ 历史记录 ══════════ -->
@@ -556,6 +568,7 @@
     lazy('openTarotPanel', ['js/12-tarot.js']);
     lazy('openWesternPanel', ['js/08-western-astrology.js']);
     lazy('openWugePanel', ['js/13-wuge.js']);
+    lazy('openShengxiao', ['js/14-shengxiao.js']);
     lazy('submitWesternForm', ['js/08-western-astrology.js']);
     lazy('westernFabTap', ['js/08-western-astrology.js']);
     lazy('backToWesternForm', ['js/08-western-astrology.js']);
