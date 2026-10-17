@@ -48,6 +48,77 @@
     if (inPair(HAI, me, cur)) return { name: '害太岁', text: '与今年相害，小人口舌需防，言语留三分，少替人担保。' };
     return { name: '平', text: '与今年无冲无合，运势平稳，成败看自己的努力。' };
   }
+  var ctx = null; // 当前面板的生肖/年份上下文，供「详细年运」使用
+  function stars(n) { return '★★★★★'.slice(0, n) + '☆☆☆☆☆'.slice(0, 5 - n); }
+  function clamp(n) { return Math.max(1, Math.min(5, Math.round(n))); }
+  function rng(seed) { // 固定种子：同一人同一年每次打开结果一致
+    var a = seed >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) >>> 0; var t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  var BASE = { '本命年': 3, '冲太岁': 2, '合太岁': 4, '三合': 5, '害太岁': 3, '平': 3 };
+  var DOMAIN_TEXT = {
+    '事业': [
+      ['今年职场阻力偏多，宜守不宜攻。手头的事做扎实，不急着跳槽或扩张，把口碑留住。', '工作中易有反复，重要决定多留一晚再下。少与人争功，默默积累反成转机。'],
+      ['事业平稳推进，没有大起大落。适合打基础、考证、补短板，下半年更容易见成果。', '贵人不多不少，靠自己的节奏走。别被他人的进度带乱，稳中求进。'],
+      ['事业有明显上升势头，主动争取的机会大概率能成。适合谈合作、接新项目、谋晋升。', '今年表现容易被看见，贵人愿意拉一把。抓住上半年的窗口，下半年巩固。']
+    ],
+    '财运': [
+      ['财务宜保守，大额投资、借贷、担保尽量避开。开源不如节流，留足备用金。', '易有计划外的开销，先列清单再花钱。听来的「稳赚」多半不稳，慎入。'],
+      ['正财稳定，偏财一般。收支大体平衡，适合做长期储蓄和小额稳健配置。', '财运随努力走，没有横财但也不至断流。年中留意一笔可回收的旧账。'],
+      ['财运较旺，正财有增、合作得利。仍需分散风险，见好就收，别因顺手而加码过度。', '有机会通过项目、副业或人脉增收。大额决策仍要做功课，贪多易失。']
+    ],
+    '感情': [
+      ['感情易起波折，言语上多一分体谅。已有伴侣的避免冷战，单身者不宜仓促定下。', '人际上易有误会，别在情绪上头时下结论。把话说开比猜测更有用。'],
+      ['感情平稳细水长流。单身者靠朋友圈缘分，已有伴侣者宜多安排共处时间。', '不温不火的一年，适合经营而非冲刺。家人与老友的陪伴是主要的情绪来源。'],
+      ['桃花与人缘都旺，单身者有望遇到合拍的人，有伴侣者感情升温，适合谈婚论嫁。', '社交活跃，容易得到真诚的支持与祝福。珍惜眼前人，别让忙碌挤掉陪伴。']
+    ],
+    '健康': [
+      ['精力易透支，睡眠和饮食要守住底线。出行、运动注意安全，体检别拖。', '情绪压力偏大，给自己留出放松的时间。久坐久站都要适度，小毛病别硬扛。'],
+      ['整体平稳，注意换季保养。规律作息、适度运动即可，不必过度担忧。', '小状况偶有，调整作息就能缓解。保持散步或拉伸的习惯，比突击锻炼有效。'],
+      ['状态不错，精力充沛，适合建立长期的运动习惯。仍要避免因顺利而熬夜透支。', '身心舒展的一年，是调理旧疾、养成好习惯的好时机，坚持就有回报。']
+    ]
+  };
+  var MONTH_N = ['正', '二', '三', '四', '五', '六', '七', '八', '九', '十', '冬', '腊'];
+  var MONTH_TIP = { good: '宜推进要事、谈合作、见贵人', bad: '宜守不宜攻，凡事留余地' };
+  function monthRel(me, branch) { // 流月地支与本命生肖地支的关系 → 加减分
+    if (me === branch) return 0;
+    if (((me - branch) % 12 + 12) % 12 === 6) return -1;
+    if (inPair(HE, me, branch)) return 1;
+    if (inPair(HAI, me, branch)) return -1;
+    for (var i = 0; i < SANHE.length; i++) if (SANHE[i].indexOf(me) >= 0 && SANHE[i].indexOf(branch) >= 0) return 1;
+    return 0;
+  }
+  function detailHtml() {
+    var c = ctx, base = BASE[c.rel.name] || 3;
+    var r = rng(c.cy * 131 + c.me * 17 + 7), html = '';
+    html += '<button type="button" class="sx-back" data-act="back">‹ 返回</button>';
+    html += '<div class="mbti-report"><div class="mbti-sec"><span class="mbti-sec-label">' + c.yearName + '年 · 属' + c.sx + ' · ' + c.rel.name + '</span>' +
+      '综合 <span class="sx-stars">' + stars(base) + '</span><br>' + c.rel.text + '</div>';
+    ['事业', '财运', '感情', '健康'].forEach(function (k) {
+      var lv = clamp(base + (r() < 0.5 ? -1 : 0) + (r() < 0.35 ? 1 : 0));
+      var tier = lv <= 2 ? 0 : (lv === 3 ? 1 : 2);
+      var pool = DOMAIN_TEXT[k][tier];
+      html += '<div class="mbti-sec"><span class="mbti-sec-label">' + k + '</span><span class="sx-stars">' + stars(lv) + '</span><br>' + pool[Math.floor(r() * pool.length)] + '</div>';
+    });
+    // 逐月：流月地支（正月寅…腊月丑）与本命生肖的冲合
+    var best = [], worst = [], cells = '';
+    for (var m = 1; m <= 12; m++) {
+      var br = (m + 1) % 12, d = monthRel(c.me, br);
+      var lv = clamp(base + d);
+      if (d > 0) best.push(MONTH_N[m - 1]); else if (d < 0) worst.push(MONTH_N[m - 1]);
+      cells += '<div class="sx-month' + (c.curMonth === m ? ' now' : '') + '"><b>' + MONTH_N[m - 1] + '月</b><span>' + stars(lv) + '</span>' +
+        (c.curMonth === m ? '<i>本月</i>' : '') + '</div>';
+    }
+    html += '<div class="mbti-sec"><span class="mbti-sec-label">逐月</span>农历月，按月支与你的生肖冲合推算</div><div class="sx-months">' + cells + '</div>';
+    html += '<div class="mbti-sec"><span class="mbti-sec-label">宜</span>' + (best.length ? best.join('、') + '月：' + MONTH_TIP.good : '全年起伏不大，顺势而为') + '</div>';
+    html += '<div class="mbti-sec"><span class="mbti-sec-label">慎</span>' + (worst.length ? worst.join('、') + '月：' + MONTH_TIP.bad : '无明显相冲之月，保持平常心') + '</div>';
+    html += '<div class="mbti-brief-note">传统生肖流年，仅供参考，重要决定请以现实为准</div></div>';
+    return html;
+  }
   function render(birth) {
     var body = document.getElementById('shengxiaoBody');
     if (!body) return;
@@ -59,13 +130,35 @@
     var csx = getShengxiao(cy);
     var gi = (((cy - 4) % 60) + 60) % 60;
     var rel = relation(SX.indexOf(sx), SX.indexOf(csx));
+    var curMonth = 0;
+    if (typeof window.__solarToLunar === 'function') {
+      var ln = window.__solarToLunar(now.getFullYear(), now.getMonth() + 1, now.getDate());
+      if (ln) curMonth = ln.month;
+    }
+    ctx = { sx: sx, me: SX.indexOf(sx), cy: cy, csx: csx, rel: rel, curMonth: curMonth, yearName: GAN[gi % 10] + ZHI[gi % 12] + csx };
     body.innerHTML =
       '<div class="tarot-card"><div class="tarot-card-pos">' + birth.year + '年生</div>' +
       '<div class="tarot-card-name" style="font-size:44px;margin:8px 0;">' + sx + '</div>' +
       '<div class="tarot-card-keys">' + info.trait + '</div></div>' +
-      '<div class="mbti-report"><div class="mbti-sec"><span class="mbti-sec-label">本年运势 · ' + GAN[gi % 10] + ZHI[gi % 12] + csx + '年 · ' + rel.name + '</span>' +
+      '<div class="mbti-report"><div class="mbti-sec sx-fortune"><div class="sx-fortune-head"><span class="mbti-sec-label">本年运势 · ' + ctx.yearName + '年 · ' + rel.name + '</span>' +
+      '<button type="button" class="sx-plus" data-act="detail" aria-label="查看详细年运">＋</button></div>' +
       rel.text + '<br>' + info.luck + '</div></div>';
   }
+  (function bindOnce() {
+    function go() {
+      var body = document.getElementById('shengxiaoBody');
+      if (!body || body._sxBound) return;
+      body._sxBound = true;
+      body.addEventListener('click', function (e) {
+        var t = e.target.closest ? e.target.closest('[data-act], .sx-fortune') : null;
+        if (!t || !ctx) return;
+        var act = t.getAttribute('data-act') || 'detail';
+        if (act === 'detail') { body.innerHTML = detailHtml(); var sc = body.closest('.sheet-scroll'); if (sc) sc.scrollTop = 0; }
+        else if (act === 'back') { var b = null; try { b = JSON.parse(localStorage.getItem('yumiao_shared_birth_v1') || 'null'); } catch (_) {} if (b && b.year) { render(b); var sc2 = body.closest('.sheet-scroll'); if (sc2) sc2.scrollTop = 0; } }
+      });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
+  })();
   function openShengxiao() {
     var birth = null;
     try { birth = JSON.parse(localStorage.getItem('yumiao_shared_birth_v1') || 'null'); } catch (e) {}
@@ -74,7 +167,7 @@
       body.innerHTML = '<p class="mbti-intro">请先到「我的」录入生辰档案。</p>';
     } else {
       render(birth);
-      ensureLunar().then(function () { render(birth); });
+      ensureLunar().then(function () { if (document.querySelector('#shengxiaoBody .sx-fortune')) render(birth); });
     }
     if (typeof ModalUI !== 'undefined' && ModalUI.open) ModalUI.open('shengxiao');
     else {
@@ -89,7 +182,7 @@
       document.getElementById('shengxiaoModal').classList.remove('show');
     }
   }
-  window.__shengxiao = { getShengxiao: getShengxiao, lunarYearOf: lunarYearOf, relation: relation };
+  window.__shengxiao = { getShengxiao: getShengxiao, lunarYearOf: lunarYearOf, relation: relation, monthRel: monthRel };
   window.openShengxiao = openShengxiao;
   window.closeShengxiao = closeShengxiao;
 })();
