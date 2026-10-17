@@ -52,7 +52,6 @@
     bazi:    { backdrop: 'baziBackdrop',    modal: 'baziModal' },
     zodiac:  { backdrop: 'zodiacBackdrop',  modal: 'zodiacModal' },
     tarot:   { backdrop: 'tarotBackdrop',   modal: 'tarotModal' },
-    ziwei:   { backdrop: 'ziweiBackdrop',   modal: 'ziweiModal' },
     western: { backdrop: 'westernBackdrop', modal: 'westernModal' }
   };
   const ModalUI = {
@@ -951,7 +950,7 @@
     )) return;
     closeAllMenus();
   }
-  /* 问卜方式 chips：MBTI / 塔罗 / 紫微 / 108 问；手动输入直接在输入行完成 */
+  /* 问卜方式 chips：MBTI / 塔罗 / 108 问；手动输入直接在输入行完成 */
   function selectQuestionMenuItem(n) {
     const q = getQuestionEl();
     if (!q) return;
@@ -986,14 +985,6 @@
       fillQuestionText('塔罗牌阵占卜');
       q.blur();
       openTarotPanel();
-      return;
-    }
-    if (n === 'ziwei') {
-      closeAllMenus();
-      if (typeof clearPreferredCategory === 'function') clearPreferredCategory();
-      fillQuestionText('紫微斗数排盘');
-      q.blur();
-      openZiweiPanel();
       return;
     }
     if (n === 'casual') {

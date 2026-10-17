@@ -235,7 +235,7 @@
     try { el.setAttribute('data-bar-opts', JSON.stringify(opts)); } catch (_) {}
     var b = readBirth();
     if (!b || !b.year) {
-      el.innerHTML = '<div class="profile-empty"><p>尚未录入生辰档案<br>录入一次，八字 · 星座 · 星盘 · 紫微皆可共用</p>' +
+      el.innerHTML = '<div class="profile-empty"><p>尚未录入生辰档案<br>录入一次，八字 · 星座 · 星盘皆可共用</p>' +
         '<button type="button" class="btn-gold btn-sm" onclick="editProfile()">录入生辰档案</button></div>';
       return;
     }
@@ -530,7 +530,7 @@
       fortuneModal: 'closeFortuneWheel', historyBox: 'toggleHistory',
       mbtiModal: 'closeMbtiQuiz', baziModal: 'closeBaziPanel',
       zodiacModal: 'closeZodiacPanel', westernModal: 'closeWesternPanel',
-      tarotModal: 'closeTarotPanel', ziweiModal: 'closeZiweiPanel',
+      tarotModal: 'closeTarotPanel',
       dailySheet: 'closeDailySheet', memberSheet: 'closeMemberSheet',
       disclaimerSheet: 'closeDisclaimer'
     };
