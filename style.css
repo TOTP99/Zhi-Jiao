@@ -953,3 +953,9 @@ input[type=range].yslider::-moz-range-thumb{width:20px;height:20px;border-radius
 .wuge-sancai b.is-ji{color:#7bc98a}
 .wuge-sancai b.is-xiong{color:#e08a8a}
 .wuge-sancai b.is-banji{color:var(--gold-bright)}
+.western-fab{position:fixed;z-index:120;min-width:120px;min-height:48px;padding:12px 24px;border-radius:999px;
+  font-size:var(--fs-md);font-weight:700;letter-spacing:2px;touch-action:none;user-select:none;-webkit-user-select:none;
+  box-shadow:0 4px 20px rgba(0,0,0,.45),0 0 0 1px var(--line);cursor:grab}
+.western-fab:active{cursor:grabbing}
+.western-fab.dragging{opacity:.92;box-shadow:0 8px 28px rgba(0,0,0,.55),0 0 0 1px var(--gold-bright)}
+.western-fab.hidden{display:none}

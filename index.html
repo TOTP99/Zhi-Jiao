@@ -325,17 +325,14 @@
   <div class="mbti-quick-result" id="mbtiQuickResult"></div>
   <div class="mbti-list" id="mbtiList"></div>
   <div class="mbti-reveal" id="mbtiReveal">
-    <div class="jiao-display" id="mbtiJiaoDisplay"></div>
-    <div class="mbti-jiao-label" id="mbtiJiaoLabel"></div>
     <div class="mbti-report" id="mbtiReport"></div>
     <div class="mbti-reveal-actions">
-      <button class="btn-ghost btn-sm" id="mbtiRecast" onclick="castMbtiJiao()" style="display:none;">再次掷筊</button>
       <button class="btn-ghost btn-sm" onclick="backToMbtiQuiz()">返回题目</button>
     </div>
   </div>
   <div class="mbti-actions">
     <button class="btn-ghost btn-sm" onclick="resetMbtiQuiz()">重新作答</button>
-    <button class="btn-gold btn-sm" id="mbtiCastBtn" onclick="castMbtiJiao()" disabled>掷筊 · 求详细解读</button>
+    <button class="btn-gold btn-sm" id="mbtiCastBtn" onclick="showMbtiResult()" disabled>查看详细解读</button>
   </div>
 </div>
 
@@ -345,18 +342,15 @@
   <div class="sheet-handle"></div>
   <div class="sheet-head"><h3>八字排盘</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
   <div class="bazi-form" id="baziForm">
-    <p class="mbti-intro">四柱 · 五行 · 十神 · 神煞。排盘既毕自动掷筊请示——聖筊详示，笑筊略示，陰筊守静。</p>
+    <p class="mbti-intro">四柱 · 五行 · 十神 · 神煞，排盘即现完整断语。</p>
     <div class="profile-bar" id="baziProfileBar" data-bar="bazi"></div>
     <label class="bazi-checkbox bazi-row-tight"><input type="checkbox" id="baziTrueSolar"> 使用真太阳时校准 <span class="bazi-optional">（按档案经度）</span></label>
     <div class="bazi-error" id="baziError"></div>
-    <button class="btn-gold btn-block" id="baziSubmitBtn" onclick="submitBaziForm()">排盘 · 掷筊</button>
+    <button class="btn-gold btn-block" id="baziSubmitBtn" onclick="submitBaziForm()">开始排盘</button>
   </div>
   <div class="mbti-reveal" id="baziReveal">
-    <div class="jiao-display" id="baziJiaoDisplay"></div>
-    <div class="mbti-jiao-label" id="baziJiaoLabel"></div>
     <div class="mbti-report" id="baziReport"></div>
     <div class="mbti-reveal-actions">
-      <button class="btn-ghost btn-sm" id="baziRecast" onclick="castBaziJiao()" style="display:none;">再次掷筊</button>
       <button class="btn-ghost btn-sm" onclick="backToBaziForm()">重新填写</button>
     </div>
   </div>
@@ -371,14 +365,11 @@
     <p class="mbti-intro">以生辰档案判定星座。确认后自动掷筊——聖筊详版，笑筊简版，陰筊仅示星座。</p>
     <div class="profile-bar" id="zodiacProfileBar" data-bar="zodiac"></div>
     <div class="mbti-quick-result show" id="zodiacPreview" style="margin-top:8px;"><div class="mbti-type" id="zodiacPreviewName">—</div></div>
-    <button class="btn-gold btn-block" onclick="submitZodiacForm()">确认星座 · 掷筊</button>
+    <button class="btn-gold btn-block" onclick="submitZodiacForm()">查看星座运势</button>
   </div>
   <div class="mbti-reveal" id="zodiacReveal" style="display:none;">
-    <div class="jiao-display" id="zodiacJiaoDisplay"></div>
-    <div class="mbti-jiao-label" id="zodiacJiaoLabel"></div>
     <div class="mbti-report" id="zodiacReport"></div>
     <div class="mbti-reveal-actions">
-      <button class="btn-ghost btn-sm" id="zodiacRecast" onclick="castZodiacJiao()" style="display:none;">再次掷筊</button>
       <button class="btn-ghost btn-sm" onclick="backToZodiacForm()">重新选择</button>
       <button class="btn-gold btn-sm" onclick="openZodiacDict()">星座词典</button>
     </div>
@@ -410,9 +401,9 @@
   <div class="bazi-form" id="westernForm">
     <div class="profile-bar" id="westernProfileBar" data-bar="western"></div>
     <div class="bazi-error" id="westernError"></div>
-    <button class="btn-gold btn-block" onclick="submitWesternForm()">开始分析</button>
     <p class="foot-note">行星 · 宫位 · 相位。宫位精算需档案中的出生地经纬度。</p>
   </div>
+  <button class="btn-gold western-fab hidden" id="westernFab" onclick="westernFabTap()">开始分析</button>
   <div class="mbti-reveal" id="westernReveal" style="display:none;">
     <div id="westernChartViz" class="western-chart-viz" aria-label="星盘可视化"></div>
     <div class="mbti-report" id="westernReport"></div>
@@ -548,27 +539,23 @@
       var _submitBazi = window.submitBaziForm;
       window.submitBaziForm = function () { var a = arguments; return loadScript('js/03-bazi-engine.js').then(function () { return _submitBazi.apply(window, a); }).catch(loadFailed); };
     }
-    if (typeof window.castBaziJiao === 'function') {
-      var _castBazi = window.castBaziJiao;
-      window.castBaziJiao = function () { var a = arguments; return loadScript('js/03-bazi-engine.js').then(function () { return _castBazi.apply(window, a); }).catch(loadFailed); };
-    }
     lazy('openChenggu', ['js/11a-chenggu-verses.js', 'js/11b-chenggu-modern.js', 'js/11-chenggu.js']);
     lazy('openTarotPanel', ['js/12-tarot.js']);
     lazy('openWesternPanel', ['js/08-western-astrology.js']);
     lazy('openWugePanel', ['js/13-wuge.js']);
     lazy('submitWesternForm', ['js/08-western-astrology.js']);
+    lazy('westernFabTap', ['js/08-western-astrology.js']);
     lazy('backToWesternForm', ['js/08-western-astrology.js']);
     lazy('toggleWesternDict', ['js/08-western-astrology.js']);
     lazy('openFortuneWheel', ['js/09-fortune-wheel.js']);
     lazy('spinFortuneWheel', ['js/09-fortune-wheel.js']);
-    lazy('castMbtiJiao', ['js/02-mbti-engine.js', 'js/04-mbti-ui.js']);
+    lazy('showMbtiResult', ['js/02-mbti-engine.js', 'js/04-mbti-ui.js']);
     lazy('resetMbtiQuiz', ['js/02-mbti-engine.js', 'js/04-mbti-ui.js']);
     lazy('startMbtiExtra', ['js/02-mbti-engine.js', 'js/04-mbti-ui.js']);
     lazy('backToMbtiQuiz', ['js/02-mbti-engine.js', 'js/04-mbti-ui.js']);
     lazy('openMbtiDict', ['js/02-mbti-engine.js', 'js/04-mbti-ui.js']);
     lazy('closeMbtiDict', ['js/02-mbti-engine.js', 'js/04-mbti-ui.js']);
     lazy('submitZodiacForm', ['js/06-zodiac.js']);
-    lazy('castZodiacJiao', ['js/06-zodiac.js']);
     lazy('backToZodiacForm', ['js/06-zodiac.js']);
     lazy('openZodiacDict', ['js/06-zodiac.js']);
     lazy('closeZodiacDict', ['js/06-zodiac.js']);
