@@ -484,6 +484,7 @@
 <script src="js/00-error-guard.js"></script>
 <script defer src="js/01-jiao-core.js"></script>
 <script defer src="js/05-bazi-ui.js"></script>
+<script defer src="js/14-shengxiao.js"></script>
 <script>
 /* 懒加载引导：与原版一致，业务模块加载后覆盖同名 stub */
 (function () {
@@ -568,7 +569,7 @@
     lazy('openTarotPanel', ['js/12-tarot.js']);
     lazy('openWesternPanel', ['js/08-western-astrology.js']);
     lazy('openWugePanel', ['js/13-wuge.js']);
-    lazy('openShengxiao', ['js/14-shengxiao.js']);
+    /* 生肖直接内嵌，不走懒加载 */
     lazy('submitWesternForm', ['js/08-western-astrology.js']);
     lazy('westernFabTap', ['js/08-western-astrology.js']);
     lazy('backToWesternForm', ['js/08-western-astrology.js']);
