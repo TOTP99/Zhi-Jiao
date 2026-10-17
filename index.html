@@ -129,13 +129,12 @@
         <p class="hero-tip" id="selectedLine">轻触瑞兽请护法，不选则随机</p>
       </div>
 
-      <div class="method-chips" role="tablist" aria-label="问卜方式">
-        <button type="button" class="mchip" data-m="casual" onclick="pickMethod('casual', this)"><span>掷筊常见问题108问</span></button>
-      </div>
-
       <div class="question-wrap">
-        <input type="text" class="question-box" id="question" maxlength="56" inputmode="text" enterkeyhint="done"
-          placeholder="手动输入直接问" autocomplete="off" oninput="onQuestionInput()">
+        <div class="question-row">
+          <input type="text" class="question-box" id="question" maxlength="56" inputmode="text" enterkeyhint="done"
+            placeholder="手动输入直接问" autocomplete="off" oninput="onQuestionInput()">
+          <button type="button" class="q108-btn" onclick="selectQuestionMenuItem('casual')" aria-label="常见108问">108问</button>
+        </div>
         <div class="question-menu" id="casualMenu">
           <div class="question-menu-title">常见 108 问 · 点击选择</div>
           <div class="question-menu-custom" onmousedown="event.preventDefault()" onclick="closeCasualMenu()"><span class="qm-num">←</span><span>关闭</span></div>
@@ -145,18 +144,18 @@
       </div>
 
       <button class="cast-btn" id="castBtn" type="button" onclick="castJiao()">掷 筊</button>
-      <div class="cast-subrow">
-        <button type="button" class="btn-sub" onclick="resetAll()">重置</button>
-        <button type="button" class="btn-sub" onclick="toggleHistory()">存入</button>
-        <button type="button" class="btn-sub" onclick="shareReading()">分享</button>
-      </div>
 
-      <div class="ritual-area" id="ritualArea">
+      <div class="ritual-area" id="ritualArea" hidden>
         <div class="jiao-display" id="jiaoDisplay"></div>
         <div class="result-area" id="resultArea">
           <div class="result-title" id="resultTitle"></div>
           <div class="result-desc" id="resultDesc"></div>
           <div class="result-beast" id="resultBeast"></div>
+        </div>
+        <div class="cast-subrow">
+          <button type="button" class="btn-sub" onclick="resetAll()">重置</button>
+          <button type="button" class="btn-sub" onclick="toggleHistory()">存入</button>
+          <button type="button" class="btn-sub" onclick="shareReading()">分享</button>
         </div>
       </div>
 

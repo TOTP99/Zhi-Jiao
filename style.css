@@ -238,11 +238,11 @@ input,textarea{font-family:inherit}
 .hero-tip{margin-top:8px;font-size:var(--fs-xs);color:var(--muted);letter-spacing:1px;min-height:20px}
 .hero-tip span{color:var(--gold-bright);font-weight:600}
 
-.method-chips{display:flex;gap:6px;margin:10px 0;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
-.method-chips::-webkit-scrollbar{display:none}
-.mchip{flex:0 0 auto;padding:7px 14px;font-size:var(--fs-xs);letter-spacing:2px;color:var(--muted);
-  border:1px solid var(--line-soft);border-radius:999px;background:var(--card);transition:all .2s}
-.mchip.on{color:#241a06;font-weight:700;background:linear-gradient(180deg,var(--gold-bright),var(--gold));border-color:var(--gold-deep)}
+.question-row{display:flex;gap:8px;align-items:stretch}
+.question-row .question-box{flex:1;min-width:0}
+.q108-btn{flex:0 0 auto;padding:0 14px;border-radius:12px;font-size:var(--fs-sm);font-weight:700;
+  color:#e8c86a;border:1px solid var(--gold-deep);background:rgba(201,161,59,.12);cursor:pointer;white-space:nowrap}
+.q108-btn:active{background:rgba(201,161,59,.25)}
 
 .question-wrap{position:relative;margin-bottom:10px}
 .question-box{
@@ -597,7 +597,7 @@ body{font-size:var(--fs-md);line-height:1.6}
 :focus-visible{outline:2px solid var(--gold-bright);outline-offset:2px}
 button{transition:transform var(--dur-1) var(--ease),background-color var(--dur-2),border-color var(--dur-2),color var(--dur-2),opacity var(--dur-2),filter var(--dur-2),box-shadow var(--dur-2)}
 /* 统一按压反馈 */
-.btn-gold:active,.btn-ghost:active,.btn-sub:active,.cast-btn:active,.mchip:active,.seg button:active,
+.btn-gold:active,.btn-ghost:active,.btn-sub:active,.cast-btn:active,.seg button:active,
 .feature-card:active,.zen-wheel-btn:active,.beast-labels button:active,.topbar-daily:active,.member-card:active{transform:scale(.97)}
 .tab:active{opacity:.6}
 .tab{transition:color var(--dur-2),opacity var(--dur-1)}
@@ -638,8 +638,6 @@ input,textarea,select{font-size:16px}
 .beast-labels button strong{font-size:var(--fs-sm);letter-spacing:3px}
 .beast-labels button span{font-size:var(--fs-xs);letter-spacing:0}
 .hero-tip{margin-top:10px;font-size:var(--fs-sm);letter-spacing:.5px;min-height:22px}
-.method-chips{gap:8px;margin:12px 0;padding-bottom:4px}
-.mchip{min-height:var(--tap);display:inline-flex;align-items:center;padding:0 16px;font-size:var(--fs-sm);letter-spacing:1px}
 .question-wrap{margin-bottom:12px}
 
 /* ── 卡片 / 列表 ── */
@@ -780,8 +778,7 @@ input[type=range].yslider::-moz-range-thumb{width:20px;height:20px;border-radius
   #view-divine .cast-btn{grid-column:1;grid-row:2;margin-top:8px;min-height:52px}
   #view-divine .cast-subrow{grid-column:1;grid-row:3;margin-top:8px}
   #view-divine .daily-card{grid-column:2;grid-row:1;margin-bottom:0}
-  #view-divine .method-chips{grid-column:2;grid-row:2;margin:0}
-  #view-divine .question-wrap{grid-column:2;grid-row:3;margin-bottom:0}
+  #view-divine   #view-divine .question-wrap{grid-column:2;grid-row:3;margin-bottom:0}
   #view-divine .ritual-area{grid-column:2;grid-row:4;margin-top:4px;display:flex;align-items:flex-start;gap:18px;text-align:left}
   #view-divine .foot-note{grid-column:1/-1}
   #view-divine .box-wrap{max-width:170px}
