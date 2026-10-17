@@ -956,46 +956,6 @@
     const q = getQuestionEl();
     if (!q) return;
     clearTimeout(questionMenuHideTimer);
-    if (n === 'mbti') {
-      closeAllMenus();
-      if (typeof clearPreferredCategory === 'function') clearPreferredCategory();
-      fillQuestionText('MBTI 性格测试');
-      q.blur();
-      openMbtiQuiz();
-      return;
-    }
-    if (n === 'bazi') {
-      closeAllMenus();
-      if (typeof clearPreferredCategory === 'function') clearPreferredCategory();
-      fillQuestionText('八字运程与神煞');
-      q.blur();
-      openBaziPanel();
-      return;
-    }
-    if (n === 'zodiac') {
-      closeAllMenus();
-      if (typeof clearPreferredCategory === 'function') clearPreferredCategory();
-      fillQuestionText('星座运势测试');
-      q.blur();
-      if (typeof openZodiacPanel === 'function') openZodiacPanel();
-      return;
-    }
-    if (n === 'tarot') {
-      closeAllMenus();
-      if (typeof clearPreferredCategory === 'function') clearPreferredCategory();
-      fillQuestionText('塔罗牌阵占卜');
-      q.blur();
-      openTarotPanel();
-      return;
-    }
-    if (n === 'wuge') {
-      closeAllMenus();
-      if (typeof clearPreferredCategory === 'function') clearPreferredCategory();
-      fillQuestionText('姓名五格测算');
-      q.blur();
-      openWugePanel();
-      return;
-    }
     if (n === 'casual') {
       openCasualMenu();
       return;

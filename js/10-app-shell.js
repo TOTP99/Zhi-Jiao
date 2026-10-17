@@ -702,16 +702,23 @@
     renderProfile();
     renderDailyCard();
     initOnboard();
-    var dd = $('dailyDrawBtn');
-    if (dd) dd.addEventListener('click', openDailySheet);
-    var td = $('topbarDaily');
-    if (td) td.addEventListener('click', openDailySheet);
-    /* 开屏 */
-    setTimeout(function () {
+    /* 开屏：6 秒金色进度条，一秒一格 */
+    (function(){
       var sp = $('splash');
-      if (sp) sp.classList.add('gone');
-      setTimeout(function () { if (sp) sp.remove(); }, 800);
-    }, 1100);
+      if (!sp) return;
+      var bars = sp.querySelectorAll('#splashProgress span');
+      var i = 0;
+      var timer = setInterval(function(){
+        if (i < bars.length) { bars[i].classList.add('on'); i++; }
+        if (i >= bars.length) {
+          clearInterval(timer);
+          setTimeout(function(){
+            sp.classList.add('gone');
+            setTimeout(function(){ if (sp) sp.remove(); }, 800);
+          }, 600);
+        }
+      }, 1000);
+    })();
     /* ESC 关闭本壳抽屉 */
     document.addEventListener('keydown', function (e) {
       if (e.key !== 'Escape') return;
