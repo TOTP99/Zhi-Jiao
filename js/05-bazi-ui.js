@@ -357,6 +357,7 @@
   async function castJiao() {
     const btn = document.getElementById('castBtn');
     if (btn.disabled) return;
+    document.getElementById('ritualArea').hidden = false;
     /* 未写问题则直接以「今日运势」起卦，不再弹出选项 */
     const question = document.getElementById('question').value.trim() || '今日运势';
     const now = Date.now();
@@ -595,6 +596,7 @@
     lastQuestion = '';
     lastQuestionAt = 0;
     lastBeastIdentity = null;
+    document.getElementById('ritualArea').hidden = true;
     if (typeof closeAllMenus === 'function') closeAllMenus();
     if (typeof clearPreferredCategory === 'function') clearPreferredCategory();
     const qEl = document.getElementById('question');
