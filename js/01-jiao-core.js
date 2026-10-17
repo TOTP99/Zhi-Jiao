@@ -52,6 +52,7 @@
     bazi:    { backdrop: 'baziBackdrop',    modal: 'baziModal' },
     zodiac:  { backdrop: 'zodiacBackdrop',  modal: 'zodiacModal' },
     tarot:   { backdrop: 'tarotBackdrop',   modal: 'tarotModal' },
+    wuge:    { backdrop: 'wugeBackdrop',    modal: 'wugeModal' },
     western: { backdrop: 'westernBackdrop', modal: 'westernModal' }
   };
   const ModalUI = {
@@ -950,7 +951,7 @@
     )) return;
     closeAllMenus();
   }
-  /* 问卜方式 chips：MBTI / 塔罗 / 108 问；手动输入直接在输入行完成 */
+  /* 问卜方式 chips：MBTI / 塔罗 / 姓名 / 108 问；手动输入直接在输入行完成 */
   function selectQuestionMenuItem(n) {
     const q = getQuestionEl();
     if (!q) return;
@@ -985,6 +986,14 @@
       fillQuestionText('塔罗牌阵占卜');
       q.blur();
       openTarotPanel();
+      return;
+    }
+    if (n === 'wuge') {
+      closeAllMenus();
+      if (typeof clearPreferredCategory === 'function') clearPreferredCategory();
+      fillQuestionText('姓名五格测算');
+      q.blur();
+      openWugePanel();
       return;
     }
     if (n === 'casual') {
