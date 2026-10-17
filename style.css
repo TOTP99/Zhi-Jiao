@@ -890,6 +890,8 @@ input[type=range].yslider::-moz-range-thumb{width:20px;height:20px;border-radius
 #mbtiModal.is-reveal .mbti-intro,#mbtiModal.is-reveal .mbti-progress,
 #mbtiModal.is-reveal .mbti-quick-result,#mbtiModal.is-reveal .mbti-actions{display:none}
 #mbtiModal .mbti-reveal{overflow:visible;flex:0 0 auto;padding:4px 2px 0}
+#westernModal .mbti-reveal{overflow:visible;flex:0 0 auto;padding:4px 2px 0}
+#westernModal .mbti-reveal-actions{position:sticky;bottom:0;background:linear-gradient(180deg,rgba(20,17,11,0) 0%,#14110b 30%);}
 .mbti-reveal-actions{position:sticky;bottom:0;z-index:2;margin:0 -20px;padding:12px 20px calc(12px + env(safe-area-inset-bottom));
   background:#14110b;border-top:1px solid var(--line-soft)}
 #mbtiModal{align-items:stretch}
