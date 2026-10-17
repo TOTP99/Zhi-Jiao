@@ -374,6 +374,10 @@
     return eq([SXM.relation(0, 0).name, SXM.relation(0, 6).name, SXM.relation(0, 1).name, SXM.relation(0, 4).name], ['本命年', '冲太岁', '合太岁', '三合']);
   });
 
+  t('流月冲合：属马 → 寅月三合 +1、子月相冲 -1、未月六合 +1、丑月相害 -1', function () {
+    return eq([SXM.monthRel(6, 2), SXM.monthRel(6, 0), SXM.monthRel(6, 7), SXM.monthRel(6, 1)], [1, -1, 1, -1]);
+  });
+
   /* ────────── 姓名笔画字典补充 ────────── */
   section('姓名笔画补充');
   t('婷梓怡萱琪睿昊宸钰鑫 均有笔画', function () { var m = '婷梓怡萱琪睿昊宸钰鑫'.split('').filter(function (c) { return wgStrokes(c) == null; }); return m.length === 0 || ('缺 ' + m.join('')); });

@@ -962,3 +962,19 @@ input[type=range].yslider::-moz-range-thumb{width:20px;height:20px;border-radius
 .western-fab:active{cursor:grabbing}
 .western-fab.dragging{opacity:.92;box-shadow:0 8px 28px rgba(0,0,0,.55),0 0 0 1px var(--gold-bright)}
 .western-fab.hidden{display:none}
+
+/* 生肖：本年运势「＋」与详细年运 */
+.sx-fortune{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.sx-fortune-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
+.sx-plus{flex:0 0 auto;width:36px;height:36px;border-radius:50%;border:1px solid var(--gold);background:rgba(201,162,39,.12);
+  color:var(--gold-bright);font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+.sx-plus:active{background:rgba(201,162,39,.3)}
+.sx-back{background:none;border:0;color:var(--gold-bright);font-size:var(--fs-md);padding:8px 4px 10px;min-height:44px;cursor:pointer}
+.sx-stars{color:var(--gold-bright);letter-spacing:2px;font-size:var(--fs-sm)}
+.sx-months{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:2px 0 12px}
+.sx-month{position:relative;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--ink-800);padding:8px 2px;text-align:center}
+.sx-month b{display:block;color:var(--cream);font-size:var(--fs-sm);font-weight:600;margin-bottom:2px}
+.sx-month span{color:var(--gold-bright);font-size:10px;letter-spacing:1px}
+.sx-month.now{border-color:var(--gold);background:rgba(201,162,39,.14)}
+.sx-month i{position:absolute;top:-7px;right:-4px;font-style:normal;font-size:9px;color:#241a06;background:var(--gold-bright);border-radius:6px;padding:0 5px}
+@media (orientation:landscape) and (max-height:480px){.sx-months{grid-template-columns:repeat(6,1fr)}}
