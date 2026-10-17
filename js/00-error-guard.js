@@ -16,13 +16,6 @@
       // 浏览器扩展、ResizeObserver 等常见无害噪声
       return /ResizeObserver|Script error\.?$|chrome-extension:\/\/|moz-extension:\/\//i.test(s);
     }
-    function reportToSentry(error, message) {
-      try {
-        if (!window.YumiaoSentry || !window.YumiaoSentry.enabled) return;
-        if (error) window.YumiaoSentry.captureException(error, { tags: { area: 'global' } });
-        else if (message) window.YumiaoSentry.captureMessage(String(message), 'error');
-      } catch (_) {}
-    }
     function softRecoverUI(reason) {
       const now = Date.now();
       if (now - lastGuardAt < GUARD_COOLDOWN_MS) return;
@@ -67,7 +60,6 @@
           return true;
         }
         console.warn('[yumiao] uncaught', message, error);
-        reportToSentry(error || null, message);
         softRecoverUI();
       } catch (_) {}
       // 返回 true 减少部分浏览器默认控制台噪音；开发仍可在 Sources 见断点
@@ -82,7 +74,6 @@
           return;
         }
         console.warn('[yumiao] unhandled rejection', msg);
-        reportToSentry(reason instanceof Error ? reason : null, msg);
         // 已知的神谕链路错误已在 resolveOracle 内处理；若仍漏出则软恢复
         softRecoverUI();
         if (event && event.preventDefault) event.preventDefault();
