@@ -140,7 +140,6 @@
       <div class="method-chips" role="tablist" aria-label="问卜方式">
         <button type="button" class="mchip" data-m="mbti" onclick="pickMethod('mbti', this)"><span>MBTI</span></button>
         <button type="button" class="mchip" data-m="tarot" onclick="pickMethod('tarot', this)"><span>塔罗</span></button>
-        <button type="button" class="mchip" data-m="ziwei" onclick="pickMethod('ziwei', this)"><span>紫微</span></button>
         <button type="button" class="mchip" data-m="casual" onclick="pickMethod('casual', this)"><span>108 问</span></button>
       </div>
 
@@ -393,14 +392,6 @@
   <div id="tarotBody"></div>
 </div>
 
-<!-- ══════════ 紫微 ══════════ -->
-<div class="sheet-backdrop" id="ziweiBackdrop" onclick="closeSheetByBtn(this)"></div>
-<div class="sheet" id="ziweiModal" role="dialog" aria-label="紫微斗数排盘">
-  <div class="sheet-handle"></div>
-  <div class="sheet-head"><h3>紫微斗数</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
-  <div id="ziweiBody"></div>
-</div>
-
 <!-- ══════════ 西方星盘 ══════════ -->
 <div class="sheet-backdrop" id="westernBackdrop" onclick="closeSheetByBtn(this)"></div>
 <div class="sheet" id="westernModal" role="dialog" aria-label="西方星盘">
@@ -554,15 +545,6 @@
     }
     lazy('openChenggu', ['js/11a-chenggu-verses.js', 'js/11b-chenggu-modern.js', 'js/11-chenggu.js']);
     lazy('openTarotPanel', ['js/12-tarot.js']);
-    lazy('openZiweiPanel', ['js/13-ziwei.js']);
-    /* 供各模块按需加载：与上面的预加载共用同一份去重表 */
-    window.loadScript = loadScript;
-    /* 紫微引擎 800KB 较大，页面空闲时预加载，点 chip 时只剩界面模块要加载 */
-    (function preloadZiweiEngine() {
-      function go() { try { loadScript('js/13a-iztro.min.js').catch(function () {}); } catch (_) {} }
-      if ('requestIdleCallback' in window) requestIdleCallback(go, { timeout: 8000 });
-      else setTimeout(go, 4000);
-    })();
     lazy('openWesternPanel', ['js/08-western-astrology.js']);
     lazy('submitWesternForm', ['js/08-western-astrology.js']);
     lazy('backToWesternForm', ['js/08-western-astrology.js']);

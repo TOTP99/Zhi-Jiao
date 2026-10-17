@@ -929,34 +929,3 @@ input[type=range].yslider::-moz-range-thumb{width:20px;height:20px;border-radius
 .tarot-card-ori.is-rev{color:#e08a8a;border:1px solid rgba(224,138,138,.4)}
 .tarot-card-keys{font-size:var(--fs-sm);color:var(--gold-bright);letter-spacing:1px;line-height:1.8}
 
-/* ═════ 紫微斗数 ═════ */
-.ziwei-head{margin:6px 0 2px}
-.ziwei-chart{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,minmax(78px,auto));gap:6px;margin:12px 0}
-.ziwei-cell{border:1px solid var(--line-soft);border-radius:8px;background:var(--card);padding:7px 6px;overflow:hidden}
-.ziwei-cell.is-ming{border-color:var(--gold-deep);background:rgba(201,162,39,.06)}
-.ziwei-gong{font-size:var(--fs-xs);color:var(--muted);letter-spacing:1px;white-space:nowrap}
-.ziwei-mark{color:var(--gold-bright);font-size:10px;margin-left:3px;white-space:nowrap}
-.ziwei-zhi{font-size:var(--fs-md);font-weight:700;color:var(--cream);margin:1px 0}
-.ziwei-stars{line-height:1.7}
-.ziwei-star{font-size:var(--fs-sm);color:var(--gold-bright);letter-spacing:1px}
-.ziwei-star.hot{color:var(--gold);font-weight:700}
-.ziwei-hua{display:inline-block;font-size:10px;line-height:1.5;border:1px solid var(--gold-deep);border-radius:4px;
-  padding:0 3px;margin-left:3px;color:var(--gold);vertical-align:1px}
-.ziwei-center{grid-row:2/4;grid-column:2/4;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:10px;
-  border:1px solid var(--gold-deep);border-radius:8px;background:radial-gradient(circle at 50% 40%,rgba(201,162,39,.10),rgba(201,162,39,.02))}
-.ziwei-center-row span{font-size:var(--fs-xs);color:var(--muted);margin-right:6px;letter-spacing:2px}
-.ziwei-center-row strong{font-size:var(--fs-md);color:var(--gold-bright);letter-spacing:2px}
-/* 紫微完整盘：辅星/煞星行、明细、大限卡片 */
-.zw-fu{font-size:10px;color:var(--gold-bright);letter-spacing:1px;line-height:1.6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.zw-sha{font-size:10px;color:#d98a8a;letter-spacing:1px;line-height:1.6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.zw-horo{border:1px solid var(--gold-deep);border-radius:8px;background:rgba(201,162,39,.05);padding:8px 10px;margin:10px 0}
-.zw-hrow{font-size:var(--fs-sm);color:var(--cream);line-height:1.9}
-.zw-hrow span{display:inline-block;min-width:64px;color:var(--gold-bright);letter-spacing:2px;font-size:var(--fs-xs)}
-.zw-detail{margin:10px 0}
-.zw-dtitle{font-size:var(--fs-sm);color:var(--gold-bright);letter-spacing:2px;margin:6px 0}
-.zw-drow{border-top:1px solid var(--line-soft);padding:7px 0}
-.zw-dhead{font-size:var(--fs-sm);font-weight:700;color:var(--cream);letter-spacing:1px}
-.zw-drange{font-size:10px;color:var(--muted);font-weight:400;margin-left:6px}
-.zw-dline{font-size:var(--fs-xs);color:var(--muted);line-height:1.8}
-.zw-dline b{display:inline-block;min-width:34px;color:var(--gold-deep);font-weight:700;margin-right:6px}
-.zw-empty{color:var(--muted)}
