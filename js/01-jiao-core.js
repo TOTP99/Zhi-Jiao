@@ -53,7 +53,9 @@
     zodiac:  { backdrop: 'zodiacBackdrop',  modal: 'zodiacModal' },
     tarot:   { backdrop: 'tarotBackdrop',   modal: 'tarotModal' },
     wuge:    { backdrop: 'wugeBackdrop',    modal: 'wugeModal' },
-    western: { backdrop: 'westernBackdrop', modal: 'westernModal' }
+    western: { backdrop: 'westernBackdrop', modal: 'westernModal' },
+    fortune: { backdrop: 'fortuneBackdrop', modal: 'fortuneModal' },
+    shengxiao: { backdrop: 'shengxiaoBackdrop', modal: 'shengxiaoModal' }
   };
   const ModalUI = {
     isOpen(name) {
