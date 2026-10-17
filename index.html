@@ -505,6 +505,7 @@
   function loadAll(list) {
     return list.reduce(function (p, src) { return p.then(function () { return loadScript(src); }); }, Promise.resolve());
   }
+  window.__yumiaoLoad = loadAll; // 供生肖等模块按需加载农历换算
   function lazy(name, deps) {
     var stub = function () {
       var args = arguments;
