@@ -143,6 +143,7 @@
       '<div class="mbti-report"><div class="mbti-sec sx-fortune"><div class="sx-fortune-head"><span class="mbti-sec-label">本年运势 · ' + ctx.yearName + '年 · ' + rel.name + '</span>' +
       '<button type="button" class="sx-plus" data-act="detail" aria-label="查看详细年运">＋</button></div>' +
       rel.text + '<br>' + info.luck + '</div></div>';
+    if (typeof saveReportHTML === 'function') saveReportHTML('yumiao_report_shengxiao_v1', '生肖运势', 'shengxiaoBody');
   }
   (function bindOnce() {
     function go() {

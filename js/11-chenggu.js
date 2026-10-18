@@ -124,6 +124,7 @@
       verseHtml(r) +
       (r.hourDefault ? '<p class="cg-note">档案里没有出生时间，时辰暂按午时计算。</p>' : '') +
       '<p class="cg-note">称骨算命是流传民间的传统玩法，仅供娱乐参考。</p>';
+    if (typeof saveReportHTML === 'function') saveReportHTML('yumiao_report_chenggu_v1', '称骨算命', 'chengguResult');
   }
 
   /* ── 自带样式与弹窗 DOM（不依赖 index.html / style.css 里的称骨代码） ── */

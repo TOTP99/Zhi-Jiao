@@ -55,7 +55,8 @@
     wuge:    { backdrop: 'wugeBackdrop',    modal: 'wugeModal' },
     western: { backdrop: 'westernBackdrop', modal: 'westernModal' },
     fortune: { backdrop: 'fortuneBackdrop', modal: 'fortuneModal' },
-    shengxiao: { backdrop: 'shengxiaoBackdrop', modal: 'shengxiaoModal' }
+    shengxiao: { backdrop: 'shengxiaoBackdrop', modal: 'shengxiaoModal' },
+    ziwei: { backdrop: 'ziweiBackdrop', modal: 'ziweiModal' }
   };
   const ModalUI = {
     isOpen(name) {
@@ -676,12 +677,27 @@
   // 请示记录：持久化到本机，最多 8 条
 
   /* 详细报告捕获：报告渲染完成后存完整 HTML，供「记录下载」生成 PDF */
+  var QUERY_LOG_KEY = 'yumiao_records_v1'; // 统一质询记录：按时间顺序，供按质询次序打印
+  var QUERY_LOG_MAX = 24;
+  function appendQueryRecord(title, html) {
+    try {
+      if (!html || html.length < 20) return;
+      var raw = localStorage.getItem(QUERY_LOG_KEY);
+      var arr = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(arr)) arr = [];
+      arr.push({ title: title, ts: Date.now(), html: html });
+      while (arr.length > QUERY_LOG_MAX) arr.shift();
+      localStorage.setItem(QUERY_LOG_KEY, JSON.stringify(arr));
+    } catch (_) { /* 存储失败不影响主流程 */ }
+  }
   function saveReportHTML(key, title, elId) {
     try {
       const el = document.getElementById(elId);
       if (!el || !el.innerHTML || el.innerHTML.length < 50) return;
       if (el.dataset.prevHtml) return; // 词典覆盖态不存
-      localStorage.setItem(key, JSON.stringify({ html: el.innerHTML, ts: Date.now(), title: title }));
+      const html = el.innerHTML;
+      localStorage.setItem(key, JSON.stringify({ html: html, ts: Date.now(), title: title }));
+      appendQueryRecord(title, html); // 同时记入统一质询记录（按质询次序）
     } catch (_) { /* 存储失败不影响主流程 */ }
   }
 

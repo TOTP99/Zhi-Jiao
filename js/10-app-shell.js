@@ -66,6 +66,14 @@
     ov.classList.add('show');
     ov.setAttribute('aria-hidden', 'false');
     lockScroll(true);
+    /* 周易查阅留痕：外部页面无法抓取结果，只记查阅时间，供记录下载 */
+    try {
+      if (typeof appendQueryRecord === 'function') {
+        var d = new Date(), pad = function (n) { return String(n).padStart(2, '0'); };
+        appendQueryRecord('周易占卜', '<p style="color:var(--cream-dim)">于 ' + d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
+          ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ' 打开周易起卦（外部页面，结果请在周易页内查看）。</p>');
+      }
+    } catch (e) { console.warn('[yumiao] yi record', e); }
     try { history.pushState({ yumiaoYi: 1 }, ''); } catch (e) { console.warn('[yumiao] 10:69', e); }
     try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) { console.warn('[yumiao] 10:70', e); }
   };
@@ -467,6 +475,13 @@
         '<span>吉数 <b>' + d.verse.n + '</b></span>';
     }
     openSheet('dailySheet', 'dailyBackdrop');
+    /* 每日运程记入统一质询记录，可打印 */
+    try {
+      if (typeof appendQueryRecord === 'function') {
+        const ds = document.getElementById('dailySheet');
+        if (ds) appendQueryRecord('每日运程', ds.innerHTML);
+      }
+    } catch (e) { console.warn('[yumiao] daily record', e); }
     try { if (navigator.vibrate) navigator.vibrate(15); } catch (e) { console.warn('[yumiao] 10:483', e); }
   }
   window.openDailySheet = openDailySheet;

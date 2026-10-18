@@ -499,6 +499,21 @@
     if (history.length > 8) history.pop();
     saveHistory();
     renderHistory();
+    /* 问卜也记入统一质询记录，可打印 */
+    try {
+      if (typeof appendQueryRecord === 'function') {
+        let qh = '<div class="mbti-report"><div class="mbti-sec"><span class="mbti-sec-label">所问</span>' +
+          escapeHtml(question) + '</div><div class="mbti-sec"><span class="mbti-sec-label">筊象</span>' +
+          escapeHtml(safeType.text) + (beastName ? ' · 护法 ' + escapeHtml(beastName) : '') + '</div>';
+        if (detail) {
+          if (detail.shenyi) qh += '<div class="mbti-sec"><span class="mbti-sec-label">神意</span>' + escapeHtml(detail.shenyi) + '</div>';
+          if (detail.yi || detail.ji) qh += '<div class="mbti-sec"><span class="mbti-sec-label">宜忌</span>宜 ' + escapeHtml(detail.yi || '—') + ' · 忌 ' + escapeHtml(detail.ji || '—') + '</div>';
+          if (detail.shiji && detail.shiji.length) qh += '<div class="mbti-sec"><span class="mbti-sec-label">诗偈</span>' + detail.shiji.map(function (l) { return escapeHtml(l); }).join('<br>') + '</div>';
+        }
+        qh += '</div>';
+        appendQueryRecord('问卜掷筊', qh);
+      }
+    } catch (_) { /* 记录失败不影响主流程 */ }
   }
   function historyTimeLabel(h) {
     try {
@@ -509,24 +524,41 @@
     } catch (_) { return h.time || ''; }
   }
 
-  /* 记录下载：一问一页，按占卜顺序（最早在前），调系统打印存为 PDF */
-  /* 详细报告下载：八字→MBTI→星座→星盘，每类一页，走系统打印存 PDF */
+  /* 记录下载：按质询次序打印（最早在前），一类一页，走系统打印存 PDF */
   function downloadHistoryPDF() {
-    const KEYS = [
-      'yumiao_report_bazi_v1',
-      'yumiao_report_mbti_v1',
-      'yumiao_report_zodiac_v1',
-      'yumiao_report_western_v1'
-    ];
     const reports = [];
-    KEYS.forEach(function(k){
-      try {
-        const raw = localStorage.getItem(k);
-        if (!raw) return;
-        const r = JSON.parse(raw);
+    // ① 优先用统一质询记录（按质询时间顺序）
+    try {
+      const raw = localStorage.getItem('yumiao_records_v1');
+      const arr = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(arr)) arr.forEach(function (r) {
         if (r && r.html && r.html.length > 50) reports.push(r);
-      } catch (e) { console.warn('[yumiao] report parse', e); }
-    });
+      });
+    } catch (e) { console.warn('[yumiao] records parse', e); }
+    // ② 老数据兜底：按类别键读取
+    if (reports.length === 0) {
+      const KEYS = [
+        'yumiao_report_bazi_v1',
+        'yumiao_report_mbti_v1',
+        'yumiao_report_zodiac_v1',
+        'yumiao_report_western_v1',
+        'yumiao_report_tarot_v1',
+        'yumiao_report_wuge_v1',
+        'yumiao_report_ziwei_v1',
+        'yumiao_report_shengxiao_v1',
+        'yumiao_report_chenggu_v1',
+        'yumiao_report_fortune_v1',
+        'yumiao_report_yi_v1'
+      ];
+      KEYS.forEach(function (k) {
+        try {
+          const raw = localStorage.getItem(k);
+          if (!raw) return;
+          const r = JSON.parse(raw);
+          if (r && r.html && r.html.length > 50) reports.push(r);
+        } catch (e) { console.warn('[yumiao] report parse', e); }
+      });
+    }
     if (reports.length === 0) {
       try {
         const t = document.createElement('div');
@@ -552,7 +584,7 @@
       + '<div class="pdf-cover-title">御猫灵局</div>'
       + '<div class="pdf-cover-sub">详细报告</div>'
       + '<div class="pdf-cover-meta">共 ' + reports.length + ' 类 · 导出于 ' + today + '</div>'
-      + '<div class="pdf-cover-note">一类一页 · 按八字 / MBTI / 星座 / 星盘顺序排列</div></div>';
+      + '<div class="pdf-cover-note">按质询次序排列 · 一类一页</div></div>';
     reports.forEach(function(r, i){
       html += '<div class="pdf-page pdf-report">'
         + '<div class="pdf-head"><span>' + (r.title || ('报告' + (i+1))) + '</span><span>' + fmtTs(r.ts) + '</span></div>'

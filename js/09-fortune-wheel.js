@@ -174,6 +174,7 @@
       res.innerHTML = '<div class="fr-tag">' + segData.tag + ' · ' + segData.label + '</div>' +
         '<div>' + line + '</div>' +
         '<div class="fr-catline">' + segData.cat + '</div>';
+      if (typeof saveReportHTML === 'function') saveReportHTML('yumiao_report_fortune_v1', '命运圆盘', 'fortuneResult');
       if (again) { again.style.display = ''; again.disabled = false; }
     }, 3000);
   }
