@@ -21,6 +21,8 @@
 <script src="js/13-wuge.js"></script>
 <script src="js/08-western-astrology.js"></script>
 <script src="js/14-shengxiao.js"></script>
+<script src="js/15-ziwei.js"></script>
+<script src="js/16-sound.js"></script>
 <script>
 (function () {
   var out = document.getElementById('out'), pass = 0, fail = 0;
@@ -383,6 +385,42 @@
   t('婷梓怡萱琪睿昊宸钰鑫 均有笔画', function () { var m = '婷梓怡萱琪睿昊宸钰鑫'.split('').filter(function (c) { return wgStrokes(c) == null; }); return m.length === 0 || ('缺 ' + m.join('')); });
   t('杰=12（按傑）、戴=18、万=15（按萬）', function () { return eq([wgStrokes('杰'), wgStrokes('戴'), wgStrokes('万')], [12, 18, 15]); });
   t('含新增字的名字可算：王梓怡', function () { var r = wgCalc('王梓怡'); return !r.error && r.zongge === 24 || JSON.stringify(r); });
+
+  /* ────────── 紫微斗数 ────────── */
+  section('紫微斗数');
+  var ZWC = window.ZiweiChart;
+  t('紫微引擎已加载', function () { return typeof ZWC === 'function'; });
+  t('基准：2000-08-16 寅时女 → 命午/身戌/木三局/紫微午/命主破军', function () {
+    var c = ZWC({ year: 2000, month: 8, day: 16, hour: 3, gender: '女' });
+    return eq([c.mingGanzhi.slice(1), c.shenBranch, c.ju.name, c.ziweiBranch, c.mingzhu], ['午', '戌', '木三局', '午', '破军']);
+  });
+  t('基准：2000-02-04 寅时女 → 命亥/身卯/火六局', function () {
+    var c = ZWC({ year: 2000, month: 2, day: 4, hour: 3, gender: '女' });
+    return eq([c.mingGanzhi.slice(1), c.shenBranch, c.ju.name], ['亥', '卯', '火六局']);
+  });
+  t('2000-08-16 寅时女四化：庚年太阳禄/武曲权/太阴科/天同忌', function () {
+    var c = ZWC({ year: 2000, month: 8, day: 16, hour: 3, gender: '女' });
+    return eq([c.sihua['太阳'], c.sihua['武曲'], c.sihua['太阴'], c.sihua['天同']], ['禄', '权', '科', '忌']);
+  });
+  t('十四主星齐全且十二宫干支无缺', function () {
+    var c = ZWC({ year: 1990, month: 5, day: 20, hour: 14, gender: '男' });
+    return Object.keys(c.majorStars).length === 14 && c.palaces.length === 12 && c.palaces.every(function (p) { return p.ganzhi.length === 2; }) || '星/宫缺失';
+  });
+  t('大限：木三局3岁起运，首限3–12岁', function () {
+    var c = ZWC({ year: 2000, month: 8, day: 16, hour: 3, gender: '女' });
+    return eq([c.daxian[0].from, c.daxian[0].to], [3, 12]);
+  });
+  t('闰月：2023-04-10（闰二月二十）排盘正常', function () {
+    var c = ZWC({ year: 2023, month: 4, day: 10, hour: 15, gender: '女' });
+    return c.lunar.isLeap === true && c.lunar.month === 2 || JSON.stringify(c.lunar);
+  });
+
+  /* ────────── 中央音效 ────────── */
+  section('中央音效');
+  var YS = window.YumiaoSound;
+  t('音效系统已加载', function () { return !!YS; });
+  t('六种音效方法齐全', function () { return ['tap', 'open', 'close', 'yi', 'select', 'pop'].every(function (m) { return typeof YS[m] === 'function'; }) || '方法缺失'; });
+  t('音效开关默认开启', function () { return YS.enabled() === true; });
 
   /* ────────── 错误边界 ────────── */
   section('错误边界');
