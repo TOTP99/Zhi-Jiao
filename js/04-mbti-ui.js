@@ -301,6 +301,7 @@
   function answerMbti(idx, val) {
     mbtiAnswers[idx] = val;
     saveMbtiAnswers();
+    if (typeof YumiaoSound !== 'undefined') YumiaoSound.tap();
     document.querySelectorAll(`.mbti-slider[data-idx="${idx}"]`).forEach(slider => {
       syncMbtiSlider(slider, val);
     });

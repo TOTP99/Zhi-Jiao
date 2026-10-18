@@ -387,10 +387,16 @@
     b.innerHTML = html;
     b.scrollTop = 0;
     bd.classList.add('show');
+    if (typeof YumiaoSound !== 'undefined') YumiaoSound.pop();
   }
   function closeZwPop() {
     var bd = document.getElementById('zwPopBackdrop');
-    if (bd) bd.classList.remove('show');
+    if (bd && bd.classList.contains('show')) {
+      bd.classList.remove('show');
+      if (typeof YumiaoSound !== 'undefined') YumiaoSound.close();
+    } else if (bd) {
+      bd.classList.remove('show');
+    }
   }
   function zwMoreBtn(fn) {
     return '<button type="button" class="zw-more" onclick="' + fn + '">详细说明</button>';
