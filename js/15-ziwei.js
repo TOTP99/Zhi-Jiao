@@ -288,7 +288,7 @@
     LAYOUT.forEach(function (item) {
       var br = item[0];
       if (br === 'CENTER') {
-        h += '<div class="zw-cell zw-center" style="grid-row:2/span 2;grid-column:2/span 2;">' +
+        h += '<div class="zw-cell zw-center zw-tap" style="grid-row:2/span 2;grid-column:2/span 2;" onclick="openZwCenter()" role="button" tabindex="0">' +
           '<div class="zw-center-title">紫微斗数</div>' +
           '<div>农历 ' + c.lunar.year + '年' + (c.lunar.isLeap ? '闰' : '') + c.lunar.month + '月' + c.lunar.day + '日 ' + esc(c.hourZhi) + '时</div>' +
           '<div>' + esc(c.yearGanZhi) + '年 · ' + esc(c.input.gender) + '命</div>' +
@@ -298,7 +298,7 @@
       }
       var p = palaceOf(br);
       var dx = c.daxian.find(function (x) { return ZHI[x.branch] === br; });
-      h += '<div class="zw-cell" style="grid-row:' + item[1] + ';grid-column:' + item[2] + ';">' +
+      h += '<div class="zw-cell zw-tap" style="grid-row:' + item[1] + ';grid-column:' + item[2] + ';" onclick="openZwPalace(\'' + p.name + '\')" role="button" tabindex="0">' +
         '<div class="zw-palace"><span class="zw-palace-name">' + esc(p.name) + '</span><span class="zw-ganzhi">' + esc(p.ganzhi) + '</span></div>' +
         '<div class="zw-stars">' + starsIn(c, br) + '</div>' +
         '<div class="zw-daxian">' + dx.from + '–' + dx.to + '岁</div></div>';
@@ -308,12 +308,12 @@
     var sh = Object.keys(c.sihua).map(function (nm) {
       return '<span class="zw-sh">' + esc(nm) + '<i class="zw-hua">' + c.sihua[nm] + '</i></span>';
     }).join('');
-    h += '<div class="mbti-report"><div class="mbti-sec"><span class="mbti-sec-label">生年四化</span>' + sh + '</div>';
+    h += '<div class="mbti-report"><div class="mbti-sec zw-tap" onclick="openZwSihua()" role="button" tabindex="0"><span class="mbti-sec-label">生年四化</span>' + sh + '</div>';
     // 大限表
     var dxh = c.daxian.map(function (x) {
       return '<span class="zw-dx">' + esc(x.ganzhi) + x.from + '–' + x.to + '</span>';
     }).join('');
-    h += '<div class="mbti-sec"><span class="mbti-sec-label">大限</span>' + dxh + '</div></div>';
+    h += '<div class="mbti-sec zw-tap" onclick="openZwDaxian()" role="button" tabindex="0"><span class="mbti-sec-label">大限</span>' + dxh + '</div></div>';
     return h;
   }
   function openZiwei() {
@@ -324,6 +324,7 @@
     } else {
       try {
         var c = chart({ year: b.year, month: b.month, day: b.day, hour: b.hour, gender: b.gender });
+        zwCurrent = c; // 供子弹窗取数
         body.innerHTML = renderChart(c);
         if (typeof saveReportHTML === 'function') saveReportHTML('yumiao_report_ziwei_v1', '紫微斗数', 'ziweiBody');
       } catch (e) {
@@ -337,13 +338,195 @@
     }
   }
   function closeZiwei() {
+    closeZwPop();
     if (typeof ModalUI !== 'undefined' && ModalUI.close) ModalUI.close('ziwei');
     else {
       document.getElementById('ziweiBackdrop').classList.remove('show');
       document.getElementById('ziweiModal').classList.remove('show');
     }
   }
+  /* ── 子弹窗：宫格即按钮，底图模糊，说明分层递进 ── */
+  var zwCurrent = null; // 当前命盘，供弹窗取数
+  var ZW_PALACE_MEAN = {
+    '命宫': '性格、天赋与一生格局，命盘的核心',
+    '兄弟': '兄弟姐妹、朋友助力与团队缘',
+    '夫妻': '感情婚姻、亲密关系与合作对象',
+    '子女': '子女缘、创作力与晚辈关系',
+    '财帛': '赚钱方式、理财习惯与物质欲',
+    '疾厄': '体质健康、潜在病灶与心理状态',
+    '迁移': '外出发展、旅行运与给人的第一印象',
+    '交友': '朋友下属、人际网络与贵人小人',
+    '官禄': '事业方向、工作态度与成就高低',
+    '田宅': '房产置业、家庭环境与不动产运',
+    '福德': '精神生活、兴趣爱好与晚年福气',
+    '父母': '父母长辈、师长缘与家庭背景'
+  };
+  var ZW_STAR_MEAN = {
+    '紫微': '帝星：有主见、好面子，天生的领导者',
+    '天机': '谋星：机智善变，宜动脑、策划',
+    '太阳': '贵星：光明博爱，主名声，乐于付出',
+    '武曲': '财星：刚毅果决，正财得力',
+    '天同': '福星：温和安逸，知足常乐',
+    '廉贞': '精明多才，公关能力强',
+    '天府': '库星：稳重守成，天生的"财库"',
+    '太阴': '富星：温柔细腻，主积蓄与不动产',
+    '贪狼': '多才多艺、交际广，宜用才华',
+    '巨门': '口才好、观察深，宜靠嘴吃饭',
+    '天相': '热心助人、重承诺，宜服务管理',
+    '天梁': '稳重，有长者缘，宜医疗教育',
+    '七杀': '果断敢冲，开创力强',
+    '破军': '破旧立新，变动大，宜创新行业'
+  };
+  var ZW_HUA_MEAN = { '禄': '得益顺遂', '权': '掌控奋进', '科': '名声贵人', '忌': '阻滞执念' };
+  function zwPop(title, html) {
+    var bd = document.getElementById('zwPopBackdrop');
+    var t = document.getElementById('zwPopTitle');
+    var b = document.getElementById('zwPopBody');
+    if (!bd || !t || !b) return;
+    t.textContent = title;
+    b.innerHTML = html;
+    b.scrollTop = 0;
+    bd.classList.add('show');
+  }
+  function closeZwPop() {
+    var bd = document.getElementById('zwPopBackdrop');
+    if (bd) bd.classList.remove('show');
+  }
+  function zwMoreBtn(fn) {
+    return '<button type="button" class="zw-more" onclick="' + fn + '">详细说明</button>';
+  }
+  function zwBackBtn(fn) {
+    return '<button type="button" class="zw-back" onclick="' + fn + '">← 返回上一层</button>';
+  }
+  // 某宫的星曜（含四化）
+  function zwPalaceStars(palaceName) {
+    if (!zwCurrent) return '';
+    var p = zwCurrent.palaces.filter(function (x) { return x.name === palaceName; })[0];
+    if (!p) return '';
+    var out = [];
+    Object.keys(zwCurrent.majorStars).forEach(function (nm) {
+      if (ZHI[zwCurrent.majorStars[nm]] === p.branch)
+        out.push('<b>' + esc(nm) + '</b>' + (zwCurrent.sihua[nm] ? '<i class="zw-hua">' + zwCurrent.sihua[nm] + '</i>' : ''));
+    });
+    Object.keys(zwCurrent.auxStars).forEach(function (nm) {
+      if (ZHI[zwCurrent.auxStars[nm]] === p.branch)
+        out.push(esc(nm) + (zwCurrent.sihua[nm] ? '<i class="zw-hua">' + zwCurrent.sihua[nm] + '</i>' : ''));
+    });
+    return out.length ? out.join('、') : '（空宫，对宫星曜借来看）';
+  }
+  // 十二宫弹窗 · 第一层（一句话）
+  function openZwPalace(name) {
+    var p = zwCurrent ? zwCurrent.palaces.filter(function (x) { return x.name === name; })[0] : null;
+    var h = '<div><b>' + esc(name) + '</b>：' + esc(ZW_PALACE_MEAN[name] || '') + '</div>';
+    if (p) h += '<div style="margin-top:8px;">本宫星曜：' + zwPalaceStars(name) + '</div>';
+    h += zwMoreBtn("openZwPalace2('" + name + "')");
+    zwPop(name, h);
+  }
+  // 十二宫弹窗 · 第二层（详细）
+  function openZwPalace2(name) {
+    var h = '<div><b>' + esc(name) + '</b>：' + esc(ZW_PALACE_MEAN[name] || '') + '</div>';
+    h += '<div style="margin-top:8px;">本宫星曜：' + zwPalaceStars(name) + '</div>';
+    if (zwCurrent) {
+      var p = zwCurrent.palaces.filter(function (x) { return x.name === name; })[0];
+      var majors = [];
+      Object.keys(zwCurrent.majorStars).forEach(function (nm) {
+        if (ZHI[zwCurrent.majorStars[nm]] === p.branch) majors.push(nm);
+      });
+      if (majors.length) {
+        h += '<div style="margin-top:8px;">' + majors.map(function (nm) {
+          return '· <b>' + esc(nm) + '</b>' + (zwCurrent.sihua[nm] ? '<i class="zw-hua">' + zwCurrent.sihua[nm] + '</i>' : '') +
+            '：' + esc(ZW_STAR_MEAN[nm] || '吉星') +
+            (zwCurrent.sihua[nm] ? '（化' + zwCurrent.sihua[nm] + '：' + ZW_HUA_MEAN[zwCurrent.sihua[nm]] + '）' : '');
+        }).join('<br>') + '</div>';
+      }
+    }
+    h += zwBackBtn("openZwPalace('" + name + "')");
+    zwPop(name + ' · 详解', h);
+  }
+  // 中央命盘弹窗 · 第一层（最简）
+  function openZwCenter() {
+    if (!zwCurrent) return;
+    var c = zwCurrent;
+    var h = '<div>你的性格底盘在<b>命宫' + esc(c.mingGanzhi) + '</b>；</div>';
+    h += '<div style="margin-top:6px;">中年后重心看<b>身宫（' + esc(c.shenBranch) + '）</b>；</div>';
+    h += '<div style="margin-top:6px;"><b>' + esc(c.ju.name) + '</b>，' + c.ju.num + '岁起运，十年一换大限。</div>';
+    h += zwMoreBtn('openZwCenter2()');
+    zwPop('命盘总览', h);
+  }
+  // 中央命盘弹窗 · 第二层（详细）
+  function openZwCenter2() {
+    if (!zwCurrent) return;
+    var c = zwCurrent;
+    var h = '<div><b>命宫' + esc(c.mingGanzhi) + '</b>：先天性格与一生格局，整张盘的核心。</div>';
+    h += '<div style="margin-top:6px;"><b>身宫居' + esc(c.shenBranch) + '</b>：后天修为与归宿，中年后影响渐重；命身同宫者表里如一。</div>';
+    h += '<div style="margin-top:6px;"><b>' + esc(c.ju.name) + '</b>：决定起运早晚，局数越小起运越早。</div>';
+    h += '<div style="margin-top:6px;"><b>命主' + esc(c.mingzhu) + '</b>、<b>身主' + esc(c.shenzhu) + '</b>：命身二宫的守护星，辅助参看吉凶。</div>';
+    h += '<div style="margin-top:6px;">十四主星：' + Object.keys(ZW_STAR_MEAN).map(function (k) {
+      return '<br>· <b>' + k + '</b>：' + ZW_STAR_MEAN[k];
+    }).join('') + '</div>';
+    h += zwBackBtn('openZwCenter()');
+    zwPop('命盘总览 · 详解', h);
+  }
+  // 生年四化弹窗 · 第一层
+  function openZwSihua() {
+    if (!zwCurrent) return;
+    var c = zwCurrent;
+    var h = '<div>出生年天干带来的四种变化，标在星名右上角小圈里：</div>';
+    h += '<div style="margin-top:6px;">' + Object.keys(c.sihua).map(function (nm) {
+      return '· <b>' + esc(nm) + '</b>化<b>' + c.sihua[nm] + '</b>（' + ZW_HUA_MEAN[c.sihua[nm]] + '）';
+    }).join('<br>') + '</div>';
+    h += zwMoreBtn('openZwSihua2()');
+    zwPop('生年四化', h);
+  }
+  function openZwSihua2() {
+    if (!zwCurrent) return;
+    var c = zwCurrent;
+    function palaceOfStar(nm) {
+      var br = c.majorStars[nm] != null ? ZHI[c.majorStars[nm]] : (c.auxStars[nm] != null ? ZHI[c.auxStars[nm]] : null);
+      if (br == null) return '';
+      var p = c.palaces.filter(function (x) { return x.branch === br; })[0];
+      return p ? p.name : '';
+    }
+    var h = '<div>' + Object.keys(c.sihua).map(function (nm) {
+      return '· <b>' + esc(nm) + '</b>化<b>' + c.sihua[nm] + '</b>在<b>' + esc(palaceOfStar(nm)) + '</b>：' +
+        ZW_HUA_MEAN[c.sihua[nm]] + '之力落在此宫';
+    }).join('<br>') + '</div>';
+    h += '<div style="margin-top:8px;color:var(--muted);font-size:var(--fs-sm);">化忌所在之宫，是这辈子最费心的地方；化禄所在，多有得益。</div>';
+    h += zwBackBtn('openZwSihua()');
+    zwPop('生年四化 · 详解', h);
+  }
+  // 大限弹窗 · 第一层
+  function openZwDaxian() {
+    if (!zwCurrent) return;
+    var c = zwCurrent;
+    var now = new Date().getFullYear() - c.input.year + 1; // 虚岁
+    var cur = c.daxian.filter(function (x) { return now >= x.from && now <= x.to; })[0] || c.daxian[0];
+    var h = '<div>大限是十年一站的运势车站，每十年走一宫。</div>';
+    h += '<div style="margin-top:6px;">你今年虚岁<b>' + now + '</b>，正走<b>' + esc(cur.ganzhi) + '（' + cur.from + '–' + cur.to + '岁）</b>大限。</div>';
+    h += zwMoreBtn('openZwDaxian2()');
+    zwPop('大限', h);
+  }
+  function openZwDaxian2() {
+    if (!zwCurrent) return;
+    var c = zwCurrent;
+    var h = '<div>' + c.daxian.map(function (x) {
+      var p = c.palaces.filter(function (pl) { return ZHI[x.branch] === pl.branch; })[0];
+      return '· <b>' + esc(x.ganzhi) + '</b> ' + x.from + '–' + x.to + '岁（' + esc(p ? p.name : '') + '）';
+    }).join('<br>') + '</div>';
+    h += '<div style="margin-top:8px;color:var(--muted);font-size:var(--fs-sm);">看某阶段运势，重心落在该大限之宫，合参本命盘同宫星曜一起看。</div>';
+    h += zwBackBtn('openZwDaxian()');
+    zwPop('大限 · 详解', h);
+  }
   window.openZiwei = openZiwei;
   window.closeZiwei = closeZiwei;
+  window.openZwPalace = openZwPalace;
+  window.openZwPalace2 = openZwPalace2;
+  window.openZwCenter = openZwCenter;
+  window.openZwCenter2 = openZwCenter2;
+  window.openZwSihua = openZwSihua;
+  window.openZwSihua2 = openZwSihua2;
+  window.openZwDaxian = openZwDaxian;
+  window.openZwDaxian2 = openZwDaxian2;
+  window.closeZwPop = closeZwPop;
   window.ZiweiChart = chart; // 供 tests.html 调用
 })();
