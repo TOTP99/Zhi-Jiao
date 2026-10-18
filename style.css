@@ -1002,3 +1002,20 @@ input[type=range].yslider::-moz-range-thumb{width:20px;height:20px;border-radius
   .zw-minor,.zw-center,.zw-ganzhi{color:#333}
   .zw-daxian{color:#666}
 }
+
+/* ══════════ 紫微子弹窗（宫格即按钮，底图模糊，递进说明） ══════════ */
+.zw-tap{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.zw-tap:active{background:rgba(201,162,39,.18)}
+.zw-pop-backdrop{position:absolute;inset:0;z-index:30;display:none;align-items:center;justify-content:center;
+  background:rgba(8,6,3,.45);-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);padding:22px}
+.zw-pop-backdrop.show{display:flex}
+.zw-pop{width:100%;max-width:340px;max-height:78%;display:flex;flex-direction:column;overflow:hidden;
+  background:var(--card-solid);border:1px solid var(--gold);border-radius:var(--r-lg);box-shadow:var(--shadow)}
+.zw-pop-head{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--line)}
+.zw-pop-head h4{margin:0;font-size:var(--fs-lg);color:var(--gold-bright)}
+.zw-pop-body{overflow-y:auto;padding:12px 14px;font-size:var(--fs-md);color:var(--cream-dim);line-height:1.9}
+.zw-pop-body b{color:var(--cream)}
+.zw-more{display:block;width:100%;margin-top:10px;padding:10px;min-height:44px;border-radius:var(--r-sm);
+  border:1px solid var(--gold);background:rgba(201,162,39,.12);color:var(--gold-bright);font-size:var(--fs-md);cursor:pointer}
+.zw-more:active{background:rgba(201,162,39,.3)}
+.zw-back{display:block;width:100%;margin-top:10px;padding:8px;border:0;background:none;color:var(--muted);font-size:var(--fs-sm);cursor:pointer}

@@ -333,6 +333,13 @@
   <div class="sheet-handle"></div>
   <div class="sheet-head"><h3>紫微斗数</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
   <div class="sheet-scroll"><div id="ziweiBody"></div></div>
+  <!-- 紫微子弹窗：底图模糊 -->
+  <div class="zw-pop-backdrop" id="zwPopBackdrop" onclick="closeZwPop()">
+    <div class="zw-pop" role="dialog" aria-label="说明" onclick="event.stopPropagation()">
+      <div class="zw-pop-head"><h4 id="zwPopTitle"></h4><button type="button" class="sheet-close" onclick="closeZwPop()" aria-label="关闭">×</button></div>
+      <div class="zw-pop-body" id="zwPopBody"></div>
+    </div>
+  </div>
 </div>
 
 <!-- ══════════ 生肖 ══════════ -->
