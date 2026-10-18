@@ -525,6 +525,11 @@
   }
 
   /* 记录下载：按质询次序打印（最早在前），一类一页，走系统打印存 PDF */
+  function hashStr(s) {
+    let h = 2166136261 >>> 0;
+    for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return (h >>> 0).toString(36);
+  }
   function downloadHistoryPDF() {
     const reports = [];
     // ① 优先用统一质询记录（按质询时间顺序）
@@ -570,6 +575,16 @@
       } catch (_) { alert('暂无详细报告，请先完成测算'); }
       return;
     }
+    // 去重：同一标题+同一内容只保留最后一次，问卜等不同内容的不合并
+    const seen = {};
+    const uniq = [];
+    for (let i = reports.length - 1; i >= 0; i--) {
+      const r = reports[i];
+      const k = (r.title || '') + '|' + (r.html || '').length + '|' + hashStr(r.html || '');
+      if (!seen[k]) { seen[k] = true; uniq.unshift(r); }
+    }
+    reports.length = 0;
+    uniq.forEach(function (r) { reports.push(r); });
     const d = new Date();
     const pad = function(n){ return String(n).padStart(2,'0'); };
     const today = d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
