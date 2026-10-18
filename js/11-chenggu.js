@@ -57,7 +57,10 @@
 
   /* ── 读取共用生辰 ── */
   function readBirth() {
-    try { return JSON.parse(localStorage.getItem(BIRTH_KEY) || 'null'); } catch (_) { return null; }
+    try {
+      var b = JSON.parse(localStorage.getItem(BIRTH_KEY) || 'null');
+      return (b && typeof window.yumiaoStdBirth === 'function') ? window.yumiaoStdBirth(b) : b;
+    } catch (_) { return null; }
   }
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {

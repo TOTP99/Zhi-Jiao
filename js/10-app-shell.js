@@ -74,7 +74,7 @@
           ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ' 打开周易起卦（外部页面，结果请在周易页内查看）。</p>');
       }
     } catch (e) { console.warn('[yumiao] yi record', e); }
-    try { history.pushState({ yumiaoYi: 1 }, ''); } catch (e) { console.warn('[yumiao] 10:69', e); }
+    try { window.history.pushState({ yumiaoYi: 1 }, ''); } catch (e) { console.warn('[yumiao] 10:69', e); }
     try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) { console.warn('[yumiao] 10:70', e); }
   };
   function hideYi() {
@@ -88,8 +88,8 @@
   window.closeYi = function () {
     if (!yiOpen) return;
     var st = null;
-    try { st = history.state; } catch (e) { console.warn('[yumiao] 10:83', e); }
-    if (st && st.yumiaoYi) history.back();   /* 交给 popstate 统一收尾，保持历史栈干净 */
+    try { st = window.history.state; } catch (e) { console.warn('[yumiao] 10:83', e); }
+    if (st && st.yumiaoYi) window.history.back();   /* 交给 popstate 统一收尾，保持历史栈干净 */
     else hideYi();
   };
   window.addEventListener('popstate', function () { if (yiOpen) hideYi(); });
@@ -317,7 +317,7 @@
     var t = ($('obTime') || {}).value || '';
     if (!d) { toast('请选择出生日期'); return null; }
     var parts = d.split('-');
-    var tp = t ? t.split(':') : ['12', '00'];
+    var tp = t ? t.split(':') : ['', ''];   /* 没填出生时间就留空，各模块自行按午时并提示 */
     var city = segVal('obCity') || 'toronto';
     var preset = CITY_PRESETS[city];
     var tz = preset ? preset.tz : (parseFloat(($('obTz') || {}).value) || 0);
@@ -325,7 +325,7 @@
     var lng = preset ? preset.lng : (parseFloat(($('obLng') || {}).value) || null);
     return {
       year: +parts[0], month: +parts[1], day: +parts[2],
-      hour: tp[0] === '' ? 12 : +tp[0], minute: tp[1] === '' ? 0 : +tp[1],
+      hour: tp[0] === '' ? '' : +tp[0], minute: tp[1] === '' ? '' : +tp[1],   /* 留空 = 不知道时辰 */
       tzOffset: tz, tzName: preset ? preset.tzName : undefined,
       lat: lat, lng: lng, city: city,
       sex: segVal('obSex') || 'M'
@@ -341,7 +341,7 @@
       var dEl = $('obDate');
       if (dEl && b.year) dEl.value = b.year + '-' + pad(b.month) + '-' + pad(b.day);
       var tEl = $('obTime');
-      if (tEl && b.hour != null) tEl.value = pad(b.hour) + ':' + pad(b.minute || 0);
+      if (tEl) tEl.value = (b.hour != null && b.hour !== '') ? pad(b.hour) + ':' + pad(b.minute || 0) : '';
       [['obSex', b.sex || 'M'], ['obCity', b.city || 'toronto']].forEach(function (pair) {
         var seg = $(pair[0]);
         if (seg) seg.querySelectorAll('button').forEach(function (x) {

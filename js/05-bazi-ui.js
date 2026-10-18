@@ -27,10 +27,11 @@
     if (form) form.style.display = '';
   }
   function readBaziInput() {
-    const b = (typeof loadSharedBirth === 'function') ? loadSharedBirth() : null;
+    let b = (typeof loadSharedBirth === 'function') ? loadSharedBirth() : null;
     if (!b || !b.year || !b.month || !b.day) {
       return { error: '请先录入生辰档案，再来排盘。' };
     }
+    if (typeof window.yumiaoStdBirth === 'function') b = window.yumiaoStdBirth(b); /* 夏令时回拨到标准时 */
     const year = +b.year, month = +b.month, day = +b.day;
     const hour = (b.hour == null || b.hour === '') ? 12 : +b.hour;
     const minute = (b.minute == null || b.minute === '') ? 0 : +b.minute;

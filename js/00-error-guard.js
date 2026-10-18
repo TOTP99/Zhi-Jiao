@@ -88,3 +88,43 @@
     });
   })();
 })();
+
+/* ============================================================
+   出生时刻 → 当地「标准时」（扣除夏令时）
+   八字 / 紫微 / 称骨都按标准时取时辰；档案里有 IANA 时区名（tzName）时，
+   用浏览器时区库判断出生当时是否夏令时（多伦多夏季、中国 1986–91 等），
+   是则把钟表时间回拨到标准时。没填出生时间 / 没有时区名 → 原样返回。
+   ============================================================ */
+(function () {
+  'use strict';
+  function offsetAt(instant, tzName) {
+    var f = new Intl.DateTimeFormat('en-US', {
+      timeZone: tzName, hourCycle: 'h23',
+      year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric'
+    });
+    var o = {};
+    f.formatToParts(new Date(instant)).forEach(function (p) { o[p.type] = p.value; });
+    var wall = Date.UTC(+o.year, +o.month - 1, +o.day, +o.hour % 24, +o.minute, +o.second);
+    return wall - Math.floor(instant / 1000) * 1000;
+  }
+  window.yumiaoStdBirth = function (b) {
+    try {
+      if (!b || !b.tzName || b.tzOffset == null || b.tzOffset === '') return b;
+      if (b.hour == null || b.hour === '') return b;
+      var std = Number(b.tzOffset) * 3600000;
+      if (!isFinite(std)) return b;
+      var wall = Date.UTC(+b.year, +b.month - 1, +b.day, +b.hour, +(b.minute || 0));
+      var o1 = offsetAt(wall - std, b.tzName);
+      var o2 = offsetAt(wall - o1, b.tzName);
+      var instant = wall - o2;
+      if (o2 === std) return b;                       /* 非夏令时，不动 */
+      var s = new Date(instant + std);
+      var r = {};
+      for (var k in b) if (Object.prototype.hasOwnProperty.call(b, k)) r[k] = b[k];
+      r.year = s.getUTCFullYear(); r.month = s.getUTCMonth() + 1; r.day = s.getUTCDate();
+      r.hour = s.getUTCHours(); r.minute = s.getUTCMinutes();
+      r._dstAdjusted = true;
+      return r;
+    } catch (e) { return b; }
+  };
+})();

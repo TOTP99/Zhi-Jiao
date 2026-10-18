@@ -261,6 +261,7 @@
     try {
       var b = JSON.parse(localStorage.getItem(BIRTH_KEY) || 'null');
       if (!b || !b.year || !b.month || !b.day) return null;
+      if (typeof window.yumiaoStdBirth === 'function') b = window.yumiaoStdBirth(b); /* 夏令时回拨到标准时 */
       return {
         year: +b.year, month: +b.month, day: +b.day,
         hour: (b.hour == null || b.hour === '') ? 12 : +b.hour,
