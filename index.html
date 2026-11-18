@@ -3,12 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0b0906">
+<meta name="theme-color" content="#101216">
+<meta name="description" content="御猫灵局：传统问卜、命盘参详与个人记录。数据保存在本机，仅供文化体验与娱乐。">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="format-detection" content="telephone=no">
-<title>御猫灵局 · 掷筊问卜</title>
+<title>御猫灵局 · 问卜与命盘</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -55,7 +56,7 @@
       <p class="ob-profile-sub">用于八字、星座与星盘排盘，仅保存在本机</p>
       <div class="form-row">
         <label>出生日期</label>
-        <input type="date" id="obDate" value="1990-06-15">
+        <input type="date" id="obDate" value="">
       </div>
       <div class="form-row">
         <label>出生时间（不清楚可留空，按午时算）</label>
@@ -78,18 +79,19 @@
       </div>
       <div class="form-row" id="obTzRow" hidden>
         <label>时区（小时）</label>
-        <input type="number" id="obTz" step="0.5" placeholder="如：-5">
+        <input type="number" id="obTz" step="0.5" min="-12" max="14" placeholder="如：-5">
       </div>
       <div class="form-row" id="obGeoRow" hidden>
         <label>经纬度 <span class="ob-optional">（选填 · 用于星盘宫位精算）</span></label>
         <div class="geo-row">
-          <input type="number" id="obLat" step="0.0001" placeholder="纬度">
-          <input type="number" id="obLng" step="0.0001" placeholder="经度">
+          <input type="number" id="obLat" step="0.0001" min="-90" max="90" placeholder="纬度">
+          <input type="number" id="obLng" step="0.0001" min="-180" max="180" placeholder="经度">
         </div>
       </div>
     </div>
     <div class="ob-actions">
       <button class="btn-ghost" id="obSkip">跳过</button>
+      <button class="btn-ghost" id="obDirect">直接录入生辰</button>
       <button class="btn-gold" id="obNext">继续</button>
     </div>
   </div>
@@ -102,7 +104,7 @@
       <img src="pics/seal.webp" alt="御猫灵局">
       <div class="brand-t"><strong>御猫灵局</strong><span>掷筊问卜</span></div>
     </div>
-    <button class="topbar-daily" id="topbarDaily" type="button" onclick="openPalmPanel()" aria-haspopup="dialog">
+    <button class="topbar-daily" id="topbarPalm" type="button" onclick="openPalmPanel()" aria-haspopup="dialog">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21c-2-2.4-3.6-4.8-4.6-7.2-.5-1.2.1-2.3 1.2-2.3.8 0 1.4.5 1.9 1.4V6.5c0-1.2 2-1.2 2 0V11V4.5c0-1.2 2-1.2 2 0V11V5.5c0-1.2 2-1.2 2 0V11V8c0-1.2 2-1.2 2 0v6c0 3.4-1.2 5.6-3.4 7"/></svg>
       <span>掌纹分析</span>
     </button>
@@ -133,7 +135,7 @@
         <div class="question-row">
           <input type="text" class="question-box" id="question" maxlength="56" inputmode="text" enterkeyhint="done"
             placeholder="手动输入直接问" autocomplete="off" oninput="onQuestionInput()">
-          <button type="button" class="q108-btn" onclick="selectQuestionMenuItem('casual')" aria-label="常见108问">108问</button>
+          <button type="button" class="btn-ghost gold" onclick="selectQuestionMenuItem('casual')" aria-label="常见108问">108问</button>
         </div>
         <div class="question-menu" id="casualMenu">
           <div class="question-menu-title">常见 108 问 · 点击选择</div>
@@ -143,7 +145,7 @@
         </div>
       </div>
 
-      <button class="cast-btn" id="castBtn" type="button" onclick="castJiao()">掷 筊</button>
+      <button class="btn-gold btn-lg" id="castBtn" type="button" onclick="castJiao()">掷 筊</button>
 
       <div class="ritual-area" id="ritualArea" hidden>
         <div class="jiao-display" id="jiaoDisplay"></div>
@@ -154,8 +156,9 @@
         </div>
         <div class="cast-subrow">
           <button type="button" class="btn-sub" onclick="resetAll()">重置</button>
-          <button type="button" class="btn-sub" onclick="toggleHistory()">存入</button>
+          <button type="button" class="btn-sub" onclick="toggleHistory()">记录</button>
           <button type="button" class="btn-sub" onclick="shareReading()">分享</button>
+          <button type="button" class="btn-sub" onclick="copyReport('resultArea')">复制</button>
         </div>
       </div>
 
@@ -254,7 +257,7 @@
           <span class="f-text"><strong>仪式音效</strong><span id="soundState">已开启</span></span>
           <span class="switch on" id="soundSwitch"><span></span></span>
         </button>
-        <button type="button" class="feature-card" onclick="openDisclaimer()" hidden>
+        <button type="button" class="feature-card" onclick="openDisclaimer()">
           <span class="f-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8v.1"/></svg></span>
           <span class="f-text"><strong>关于与声明</strong><span>版本 · 隐私 · 免责</span></span>
           <span class="f-go">›</span>
@@ -266,7 +269,7 @@
         </button>
       </div>
       <button type="button" id="recordBtn" class="hidden-anchor" onclick="toggleHistory()" aria-hidden="true" tabindex="-1"></button>
-      <p class="foot-note">御猫灵局 v2.11 · 数据仅存于本机</p>
+      <p class="foot-note">御猫灵局 v2.15 · 数据仅存于本机</p>
     </section>
   </main>
 
@@ -315,8 +318,8 @@
 <div class="sheet-backdrop" id="fortuneBackdrop" onclick="closeSheetByBtn(this)"></div>
 <div class="sheet" id="fortuneModal" role="dialog" aria-label="命运圆盘">
   <div class="sheet-handle"></div>
-  <div class="sheet-head"><h3>命运圆盘</h3><button type="button" class="fortune-again-head" id="fortuneAgain" onclick="spinFortuneWheel()" style="display:none">再转一次</button><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
-  <div class="fortune-layout">
+  <div class="sheet-head"><h3>命运圆盘</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
+  <div class="sheet-scroll"><div class="fortune-layout">
     <div class="fortune-stage">
       <div class="fortune-pointer" aria-hidden="true"></div>
       <div class="fortune-wheel" id="fortuneWheel"><div class="fortune-labels" id="fortuneLabels"></div></div>
@@ -324,7 +327,8 @@
     </div>
     <div class="fortune-cat"><img src="pics/zen-cat.webp" alt="禅猫打坐" draggable="false"></div>
     <div class="fortune-result" id="fortuneResult"><span class="dim">小猫转动圆盘中…</span></div>
-  </div>
+  </div></div>
+  <div class="mbti-reveal-actions"><button type="button" class="btn-gold btn-sm" id="fortuneAgain" onclick="spinFortuneWheel()" style="display:none">再转一次</button><button type="button" class="btn-ghost btn-sm" onclick="copyReport('fortuneResult')">复制结果</button></div>
 </div>
 
 <!-- ══════════ 紫微斗数 ══════════ -->
@@ -332,7 +336,8 @@
 <div class="sheet" id="ziweiModal" role="dialog" aria-label="紫微斗数">
   <div class="sheet-handle"></div>
   <div class="sheet-head"><h3>紫微斗数</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
-  <div class="sheet-scroll"><div id="ziweiBody"></div></div>
+  <div class="sheet-scroll"><div class="profile-bar" id="ziweiProfileBar" data-bar="ziwei"></div><div id="ziweiBody"></div></div>
+  <div class="mbti-reveal-actions"><button type="button" class="btn-ghost btn-sm" onclick="openZiwei()">重新排盘</button><button type="button" class="btn-gold btn-sm" onclick="copyReport('ziweiBody')">复制结果</button></div>
   <!-- 紫微子弹窗：底图模糊 -->
   <div class="zw-pop-backdrop" id="zwPopBackdrop" onclick="closeZwPop()">
     <div class="zw-pop" role="dialog" aria-label="说明" onclick="event.stopPropagation()">
@@ -347,31 +352,35 @@
 <div class="sheet" id="shengxiaoModal" role="dialog" aria-label="生肖">
   <div class="sheet-handle"></div>
   <div class="sheet-head"><h3>生肖</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
-  <div class="sheet-scroll"><div id="shengxiaoBody"></div></div>
+  <div class="sheet-scroll"><div class="profile-bar" id="shengxiaoProfileBar" data-bar="shengxiao"></div><div id="shengxiaoBody"></div></div>
+  <div class="mbti-reveal-actions"><button type="button" class="btn-ghost btn-sm" onclick="openShengxiao()">重新排盘</button><button type="button" class="btn-gold btn-sm" onclick="copyReport('shengxiaoBody')">复制结果</button></div>
 </div>
 
 <!-- ══════════ 历史记录 ══════════ -->
 <div class="sheet-backdrop" id="historyBackdrop" onclick="closeSheetByBtn(this)"></div>
-<div class="sheet" id="historyBox" role="dialog" aria-label="请示记录">
+<div class="sheet" id="historyModal" role="dialog" aria-label="请示记录">
   <div class="sheet-handle"></div>
   <div class="sheet-head"><h3>请示记录</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
-  <div id="historyList"></div>
+  <div class="sheet-scroll"><div id="historyList"></div></div>
 </div>
 
 <!-- ══════════ MBTI ══════════ -->
 <div class="sheet-backdrop" id="mbtiBackdrop" onclick="closeSheetByBtn(this)"></div>
-<div class="sheet" id="mbtiModal" role="dialog" aria-label="MBTI 人格快测">
+<div class="sheet sheet--col" id="mbtiModal" role="dialog" aria-label="MBTI 人格快测">
   <div class="sheet-handle"></div>
   <div class="sheet-head"><h3>MBTI 人格快测</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
-  <div class="mbti-intro">凭第一反应拖动滑杆：左为「否」，右为「是」。</div>
-  <div class="mbti-progress" id="mbtiProgress">已完成 0/48</div>
-  <div class="mbti-quick-result" id="mbtiQuickResult"></div>
-  <div class="mbti-list" id="mbtiList"></div>
-  <div class="mbti-reveal" id="mbtiReveal">
-    <div class="mbti-report" id="mbtiReport"></div>
-    <div class="mbti-reveal-actions">
-      <button class="btn-ghost btn-sm" onclick="backToMbtiQuiz()">返回题目</button>
+  <div class="sheet-scroll">
+    <div class="mbti-intro">凭第一反应拖动滑杆：左为「否」，右为「是」。</div>
+    <div class="mbti-progress" id="mbtiProgress">已完成 0/48</div>
+    <div class="mbti-quick-result" id="mbtiQuickResult"></div>
+    <div class="mbti-list" id="mbtiList"></div>
+    <div class="mbti-reveal" id="mbtiReveal">
+      <div class="mbti-report" id="mbtiReport"></div>
     </div>
+  </div>
+  <div class="mbti-reveal-actions">
+    <button class="btn-ghost btn-sm" onclick="backToMbtiQuiz()">返回题目</button>
+    <button type="button" class="btn-gold btn-sm" onclick="copyReport('mbtiReport')">复制结果</button>
   </div>
   <div class="mbti-actions">
     <button class="btn-ghost btn-sm" onclick="resetMbtiQuiz()">重新作答</button>
@@ -384,19 +393,22 @@
 <div class="sheet" id="baziModal" role="dialog" aria-label="八字排盘">
   <div class="sheet-handle"></div>
   <div class="sheet-head"><h3>八字排盘</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
-  <div class="bazi-form" id="baziForm">
-    <p class="mbti-intro">四柱 · 五行 · 十神 · 神煞，排盘即现完整断语。</p>
-    <div class="profile-bar" id="baziProfileBar" data-bar="bazi"></div>
-    <label class="bazi-checkbox bazi-row-tight"><input type="checkbox" id="baziTrueSolar"> 使用真太阳时校准 <span class="bazi-optional">（按档案经度）</span></label>
-    <div class="bazi-error" id="baziError"></div>
-    <button class="btn-gold btn-block" id="baziSubmitBtn" onclick="submitBaziForm()">开始排盘</button>
-  </div>
-  <div class="mbti-reveal" id="baziReveal">
-    <div class="mbti-report" id="baziReport"></div>
-    <div class="mbti-reveal-actions">
-      <button class="btn-ghost btn-sm" onclick="openShenshaDict()">神煞词典</button>
-      <button class="btn-ghost btn-sm" onclick="backToBaziForm()">重新填写</button>
+  <div class="sheet-scroll">
+    <div class="bazi-form" id="baziForm">
+      <p class="mbti-intro">四柱 · 五行 · 十神 · 神煞，排盘即现完整断语。</p>
+      <div class="profile-bar" id="baziProfileBar" data-bar="bazi"></div>
+      <label class="bazi-checkbox bazi-row-tight"><input type="checkbox" id="baziTrueSolar"> 使用真太阳时校准 <span class="bazi-optional">（按档案经度）</span></label>
+      <div class="bazi-error" id="baziError"></div>
+      <button class="btn-gold btn-block" id="baziSubmitBtn" onclick="submitBaziForm()">开始排盘</button>
     </div>
+    <div class="mbti-reveal" id="baziReveal">
+      <div class="mbti-report" id="baziReport"></div>
+    </div>
+  </div>
+  <div class="mbti-reveal-actions">
+    <button class="btn-ghost btn-sm" onclick="openShenshaDict()">神煞词典</button>
+    <button class="btn-ghost btn-sm" onclick="backToBaziForm()">调整</button>
+    <button type="button" class="btn-gold btn-sm" onclick="copyReport('baziReport')">复制结果</button>
   </div>
 </div>
 
@@ -405,18 +417,21 @@
 <div class="sheet" id="zodiacModal" role="dialog" aria-label="星座运势">
   <div class="sheet-handle"></div>
   <div class="sheet-head"><h3>星座运势</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
-  <div class="bazi-form" id="zodiacForm">
-    <p class="mbti-intro">以生辰档案判定星座。</p>
-    <div class="profile-bar" id="zodiacProfileBar" data-bar="zodiac"></div>
-    <div class="mbti-quick-result show" id="zodiacPreview" style="margin-top:8px;"><div class="mbti-type" id="zodiacPreviewName">—</div></div>
-    <button class="btn-gold btn-block" onclick="submitZodiacForm()">查看星座运势</button>
-  </div>
-  <div class="mbti-reveal" id="zodiacReveal" style="display:none;">
-    <div class="mbti-report" id="zodiacReport"></div>
-    <div class="mbti-reveal-actions">
-      <button class="btn-ghost btn-sm" onclick="backToZodiacForm()">重新选择</button>
-      <button class="btn-gold btn-sm" onclick="openZodiacDict()">星座词典</button>
+  <div class="sheet-scroll">
+    <div class="bazi-form" id="zodiacForm">
+      <p class="mbti-intro">以生辰档案判定星座。</p>
+      <div class="profile-bar" id="zodiacProfileBar" data-bar="zodiac"></div>
+      <div class="mbti-quick-result show mt-8" id="zodiacPreview"><div class="mbti-type" id="zodiacPreviewName">—</div></div>
+      <button class="btn-gold btn-block" onclick="submitZodiacForm()">查看星座运势</button>
     </div>
+    <div class="mbti-reveal" id="zodiacReveal" style="display:none;">
+      <div class="mbti-report" id="zodiacReport"></div>
+    </div>
+  </div>
+  <div class="mbti-reveal-actions">
+    <button class="btn-ghost btn-sm" onclick="backToZodiacForm()">调整</button>
+    <button class="btn-gold btn-sm" onclick="openZodiacDict()">星座词典</button>
+    <button type="button" class="btn-gold btn-sm" onclick="copyReport('zodiacReport')">复制结果</button>
   </div>
 </div>
 
@@ -425,7 +440,8 @@
 <div class="sheet" id="tarotModal" role="dialog" aria-label="塔罗牌占卜">
   <div class="sheet-handle"></div>
   <div class="sheet-head"><h3>塔罗牌占卜</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
-  <div id="tarotBody"></div>
+  <div class="sheet-scroll"><div id="tarotBody"></div></div>
+  <div class="mbti-reveal-actions" id="tarotFoot" style="display:none"></div>
 </div>
 
 <!-- ══════════ 掌纹分析 ══════════ -->
@@ -433,7 +449,11 @@
 <div class="sheet" id="palmModal" role="dialog" aria-label="掌纹分析">
   <div class="sheet-handle"></div>
   <div class="sheet-head"><h3>掌纹分析</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
-  <div id="palmBody"></div>
+  <div class="sheet-scroll"><div id="palmBody"></div></div>
+  <div class="mbti-reveal-actions palm-result-actions" id="palmResultActions" hidden>
+    <button type="button" class="btn-ghost btn-sm" id="palmBack">返回修改</button>
+    <button type="button" class="btn-gold btn-sm" id="palmCopy">复制结果</button>
+  </div>
 </div>
 
 <!-- ══════════ 姓名五格 ══════════ -->
@@ -441,7 +461,8 @@
 <div class="sheet" id="wugeModal" role="dialog" aria-label="姓名五格">
   <div class="sheet-handle"></div>
   <div class="sheet-head"><h3>姓名五格</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
-  <div id="wugeBody"></div>
+  <div class="sheet-scroll"><div id="wugeBody"></div></div>
+  <div class="mbti-reveal-actions" id="wugeFoot"></div>
 </div>
 
 <!-- ══════════ 西方星盘 ══════════ -->
@@ -449,21 +470,24 @@
 <div class="sheet" id="westernModal" role="dialog" aria-label="西方星盘">
   <div class="sheet-handle"></div>
   <div class="sheet-head"><h3>西方星盘</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
-  <div class="western-chart-wrap" id="westernChartWrap"><img id="westernChartImg" class="western-chart-img" alt="西方星盘图" src="pics/western-chart-placeholder.webp"></div>
-  <div class="bazi-form" id="westernForm">
-    <div class="profile-bar" id="westernProfileBar" data-bar="western"></div>
-    <div class="bazi-error" id="westernError"></div>
-    <p class="foot-note">行星 · 宫位 · 相位。宫位精算需档案中的出生地经纬度。</p>
+  <div class="sheet-scroll">
+    <div class="western-chart-wrap" id="westernChartWrap"><img id="westernChartImg" class="western-chart-img" alt="西方星盘图" src="pics/western-chart-placeholder.webp"></div>
+    <div class="bazi-form" id="westernForm">
+      <div class="profile-bar" id="westernProfileBar" data-bar="western"></div>
+      <div class="bazi-error" id="westernError"></div>
+      <p class="foot-note">行星 · 宫位 · 相位。宫位精算需档案中的出生地经纬度。</p>
+    </div>
+    <div class="mbti-reveal" id="westernReveal" style="display:none;">
+      <div id="westernChartViz" class="western-chart-viz" aria-label="星盘可视化"></div>
+      <div class="mbti-report" id="westernReport"></div>
+      <div class="mbti-report" id="westernDictBox"></div>
+    </div>
   </div>
   <button class="btn-gold western-fab hidden" id="westernFab" onclick="westernFabTap()">开始分析</button>
-  <div class="mbti-reveal" id="westernReveal" style="display:none;">
-    <div id="westernChartViz" class="western-chart-viz" aria-label="星盘可视化"></div>
-    <div class="mbti-report" id="westernReport"></div>
-    <div class="mbti-report" id="westernDictBox"></div>
-    <div class="mbti-reveal-actions" id="westernActions">
-      <button class="btn-ghost btn-sm" onclick="backToWesternForm()">重新填写</button>
-      <button class="btn-ghost btn-sm" type="button" onclick="toggleWesternDict()">星盘小词典</button>
-    </div>
+  <div class="mbti-reveal-actions" id="westernActions">
+    <button class="btn-ghost btn-sm" onclick="backToWesternForm()">调整</button>
+    <button class="btn-ghost btn-sm" type="button" onclick="toggleWesternDict()">星盘小词典</button>
+    <button type="button" class="btn-gold btn-sm" onclick="copyReport('westernReport')">复制结果</button>
   </div>
 </div>
 
@@ -472,12 +496,12 @@
 <div class="sheet" id="dailySheet" role="dialog" aria-label="每日签文">
   <div class="sheet-handle"></div>
   <div class="sheet-head"><h3>每日一签</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
-  <div class="daily-sheet-body">
+  <div class="daily-sheet-body sheet-scroll">
     <p class="daily-date" id="dailyDate"></p>
     <div class="daily-verse-full" id="dailyVerseFull"></div>
     <div class="daily-meta" id="dailyMeta"></div>
-    <button type="button" class="btn-ghost btn-sm" onclick="shareDaily()">分享今日签</button>
   </div>
+  <div class="mbti-reveal-actions"><button type="button" class="btn-ghost btn-sm" onclick="shareDaily()">分享今日签</button></div>
 </div>
 
 <!-- ══════════ 会员 ══════════ -->
@@ -485,13 +509,15 @@
 <div class="sheet" id="memberSheet" role="dialog" aria-label="灵局会员">
   <div class="sheet-handle"></div>
   <div class="sheet-head"><h3>灵局会员</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
+  <div class="sheet-scroll">
   <ul class="member-perks">
     <li><strong>完整报告</strong><span>八字 / 星盘 / MBTI 解读不再因筊型受限</span></li>
     <li><strong>专属签文</strong><span>每日一签解锁典藏签文库</span></li>
     <li><strong>无限参详</strong><span>问卜次数不再设限，记录云端同步</span></li>
   </ul>
-  <button type="button" class="btn-gold btn-block" onclick="memberSoon()">即将上线 · 敬请期待</button>
   <p class="foot-note">会员功能开发中，当前版本全部免费</p>
+  </div>
+  <div class="mbti-reveal-actions"><button type="button" class="btn-gold btn-block" onclick="memberSoon()">即将上线 · 敬请期待</button></div>
 </div>
 
 <!-- ══════════ 声明 ══════════ -->
@@ -499,16 +525,18 @@
 <div class="sheet" id="disclaimerSheet" role="dialog" aria-label="关于与声明">
   <div class="sheet-handle"></div>
   <div class="sheet-head"><h3>关于与声明</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
-  <div class="disclaimer-body">
-    <p><strong>御猫灵局 v2.11</strong><br>传统掷筊问卜 · 八字排盘 · 星座运势 · 西方星盘 · MBTI 人格快测</p>
+  <div class="sheet-scroll"><div class="disclaimer-body">
+    <p><strong>御猫灵局 v2.15</strong><br>传统掷筊问卜 · 八字排盘 · 星座运势 · 西方星盘 · MBTI 人格快测</p>
     <p><strong>隐私</strong><br>生辰档案、问卜记录等所有数据仅保存在本机浏览器，不上传任何服务器。</p>
     <p><strong>免责声明</strong><br>签文、排盘、运势等内容源自传统民俗与娱乐化演算，仅供娱乐与怡情，不构成医疗、法律、投资或人生决策建议。重要事项请咨询专业人士。</p>
-  </div>
+  </div></div>
 </div>
 
 <div id="toast" role="status"></div>
 
 <script src="js/00-error-guard.js"></script>
+<script src="js/00a-lunar.js"></script>
+<script src="js/00b-core.js"></script>
 <script defer src="js/01-jiao-core.js"></script>
 <script defer src="js/05-bazi-ui.js"></script>
 <script defer src="js/14-shengxiao.js"></script>
@@ -587,14 +615,24 @@
   afterCore(function () {
     lazy('openMbtiQuiz', ['js/02-mbti-engine.js', 'js/04-mbti-ui.js']);
     lazy('openZodiacPanel', ['js/06-zodiac.js']);
-    if (typeof window.openBaziPanel === 'function') {
-      var _openBazi = window.openBaziPanel;
-      window.openBaziPanel = function () { var a = arguments; return loadScript('js/03-bazi-engine.js').then(function () { return _openBazi.apply(window, a); }).catch(loadFailed); };
-    }
-    if (typeof window.submitBaziForm === 'function') {
-      var _submitBazi = window.submitBaziForm;
-      window.submitBaziForm = function () { var a = arguments; return loadScript('js/03-bazi-engine.js').then(function () { return _submitBazi.apply(window, a); }).catch(loadFailed); };
-    }
+    /* 八字懒加载：先加载 03 引擎再调原函数（走统一 YumiaoHook 注册表；01 未加载时退回直包） */
+    (function wrapBaziLazy() {
+      var wrap = (typeof window.YumiaoHook !== 'undefined' && window.YumiaoHook.wrap) ? window.YumiaoHook.wrap : null;
+      function lazyBazi(orig) {
+        return function () { var a = arguments; return loadScript('js/03-bazi-engine.js').then(function () { return orig.apply(window, a); }).catch(loadFailed); };
+      }
+      if (wrap) {
+        wrap(window, 'openBaziPanel', lazyBazi);
+        wrap(window, 'submitBaziForm', lazyBazi);
+      } else {
+        if (typeof window.openBaziPanel === 'function' && !window.openBaziPanel._yumiaoHooked) {
+          var _o = window.openBaziPanel; window.openBaziPanel = lazyBazi(_o); window.openBaziPanel._yumiaoHooked = true;
+        }
+        if (typeof window.submitBaziForm === 'function' && !window.submitBaziForm._yumiaoHooked) {
+          var _s = window.submitBaziForm; window.submitBaziForm = lazyBazi(_s); window.submitBaziForm._yumiaoHooked = true;
+        }
+      }
+    })();
     lazy('openChenggu', ['js/11a-chenggu-verses.js', 'js/11b-chenggu-modern.js', 'js/11-chenggu.js']);
     lazy('openTarotPanel', ['js/12-tarot.js']);
     lazy('openPalmPanel', ['js/17-palm.js']);

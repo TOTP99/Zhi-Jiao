@@ -12,6 +12,8 @@
 <p>直接用浏览器打开本文件即可（需与 js/ 同目录）。只读，不改动任何数据（生辰存取测试会临时写入并立即恢复）。</p>
 <p id="sum">运行中…</p><ul id="out"></ul>
 <script src="js/00-error-guard.js"></script>
+<script src="js/00a-lunar.js"></script>
+<script src="js/00b-core.js"></script>
 <script src="js/11a-chenggu-verses.js"></script>
 <script src="js/11b-chenggu-modern.js"></script>
 <script src="js/11-chenggu.js"></script>
@@ -50,9 +52,14 @@
 
   /* ────────── 农历换算 ────────── */
   section('农历换算');
-  t('2024-02-10 = 农历正月初一', function () { var r = L(2024, 2, 10); return eq([r.year, r.month, r.day, r.leap], [2024, 1, 1, false]); });
-  t('2023-03-22 = 闰二月初一', function () { var r = L(2023, 3, 22); return eq([r.year, r.month, r.day, r.leap], [2023, 2, 1, true]); });
-  t('2020-05-23 = 闰四月初一', function () { var r = L(2020, 5, 23); return eq([r.year, r.month, r.day, r.leap], [2020, 4, 1, true]); });
+  t('2024-02-10 = 农历正月初一', function () { var r = L(2024, 2, 10); return eq([r.year, r.month, r.day, r.isLeap], [2024, 1, 1, false]); });
+  t('2023-03-22 = 闰二月初一', function () { var r = L(2023, 3, 22); return eq([r.year, r.month, r.day, r.isLeap], [2023, 2, 1, true]); });
+  t('2020-05-23 = 闰四月初一', function () { var r = L(2020, 5, 23); return eq([r.year, r.month, r.day, r.isLeap], [2020, 4, 1, true]); });
+  t('农历单源化：1917 闰二月（旧 11 表错成闰三月）', function () { var r = L(1917, 3, 23); return eq([r.year, r.month, r.day, r.isLeap], [1917, 2, 1, true]); });
+  t('农历单源化：1922 闰五月（旧 11 表错成闰六月）', function () { var r = L(1922, 6, 25); return eq([r.year, r.month, r.day, r.isLeap], [1922, 5, 1, true]); });
+  t('农历单源化：1955 与香港天文台一致（03-15 = 二月廿二）', function () { var r = L(1955, 3, 15); return eq([r.year, r.month, r.day, r.isLeap], [1955, 2, 22, false]); });
+  t('农历单源化：1987 闰六月（旧 11 表错成闰七月）', function () { var r = L(1987, 8, 1); return eq([r.year, r.month, r.day, r.isLeap], [1987, 6, 7, true]); });
+  t('农历单源化：2070 二月初一（旧 11 表错成正月三十）', function () { var r = L(2070, 3, 12); return eq([r.year, r.month, r.day, r.isLeap], [2070, 2, 1, false]); });
   t('2000-01-01 = 1999 年十一月廿五', function () { var r = L(2000, 1, 1); return eq([r.year, r.month, r.day], [1999, 11, 25]); });
   t('超出 1900–2100 返回 null 而不是抛错', function () { return eq([L(1899, 1, 1), L(2101, 1, 1)], [null, null]); });
   t('1900–2100 每月 1–28 日换算都落在合法范围（1900 年春节前除外）', function () {
@@ -414,6 +421,62 @@
   t('闰月：2023-04-10（闰二月二十）排盘正常', function () {
     var c = ZWC({ year: 2023, month: 4, day: 10, hour: 15, gender: '女' });
     return c.lunar.isLeap === true && c.lunar.month === 2 || JSON.stringify(c.lunar);
+  });
+
+  /* ────────── 算法修正回归（v2.14） ────────── */
+  section('算法修正回归（v2.14）');
+  function shenshaItem(r, name) { for (var i = 0; i < r.shensha.items.length; i++) if (r.shensha.items[i].name === name) return r.shensha.items[i]; return null; }
+  t('紫微宫名逆时针：命午→兄弟巳→夫妻辰……→父母未', function () {
+    var c = ZWC({ year: 2000, month: 8, day: 16, hour: 3, gender: '女' });
+    return eq(c.palaces.map(function (p) { return p.name + p.branch; }),
+      ['命宫午', '兄弟巳', '夫妻辰', '子女卯', '财帛寅', '疾厄丑', '迁移子', '交友亥', '官禄戌', '田宅酉', '福德申', '父母未']);
+  });
+  t('天医：1995-02-15（月支寅→丑）日柱命中', function () {
+    var it = shenshaItem(window.BaziShensha.calculate({ year: 1995, month: 2, day: 15, hour: 10, timezone: 8 }), '天医');
+    return (it && eq(it.positions, ['day'])) || ('实得 ' + JSON.stringify(it && it.positions));
+  });
+  t('天医：1990-05-17（月支巳→辰）无辰柱则无天医', function () {
+    var it = shenshaItem(window.BaziShensha.calculate({ year: 1990, month: 5, day: 17, hour: 10, timezone: 8 }), '天医');
+    return it === null || ('不应出现天医 ' + JSON.stringify(it.positions));
+  });
+  t('解神：1990-12-15（月支子→午）年柱命中', function () {
+    var it = shenshaItem(window.BaziShensha.calculate({ year: 1990, month: 12, day: 15, hour: 10, timezone: 8 }), '解神');
+    return (it && eq(it.positions, ['year'])) || ('实得 ' + JSON.stringify(it && it.positions));
+  });
+  t('解神：1990-05-15（月支巳→戌）无戌柱则无解神', function () {
+    var it = shenshaItem(window.BaziShensha.calculate({ year: 1990, month: 5, day: 15, hour: 10, timezone: 8 }), '解神');
+    return it === null || ('不应出现解神 ' + JSON.stringify(it.positions));
+  });
+  function jieqiDiffMin(name, y, m, d, cstISO) {
+    var r = window.BaziShensha.calculate({ year: y, month: m, day: d, hour: 12, timezone: 8 });
+    if (r.jieqi.name !== name) return '节气名不对 ' + r.jieqi.name;
+    var diff = (Date.parse(r.jieqi.date) - Date.parse(cstISO)) / 60000;
+    return Math.abs(diff) < 1 || ('差 ' + diff.toFixed(2) + ' 分钟');
+  }
+  t('节气：2024 立春落在 16:26–16:28（北京时间）', function () {
+    var r = window.BaziShensha.calculate({ year: 2024, month: 2, day: 5, hour: 12, timezone: 8 });
+    var d = new Date(new Date(r.jieqi.date).getTime() + 8 * 3600000);
+    return (r.jieqi.name === '立春' && d.getUTCHours() === 16 && d.getUTCMinutes() >= 26 && d.getUTCMinutes() <= 28) || ('实得 ' + r.jieqi.date);
+  });
+  t('节气：2024 清明与官方差 <1 分钟', function () { return jieqiDiffMin('清明', 2024, 4, 5, '2024-04-04T15:02:03+08:00'); });
+  t('节气：2024 芒种与官方差 <1 分钟', function () { return jieqiDiffMin('芒种', 2024, 6, 6, '2024-06-05T12:09:40+08:00'); });
+  t('节气：2024 小暑与官方差 <1 分钟', function () { return jieqiDiffMin('小暑', 2024, 7, 7, '2024-07-06T22:19:49+08:00'); });
+  t('节气：2024 大雪与官方差 <1 分钟', function () { return jieqiDiffMin('大雪', 2024, 12, 7, '2024-12-06T23:16:47+08:00'); });
+  t('称骨闰月半月制：2023-04-10 闰二月二十（15时）月重 1.8、总重 5.3', function () {
+    var r = C({ year: 2023, month: 4, day: 10, hour: 15 });
+    return eq([r.mw, r.total], [18, 53]);
+  });
+  t('称骨闰月半月制：闰二月十五仍按本月（月重 7）', function () {
+    var r = C({ year: 2023, month: 4, day: 5, hour: 10 });
+    return eq([r.mw, r.total], [7, 45]);
+  });
+  t('称骨闰月半月制：闰二月十六算下月（月重 18）', function () {
+    var r = C({ year: 2023, month: 4, day: 6, hour: 10 });
+    return eq([r.mw, r.total], [18, 54]);
+  });
+  t('称骨闰月半月制：闰二月十七算下月（月重 18）', function () {
+    var r = C({ year: 2023, month: 4, day: 7, hour: 10 });
+    return eq([r.mw, r.total], [18, 55]);
   });
 
   /* ────────── 中央音效 ────────── */

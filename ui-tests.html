@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>御猫灵局 · UI 自检</title>
+<style>
+  body{font:14px/1.6 -apple-system,"PingFang SC",sans-serif;background:#111;color:#ddd;margin:0;padding:16px 16px 40px;max-width:760px}
+  h1{font-size:18px;margin:0 0 4px} #sum{margin:0 0 14px;font-size:16px}
+  .ok{color:#7ad17a}.bad{color:#ff7b72;font-weight:600}
+  li{margin:2px 0;list-style:none} ul{padding:0}
+  h2{font-size:15px;margin:18px 0 6px;color:#aaa;font-weight:600;border-bottom:1px solid #333;padding-bottom:4px}
+  #frame{width:100%;height:420px;border:1px solid #333;background:#000;margin-top:12px}
+</style></head><body>
+<h1>御猫灵局 · UI 自检页</h1>
+<p>用浏览器打开本文件即可（需与 index.html / js/ 同目录）。在下方内嵌的真实应用里跑 UI 断言：tab 切换、弹窗开关、档案边界、掌纹图像端到端。只读，不改动应用数据（生辰档案测试会临时写入并立即恢复）。</p>
+<p id="sum">等待应用加载…</p><ul id="out"></ul>
+<iframe id="frame" src="index.html" title="御猫灵局应用"></iframe>
+<script>
+(function () {
+  var out = document.getElementById('out'), pass = 0, fail = 0;
+  function section(title) {
+    var h = document.createElement('h2'); h.textContent = title; out.appendChild(h);
+  }
+  async function t(name, fn) {
+    var ok = false, msg = '';
+    try {
+      var r = await fn();
+      ok = (r === undefined || r === true); if (!ok) msg = String(r);
+    } catch (e) { msg = e && e.message || String(e); }
+    ok ? pass++ : fail++;
+    var li = document.createElement('li'); li.className = ok ? 'ok' : 'bad';
+    li.textContent = (ok ? '✓ ' : '✗ ') + name + (ok ? '' : ' —— ' + msg);
+    out.appendChild(li);
+  }
+  function sum() {
+    var s = document.getElementById('sum');
+    s.textContent = fail === 0 ? ('全部通过：' + pass + ' / ' + (pass + fail)) : ('有 ' + fail + ' 项失败 / 共 ' + (pass + fail) + ' 项');
+    s.style.color = fail === 0 ? '#7ad17a' : '#ff7b72';
+  }
+  function loadScriptInto(win, src) {
+    return new Promise(function (resolve, reject) {
+      var s = win.document.createElement('script');
+      s.src = src; s.onload = resolve; s.onerror = function () { reject(new Error('load fail: ' + src)); };
+      win.document.head.appendChild(s);
+    });
+  }
+  /* 造一张测试图：纯色画布 / 肤色实心椭圆，返回 ImageData */
+  function makeImageData(win, draw, w, h) {
+    w = w || 200; h = h || 200;
+    var cv = win.document.createElement('canvas'); cv.width = w; cv.height = h;
+    var ctx = cv.getContext('2d'); draw(ctx, w, h);
+    return ctx.getImageData(0, 0, w, h);
+  }
+  var frame = document.getElementById('frame');
+  frame.addEventListener('load', function () {
+    var W = frame.contentWindow, D = frame.contentDocument;
+    var sleepMs = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+    (async function () {
+      /* 等 defer 脚本 + 开屏 */
+      await sleepMs(600);
+      var hasShow = function (id) { var el = D.getElementById(id); return !!(el && el.classList.contains('show')); };
+      /* ── Tab 切换 ── */
+      section('Tab 切换');
+      await t('切到 charts：view-charts 有 .on', function () {
+        W.switchTab('charts');
+        return D.getElementById('view-charts').classList.contains('on') || 'view-charts 未高亮';
+      });
+      await t('切到 me：view-me 有 .on，charts 已收起', function () {
+        W.switchTab('me');
+        return D.getElementById('view-me').classList.contains('on') && !D.getElementById('view-charts').classList.contains('on') || 'tab 状态不对';
+      });
+      await t('切回 divine：view-divine 有 .on', function () {
+        W.switchTab('divine');
+        return D.getElementById('view-divine').classList.contains('on') || 'view-divine 未高亮';
+      });
+      await t('tab 切换入 history（state 有 yumiaoTab）', function () {
+        W.switchTab('charts');
+        var ok = W.history.state && W.history.state.yumiaoTab === 'charts';
+        W.history.back();
+        return ok || ('state=' + JSON.stringify(W.history.state));
+      });
+      await sleepMs(120);
+      W.switchTab('divine');
+      /* ── 弹窗开关 ── */
+      section('弹窗开关');
+      await t('紫微打开：ziweiModal 有 .show 且入 history', function () {
+        W.openZiwei();
+        var el = D.getElementById('ziweiModal');
+        return el.classList.contains('show') && W.YumiaoNav.isOpen('ziweiModal') || '紫微未打开或未入栈';
+      });
+      await t('紫微 X 关闭：.show 移除', function () {
+        W.closeSheetByBtn(D.querySelector('#ziweiModal .sheet-close'));
+        return !hasShow('ziweiModal') || '紫微未关闭';
+      });
+      await t('八字打开即排（有档案时直接出结果）', function () {
+        W.localStorage.setItem('yumiao_shared_birth_v1', JSON.stringify({ year: 1990, month: 6, day: 15, hour: 12, sex: 'M', tzOffset: 8, city: 'Toronto' }));
+        W.openBaziPanel();
+        var rep = D.getElementById('baziReport').innerHTML;
+        W.closeBaziPanel();
+        return rep.length > 100 || ('report len ' + rep.length);
+      });
+      await t('历史记录打开/关闭', function () {
+        W.toggleHistory();
+        var open = hasShow('historyModal');
+        W.toggleHistory();
+        return open && !hasShow('historyModal') || '历史记录开关异常';
+      });
+      await t('关于与声明入口可见且可打开', function () {
+        var btn = D.querySelector('[onclick="openDisclaimer()"]');
+        if (!btn || btn.hasAttribute('hidden')) return '关于入口被 hidden';
+        W.openDisclaimer();
+        var open = hasShow('disclaimerSheet');
+        W.closeDisclaimer();
+        return open && !hasShow('disclaimerSheet') || '声明弹窗开关异常';
+      });
+      /* ── 档案边界（collectProfile）── */
+      section('档案边界');
+      function setObDate(v) { D.getElementById('obDate').value = v; }
+      function setObCity(v) {
+        D.querySelectorAll('#obCity button').forEach(function (b) { b.classList.toggle('on', b.dataset.v === v); });
+      }
+      await t('未来日期被拦截', function () {
+        setObDate('2099-01-01');
+        return W.collectProfile ? (W.collectProfile() === null || '未来日期未拦截') : 'collectProfile 未暴露';
+      });
+      await t('年份 1899 被拦截', function () {
+        setObDate('1899-06-15');
+        return W.collectProfile() === null || '1899 未拦截';
+      });
+      await t('年份 2101 被拦截', function () {
+        setObDate('2101-06-15');
+        return W.collectProfile() === null || '2101 未拦截';
+      });
+      await t('年份 1900 边界可通过（2100 属未来日期，另由未来规则拦截）', function () {
+        setObDate('1900-06-15');
+        var a = W.collectProfile();
+        setObDate('2100-06-15');
+        var b = W.collectProfile();
+        return !!(a && a.year === 1900 && b === null) || '1900 未通过或 2100 未被未来规则拦截';
+      });
+      await t('时区 -12 / +14 边界可通过，+15 被拦截（其他城市）', function () {
+        setObDate('1990-06-15'); setObCity('other');
+        D.getElementById('obTz').value = '-12';
+        var a = W.collectProfile();
+        D.getElementById('obTz').value = '15';
+        var b = W.collectProfile();
+        return !!(a && a.tzOffset === -12 && b === null) || '时区边界异常';
+      });
+      await t('纬度 91 / 经度 181 被拦截（其他城市）', function () {
+        setObDate('1990-06-15'); setObCity('other');
+        D.getElementById('obTz').value = '-5';
+        D.getElementById('obLat').value = '91';
+        var a = W.collectProfile();
+        D.getElementById('obLat').value = '43';
+        D.getElementById('obLng').value = '181';
+        var b = W.collectProfile();
+        return a === null && b === null || '经纬度越界未拦截';
+      });
+      /* 恢复档案与城市 */
+      setObDate('1990-06-15'); setObCity('toronto');
+      D.getElementById('obTz').value = ''; D.getElementById('obLat').value = ''; D.getElementById('obLng').value = '';
+      /* ── 掌纹图像端到端 ── */
+      section('掌纹图像端到端');
+      try { await loadScriptInto(W, 'js/17-palm.js'); } catch (e) { /* 已加载时可能重复，忽略 */ }
+      await sleepMs(200);
+      var PM = W.YumiaoPalm;
+      await t('掌纹模块已加载（YumiaoPalm.analyzeImage 可用）', function () {
+        return !!(PM && typeof PM.analyzeImage === 'function') || 'YumiaoPalm 未加载';
+      });
+      await t('非肤色图 → nohand（纯蓝画布）', async function () {
+        var im = makeImageData(W, function (ctx, w, h) { ctx.fillStyle = '#0000ff'; ctx.fillRect(0, 0, w, h); });
+        var res = await PM.analyzeImage(im.data, im.width, im.height, { hand: 'L' });
+        return (!res.ok && res.reason === 'nohand') || ('reason=' + res.reason + ' ok=' + res.ok);
+      });
+      await t('纯色肤色椭圆 → lowcontrast（无纹理）', async function () {
+        var im = makeImageData(W, function (ctx, w, h) {
+          ctx.fillStyle = '#222222'; ctx.fillRect(0, 0, w, h);
+          ctx.fillStyle = 'rgb(200,150,120)';
+          ctx.beginPath(); ctx.ellipse(w / 2, h / 2, 70, 90, 0, 0, Math.PI * 2); ctx.fill();
+        });
+        var res = await PM.analyzeImage(im.data, im.width, im.height, { hand: 'L' });
+        return (!res.ok && res.reason === 'lowcontrast') || ('reason=' + res.reason + ' ok=' + res.ok);
+      });
+      /* 清理：恢复默认档案 */
+      W.localStorage.setItem('yumiao_shared_birth_v1', JSON.stringify({ year: 1990, month: 6, day: 15, hour: 12, sex: 'M', tzOffset: 8, city: 'Toronto' }));
+      sum();
+    })().catch(function (e) {
+      var li = document.createElement('li'); li.className = 'bad';
+      li.textContent = '✗ 测试流程异常 —— ' + (e && e.message || e);
+      out.appendChild(li); sum();
+    });
+  });
+})();
+</script>
+</body></html>
