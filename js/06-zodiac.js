@@ -186,10 +186,12 @@
     backToZodiacForm();
     refreshZodiacFromBirth();
     if (typeof window.renderProfileBar === 'function') window.renderProfileBar('zodiacProfileBar', { extraFn: 'getZodiacChip' });
-    ModalUI.open('zodiac');
+    if (typeof ModalUI !== 'undefined' && ModalUI.open) ModalUI.open('zodiac');
+    /* 有档案则打开即排，省一次提交 tap；无档案时留表单（submitZodiacForm 内有 toast，不在此处重复提示） */
+    if (zodiacSelected) submitZodiacForm();
   }
   function closeZodiacPanel() {
-    ModalUI.close('zodiac');
+    if (typeof ModalUI !== 'undefined' && ModalUI.close) ModalUI.close('zodiac');
     clearQuestionSelectionToDefault();
   }
   function backToZodiacForm() {
@@ -197,6 +199,8 @@
     const form = document.getElementById('zodiacForm');
     if (reveal) reveal.style.display = 'none';
     if (form) form.style.display = '';
+    const modal = document.getElementById('zodiacModal');
+    if (modal) modal.classList.remove('is-reveal');
   }
   function submitZodiacForm() {
     refreshZodiacFromBirth();
@@ -207,6 +211,8 @@
     saveProfileSummary('zodiac', `${zodiacSelected.name}·${zodiacSelected.element}象`);
     document.getElementById('zodiacForm').style.display = 'none';
     document.getElementById('zodiacReveal').style.display = 'flex';
+    const modal = document.getElementById('zodiacModal');
+    if (modal) modal.classList.add('is-reveal');
     renderZodiacFull();
   }
   function renderZodiacFull() {
@@ -330,18 +336,18 @@
     };
   }
   function openZodiacDict() {
-    let html = '<div class="mbti-intro" style="margin-bottom:8px;">十二星座词典（图标 · 中英文 · 日期 · 元素）。点返回可回到结果。</div>';
+    let html = '<div class="mbti-intro mb-8">十二星座词典（图标 · 中英文 · 日期 · 元素）。点返回可回到结果。</div>';
     ZODIAC_LIST.forEach(function (z) {
       const range = z.from[0] === 12
         ? ('12.' + z.from[1] + '–1.' + z.to[1])
         : (z.from[0] + '.' + z.from[1] + '–' + z.to[0] + '.' + z.to[1]);
-      html += '<div class="mbti-sec" style="margin-bottom:8px;"><span class="mbti-sec-label">' + z.icon + '</span><strong>' + escapeHtml(z.name) + '</strong> ' + escapeHtml(z.en) +
-        '<br><span style="color:var(--cream-dim);">' + escapeHtml(range) + ' · ' + escapeHtml(z.element) + '象 · ' + escapeHtml(z.planet || '') + ' · ' + escapeHtml(z.keywords) + '</span></div>';
+      html += '<div class="mbti-sec mb-8"><span class="mbti-sec-label">' + z.icon + '</span><strong>' + escapeHtml(z.name) + '</strong> ' + escapeHtml(z.en) +
+        '<br><span class="c-dim">' + escapeHtml(range) + ' · ' + escapeHtml(z.element) + '象 · ' + escapeHtml(z.planet || '') + ' · ' + escapeHtml(z.keywords) + '</span></div>';
     });
     const reportEl = document.getElementById('zodiacReport');
     if (reportEl) {
       reportEl.dataset.prevHtml = reportEl.innerHTML;
-      reportEl.innerHTML = html + '<div style="text-align:center;margin-top:10px;"><button class="mbti-reset" onclick="closeZodiacDict()">返回结果</button></div>';
+      reportEl.innerHTML = html + '<div class="ta-c mt-10"><button class="btn-ghost btn-sm" onclick="closeZodiacDict()">返回结果</button></div>';
     }
   }
   function closeZodiacDict() {
@@ -351,14 +357,3 @@
       delete reportEl.dataset.prevHtml;
     }
   }
-  // 统一的 ESC 关闭监听：历史记录框 + ModalUI 管理的四个弹窗（原来分散在两处 keydown 监听器里，现合并为一处）
-  document.addEventListener('keydown', function (e) {
-    if (e.key !== 'Escape') return;
-    if (document.getElementById('historyBox').classList.contains('show')) {
-      toggleHistory();
-    }
-    if (ModalUI.isOpen('mbti')) closeMbtiQuiz();
-    if (ModalUI.isOpen('zodiac')) closeZodiacPanel();
-    if (ModalUI.isOpen('bazi')) closeBaziPanel();
-    if (ModalUI.isOpen('western')) closeWesternPanel();
-  });

@@ -20,7 +20,7 @@
     return SX[(((year - 4) % 12) + 12) % 12];
   }
   // 生肖按农历年（春节换年）而非公历年：1 月～春节前出生的人属上一年。
-  // 农历换算在称骨模块（11-chenggu.js，懒加载）；加载失败时退回「2 月 4 日换年」的近似。
+  // 农历换算在共享模块（00a-lunar.js，随页面加载）；加载失败时退回「2 月 4 日换年」的近似并提示。
   function lunarYearOf(y, m, d) {
     if (typeof window.__solarToLunar === 'function') {
       var l = window.__solarToLunar(y, m, d);
@@ -29,8 +29,14 @@
     return (m < 2 || (m === 2 && d < 4)) ? y - 1 : y;
   }
   function ensureLunar() {
-    if (typeof window.__solarToLunar === 'function' || typeof window.__yumiaoLoad !== 'function') return Promise.resolve();
-    return window.__yumiaoLoad(['js/11a-chenggu-verses.js', 'js/11b-chenggu-modern.js', 'js/11-chenggu.js']).catch(function () {});
+    if (typeof window.__solarToLunar === 'function') return Promise.resolve();
+    if (typeof window.__yumiaoLoad !== 'function') {
+      if (typeof window.toast === 'function') window.toast('农历换算未加载，生肖按 2 月 4 日换年估算');
+      return Promise.resolve();
+    }
+    return window.__yumiaoLoad(['js/00a-lunar.js']).catch(function () {
+      if (typeof window.toast === 'function') window.toast('农历换算加载失败，生肖按 2 月 4 日换年估算');
+    });
   }
   // 今年（农历年）生肖与本命生肖的关系：本命年 / 冲 / 合 / 三合 / 害 / 平
   var HE = [[0, 1], [2, 11], [3, 10], [4, 9], [5, 8], [6, 7]];
@@ -95,7 +101,7 @@
   function detailHtml() {
     var c = ctx, base = BASE[c.rel.name] || 3;
     var r = rng(c.cy * 131 + c.me * 17 + 7), html = '';
-    html += '<button type="button" class="sx-back" data-act="back">‹ 返回</button>';
+    html += '<button type="button" class="btn-back" data-act="back">‹ 返回</button>';
     html += '<div class="mbti-report"><div class="mbti-sec"><span class="mbti-sec-label">' + c.yearName + '年 · 属' + c.sx + ' · ' + c.rel.name + '</span>' +
       '综合 <span class="sx-stars">' + stars(base) + '</span><br>' + c.rel.text + '</div>';
     ['事业', '财运', '感情', '健康'].forEach(function (k) {
@@ -138,12 +144,16 @@
     ctx = { sx: sx, me: SX.indexOf(sx), cy: cy, csx: csx, rel: rel, curMonth: curMonth, yearName: GAN[gi % 10] + ZHI[gi % 12] + csx };
     body.innerHTML =
       '<div class="tarot-card"><div class="tarot-card-pos">' + birth.year + '年生</div>' +
-      '<div class="tarot-card-name" style="font-size:44px;margin:8px 0;">' + sx + '</div>' +
+      '<div class="tarot-card-name sx-icon">' + sx + '</div>' +
       '<div class="tarot-card-keys">' + info.trait + '</div></div>' +
       '<div class="mbti-report"><div class="mbti-sec sx-fortune"><div class="sx-fortune-head"><span class="mbti-sec-label">本年运势 · ' + ctx.yearName + '年 · ' + rel.name + '</span>' +
       '<button type="button" class="sx-plus" data-act="detail" aria-label="查看详细年运">＋</button></div>' +
       rel.text + '<br>' + info.luck + '</div></div>';
-    if (typeof saveReportHTML === 'function') saveReportHTML('yumiao_report_shengxiao_v1', '生肖运势', 'shengxiaoBody');
+    if (typeof saveReportHTML === 'function') {
+      /* 只存报告片段（.mbti-report：本年运势），不存动物卡片头 */
+      var _rep = body.querySelector('.mbti-report');
+      saveReportHTML('yumiao_report_shengxiao_v1', '生肖运势', 'shengxiaoBody', _rep ? _rep.outerHTML : null);
+    }
   }
   (function bindOnce() {
     function go() {
@@ -155,14 +165,14 @@
         if (!t || !ctx) return;
         var act = t.getAttribute('data-act') || 'detail';
         if (act === 'detail') { body.innerHTML = detailHtml(); var sc = body.closest('.sheet-scroll'); if (sc) sc.scrollTop = 0; }
-        else if (act === 'back') { var b = null; try { b = JSON.parse(localStorage.getItem('yumiao_shared_birth_v1') || 'null'); } catch (_) {} if (b && b.year) { render(b); var sc2 = body.closest('.sheet-scroll'); if (sc2) sc2.scrollTop = 0; } }
+        else if (act === 'back') { var b = (typeof readBirth === 'function') ? readBirth() : null; if (b && b.year) { render(b); var sc2 = body.closest('.sheet-scroll'); if (sc2) sc2.scrollTop = 0; } }
       });
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
   })();
   function openShengxiao() {
-    var birth = null;
-    try { birth = JSON.parse(localStorage.getItem('yumiao_shared_birth_v1') || 'null'); } catch (e) {}
+    if (typeof window.renderProfileBar === 'function') window.renderProfileBar('shengxiaoProfileBar');
+    var birth = (typeof readBirth === 'function') ? readBirth() : null;
     var body = document.getElementById('shengxiaoBody');
     if (!birth || !birth.year) {
       body.innerHTML = '<p class="mbti-intro">请先到「我的」录入生辰档案。</p>';
@@ -171,17 +181,9 @@
       ensureLunar().then(function () { if (document.querySelector('#shengxiaoBody .sx-fortune')) render(birth); });
     }
     if (typeof ModalUI !== 'undefined' && ModalUI.open) ModalUI.open('shengxiao');
-    else {
-      document.getElementById('shengxiaoBackdrop').classList.add('show');
-      document.getElementById('shengxiaoModal').classList.add('show');
-    }
   }
   function closeShengxiao() {
     if (typeof ModalUI !== 'undefined' && ModalUI.close) ModalUI.close('shengxiao');
-    else {
-      document.getElementById('shengxiaoBackdrop').classList.remove('show');
-      document.getElementById('shengxiaoModal').classList.remove('show');
-    }
   }
   window.__shengxiao = { getShengxiao: getShengxiao, lunarYearOf: lunarYearOf, relation: relation, monthRel: monthRel };
   window.openShengxiao = openShengxiao;

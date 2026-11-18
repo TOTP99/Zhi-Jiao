@@ -7,17 +7,19 @@
   // ============================================================
   // 共用出生信息（八字 / 星座 / 西方星盘自动对齐）
   // ============================================================
-  const SHARED_BIRTH_KEY = 'yumiao_shared_birth_v1';
   function loadSharedBirth() {
-    return readStorageJSON(SHARED_BIRTH_KEY, null);
+    return (typeof readBirth === 'function') ? readBirth() : null;
   }
   function openBaziPanel() {
     backToBaziForm();
     if (typeof window.renderProfileBar === 'function') window.renderProfileBar('baziProfileBar');
-    ModalUI.open('bazi');
+    if (typeof ModalUI !== 'undefined' && ModalUI.open) ModalUI.open('bazi');
+    /* 有档案则打开即排，省一次提交 tap；无档案时留表单并提示 */
+    var _b = (typeof loadSharedBirth === 'function') ? loadSharedBirth() : null;
+    if (_b && _b.year && _b.month && _b.day) submitBaziForm();
   }
   function closeBaziPanel() {
-    ModalUI.close('bazi');
+    if (typeof ModalUI !== 'undefined' && ModalUI.close) ModalUI.close('bazi');
     clearQuestionSelectionToDefault();
   }
   function backToBaziForm() {
@@ -25,6 +27,8 @@
     const form = document.getElementById('baziForm');
     if (reveal) reveal.style.display = 'none';
     if (form) form.style.display = '';
+    const modal = document.getElementById('baziModal');
+    if (modal) modal.classList.remove('is-reveal');
   }
   function readBaziInput() {
     let b = (typeof loadSharedBirth === 'function') ? loadSharedBirth() : null;
@@ -70,6 +74,8 @@
     const reveal = document.getElementById('baziReveal');
     if (form) form.style.display = 'none';
     if (reveal) reveal.style.display = 'flex';
+    const modal = document.getElementById('baziModal');
+    if (modal) modal.classList.add('is-reveal');
     renderBaziFull();
   }
   function renderBaziFull() {
@@ -281,17 +287,17 @@
   function openShenshaDict() {
     const items = (baziResult && baziResult.shensha && baziResult.shensha.items) || [];
     const names = items.length ? [...new Set(items.map(i => i.name))] : Object.keys(SHENSHA_DICT);
-    let html = '<div class="mbti-intro" style="margin-bottom:8px;">以下为常见神煞简释（命理参考，非定论）。点击关闭返回。</div>';
+    let html = '<div class="mbti-intro mb-8">以下为常见神煞简释（命理参考，非定论）。点击关闭返回。</div>';
     names.forEach(name => {
       const entry = shenshaEntry(name);
       const desc = entry.base || (items.find(i => i.name === name) || {}).description || '传统神煞，流派解释不一。';
       const pos = items.filter(i => i.name === name).map(i => i.positionNames.join('、')).filter(Boolean);
-      html += `<div class="mbti-sec" style="margin-bottom:8px;"><span class="mbti-sec-label">${escapeHtml(name)}</span>${pos.length ? '（' + escapeHtml(pos.join('；')) + '）' : ''}<br><span style="color:var(--cream-dim);">${escapeHtml(desc)}</span>${entry.note ? '<br><span style="color:#8a6f3a;">\u25C6 ' + escapeHtml(entry.note) + '</span>' : ''}</div>`;
+      html += `<div class="mbti-sec mb-8"><span class="mbti-sec-label">${escapeHtml(name)}</span>${pos.length ? '（' + escapeHtml(pos.join('；')) + '）' : ''}<br><span class="c-dim">${escapeHtml(desc)}</span>${entry.note ? '<br><span class="c-goldsoft">\u25C6 ' + escapeHtml(entry.note) + '</span>' : ''}</div>`;
     });
     const reportEl = document.getElementById('baziReport');
     if (reportEl) {
       reportEl.dataset.prevHtml = reportEl.innerHTML;
-      reportEl.innerHTML = html + '<div style="text-align:center;margin-top:10px;"><button class="mbti-reset" onclick="closeShenshaDict()">返回排盘结果</button></div>';
+      reportEl.innerHTML = html + '<div class="ta-c mt-10"><button class="btn-ghost btn-sm" onclick="closeShenshaDict()">返回排盘结果</button></div>';
     }
   }
   function closeShenshaDict() {
@@ -309,7 +315,7 @@
     fillQuestionText('');
   }
   function closeMbtiQuiz() {
-    ModalUI.close('mbti');
+    if (typeof ModalUI !== 'undefined' && ModalUI.close) ModalUI.close('mbti');
     clearQuestionSelectionToDefault();
   }
   function handleBeastKey(e, el) {
@@ -453,7 +459,7 @@
         } catch (__) {
           try {
             descEl.textContent = '护法示下：宜顺其自然，耐心等待天时。';
-          } catch (e) { console.warn('[yumiao] 05:454', e); }
+          } catch (e) { console.warn('[yumiao] 05', e); }
         }
       } finally {
         if (myToken === castToken) {
@@ -500,9 +506,9 @@
     if (history.length > 8) history.pop();
     saveHistory();
     renderHistory();
-    /* 问卜也记入统一质询记录，可打印 */
+    /* 问卜也记入统一质询记录，可打印：走 saveReportHTML（存 yumiao_report_jiao_v1 + 记入质询记录） */
     try {
-      if (typeof appendQueryRecord === 'function') {
+      if (typeof saveReportHTML === 'function') {
         let qh = '<div class="mbti-report"><div class="mbti-sec"><span class="mbti-sec-label">所问</span>' +
           escapeHtml(question) + '</div><div class="mbti-sec"><span class="mbti-sec-label">筊象</span>' +
           escapeHtml(safeType.text) + (beastName ? ' · 护法 ' + escapeHtml(beastName) : '') + '</div>';
@@ -512,7 +518,7 @@
           if (detail.shiji && detail.shiji.length) qh += '<div class="mbti-sec"><span class="mbti-sec-label">诗偈</span>' + detail.shiji.map(function (l) { return escapeHtml(l); }).join('<br>') + '</div>';
         }
         qh += '</div>';
-        appendQueryRecord('问卜掷筊', qh);
+        saveReportHTML('yumiao_report_jiao_v1', '问卜掷筊', 'resultArea', qh);
       }
     } catch (_) { /* 记录失败不影响主流程 */ }
   }
@@ -526,24 +532,21 @@
   }
 
   /* 记录下载：按质询次序打印（最早在前），一类一页，走系统打印存 PDF */
-  function hashStr(s) {
-    let h = 2166136261 >>> 0;
-    for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
-    return (h >>> 0).toString(36);
-  }
+  // hashStr 已删：PDF 去重改调 01 的 yumiaoHash（同为 FNV-1a，yumiaoHash(s).toString(36) 与旧 hashStr(s) 输出一致）
   function downloadHistoryPDF() {
     const reports = [];
     // ① 优先用统一质询记录（按质询时间顺序）
     try {
-      const raw = localStorage.getItem('yumiao_records_v1');
-      const arr = raw ? JSON.parse(raw) : [];
+      const _rk = (typeof QUERY_LOG_KEY !== 'undefined' ? QUERY_LOG_KEY : 'yumiao_records_v1');
+      const raw = localStorage.getItem(_rk);
+      const arr = (typeof readStorageJSON === 'function') ? readStorageJSON(_rk, []) : (raw ? JSON.parse(raw) : []);
       if (Array.isArray(arr)) arr.forEach(function (r) {
         if (r && r.html && r.html.length > 50) reports.push(r);
       });
     } catch (e) { console.warn('[yumiao] records parse', e); }
     // ② 老数据兜底：按类别键读取
     if (reports.length === 0) {
-      const KEYS = [
+      const KEYS = (typeof REPORT_KEYS !== 'undefined' && Array.isArray(REPORT_KEYS) && REPORT_KEYS.length) ? REPORT_KEYS : [
         'yumiao_report_bazi_v1',
         'yumiao_report_mbti_v1',
         'yumiao_report_zodiac_v1',
@@ -554,13 +557,15 @@
         'yumiao_report_shengxiao_v1',
         'yumiao_report_chenggu_v1',
         'yumiao_report_fortune_v1',
-        'yumiao_report_yi_v1'
+        'yumiao_report_jiao_v1',
+        'yumiao_report_palm_fortune_v1',
+        'yumiao_report_palm_diag_v1'
       ];
       KEYS.forEach(function (k) {
         try {
           const raw = localStorage.getItem(k);
           if (!raw) return;
-          const r = JSON.parse(raw);
+          const r = (typeof readStorageJSON === 'function') ? readStorageJSON(k, null) : JSON.parse(raw);
           if (r && r.html && r.html.length > 50) reports.push(r);
         } catch (e) { console.warn('[yumiao] report parse', e); }
       });
@@ -581,13 +586,12 @@
     const uniq = [];
     for (let i = reports.length - 1; i >= 0; i--) {
       const r = reports[i];
-      const k = (r.title || '') + '|' + (r.html || '').length + '|' + hashStr(r.html || '');
+      const k = (r.title || '') + '|' + (r.html || '').length + '|' + (typeof yumiaoHash === 'function' ? yumiaoHash(r.html || '') : 0).toString(36);
       if (!seen[k]) { seen[k] = true; uniq.unshift(r); }
     }
     reports.length = 0;
     uniq.forEach(function (r) { reports.push(r); });
     const d = new Date();
-    const pad = function(n){ return String(n).padStart(2,'0'); };
     const today = d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
     const fmtTs = function(ts){
       try {
@@ -624,19 +628,21 @@
       return;
     }
     list.innerHTML = profileBar + history.map(h => `
-      <div class="history-item"><span>${historyTimeLabel(h)} · ${escapeHtml(h.q)}${h.snippet ? `<br><span style="color:var(--muted);font-size:11px;">${escapeHtml(h.snippet)}</span>` : ''}</span><span class="history-result ${escapeHtml(String(h.result.cls))}">${escapeHtml(String(h.result.text))}（${window.beastIconHTML ? window.beastIconHTML(window.beastKeyByName ? window.beastKeyByName(h.beast) : '', 'sm') : ''}${escapeHtml(h.beast)}）</span></div>
+      <div class="history-item"><span>${historyTimeLabel(h)} · ${escapeHtml(h.q)}${h.snippet ? `<br><span class="fine">${escapeHtml(h.snippet)}</span>` : ''}</span><span class="history-result ${escapeHtml(String(h.result.cls))}">${escapeHtml(String(h.result.text))}（${window.beastIconHTML ? window.beastIconHTML(window.beastKeyByName ? window.beastKeyByName(h.beast) : '', 'sm') : ''}${escapeHtml(h.beast)}）</span></div>
     `).join('');
   }
   function toggleHistory() {
-    const box = document.getElementById('historyBox');
+    const box = document.getElementById('historyModal');
     const backdrop = document.getElementById('historyBackdrop');
     const btn = document.getElementById('recordBtn');
     const opening = !box.classList.contains('show');
+    if (opening && typeof syncAppViewportVars === 'function') syncAppViewportVars();
     if (opening) renderHistory();
     box.classList.toggle('show', opening);
     backdrop.classList.toggle('show', opening);
     btn.classList.toggle('on', opening);
     if (opening) lockPageScroll(); else unlockPageScroll();
+    if (window.YumiaoNav) { if (opening) window.YumiaoNav.noteOpened('historyModal'); else window.YumiaoNav.noteClosed('historyModal'); }
   }
   function resetAll() {
     castToken++; // 使任何仍在等待神谕的请求失效
@@ -648,7 +654,6 @@
     if (typeof closeAllMenus === 'function') closeAllMenus();
     if (typeof clearPreferredCategory === 'function') clearPreferredCategory();
     const qEl = document.getElementById('question');
-    qEl.value = '';
     qEl.style.borderColor = '';
     qEl.blur();
     selectedBeast = null;
@@ -663,11 +668,13 @@
     document.getElementById('resultBeast').textContent = '';
     var _halo2 = document.getElementById('beastOverlay'); if (_halo2) _halo2.classList.remove('watermark');
     document.getElementById('castBtn').disabled = false;
-    const _histBoxWasOpen = document.getElementById('historyBox').classList.contains('show');
-    document.getElementById('historyBox').classList.remove('show');
-    document.getElementById('historyBackdrop').classList.remove('show');
+    if (typeof ModalUI !== 'undefined' && ModalUI.close) ModalUI.close('history');
+    else {
+      document.getElementById('historyModal').classList.remove('show');
+      document.getElementById('historyBackdrop').classList.remove('show');
+      if (typeof unlockPageScroll === 'function') unlockPageScroll();
+    }
     document.getElementById('recordBtn').classList.remove('on');
-    if (_histBoxWasOpen) unlockPageScroll();
   }
   document.getElementById('question').addEventListener('keydown', function(e) {
     if (e.key === 'Enter' && !e.shiftKey) {

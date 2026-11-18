@@ -57,13 +57,14 @@
   ];
   let fortuneSpinning = false;
   let fortuneAngle = 0;
+  let fortuneAC = null; /* 圆盘转盘音效的 AudioContext（文件内变量，不挂 window） */
   let fortuneSoundTimer = null;
   function playFortuneSpinSound() {
     try {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return;
-      if (!window._yumiaoFortuneAC) window._yumiaoFortuneAC = new AC();
-      const ctx = window._yumiaoFortuneAC;
+      if (!fortuneAC) fortuneAC = new AC();
+      const ctx = fortuneAC;
       if (ctx.state === 'suspended') ctx.resume();
       const start = ctx.currentTime;
       // 金属转盘持续嘶嘶 + 节奏嘀嗒，约 3 秒
@@ -103,9 +104,9 @@
           g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.14);
           osc.connect(g); g.connect(ctx.destination);
           osc.start(t0); osc.stop(t0 + 0.15);
-        } catch (e) { console.warn('[yumiao] 09:106', e); }
+        } catch (e) { console.warn('[yumiao] 09', e); }
       }, 2950);
-    } catch (e) { console.warn('[yumiao] 09:108', e); }
+    } catch (e) { console.warn('[yumiao] 09', e); }
   }
   function buildFortuneWheelUI() {
     const labels = document.getElementById('fortuneLabels');
@@ -126,20 +127,28 @@
     const md = document.getElementById('fortuneModal');
     const res = document.getElementById('fortuneResult');
     const again = document.getElementById('fortuneAgain');
-    if (bd) bd.classList.add('show');
-    if (md) md.classList.add('show');
-    if (typeof lockPageScroll === 'function') lockPageScroll();
-    if (res) res.innerHTML = '<span style="color:#a08c60">禅猫就位 · 圆盘待命…</span>';
+    if (typeof ModalUI !== 'undefined' && ModalUI.open) ModalUI.open('fortune');
+    else {
+      if (bd) bd.classList.add('show');
+      if (md) md.classList.add('show');
+      if (window.YumiaoNav) window.YumiaoNav.noteOpened('fortuneModal');
+      if (typeof lockPageScroll === 'function') lockPageScroll();
+    }
+    if (res) res.innerHTML = '<span class="c-goldsoft">禅猫就位 · 圆盘待命…</span>';
     if (again) { again.style.display = 'none'; again.disabled = false; }
     setTimeout(function(){ spinFortuneWheel(); }, 280);
   }
   function closeFortuneWheel() {
-    if (fortuneSpinning) return;
-    const bd = document.getElementById('fortuneBackdrop');
-    const md = document.getElementById('fortuneModal');
-    if (bd) bd.classList.remove('show');
-    if (md) md.classList.remove('show');
-    if (typeof unlockPageScroll === 'function') unlockPageScroll();
+    if (fortuneSpinning) return false;   /* 旋转中拒绝关闭：X/遮罩/ESC/返回键都尊重 */
+    if (typeof ModalUI !== 'undefined' && ModalUI.close) ModalUI.close('fortune');
+    else {
+      const bd = document.getElementById('fortuneBackdrop');
+      const md = document.getElementById('fortuneModal');
+      if (bd) bd.classList.remove('show');
+      if (md) md.classList.remove('show');
+      if (typeof unlockPageScroll === 'function') unlockPageScroll();
+      if (window.YumiaoNav) window.YumiaoNav.noteClosed('fortuneModal');
+    }
   }
   function spinFortuneWheel() {
     if (fortuneSpinning) return;
@@ -149,7 +158,7 @@
     if (!wheel || !res) return;
     fortuneSpinning = true;
     if (again) { again.style.display = 'none'; again.disabled = true; }
-    res.innerHTML = '<span style="color:#a08c60">圆盘旋转中…</span>';
+    res.innerHTML = '<span class="c-goldsoft">圆盘旋转中…</span>';
     playFortuneSpinSound();
     const n = FORTUNE_SEGMENTS.length;
     const idx = Math.floor(Math.random() * n);
@@ -184,9 +193,6 @@
       const wrap = document.querySelector('.box-wrap');
       const target = wrap || img;
       if (!target) return;
-      let timer = null;
-      let armed = false;
-      const LONG_MS = 560;
       function blockSave(e){ e.preventDefault(); e.stopPropagation(); return false; }
       if (img) {
         img.addEventListener('contextmenu', blockSave);
@@ -194,15 +200,9 @@
         img.setAttribute('draggable', 'false');
       }
       target.addEventListener('contextmenu', blockSave);
-      function clearTimer(){ if (timer) { clearTimeout(timer); timer = null; } armed = false; }
       /* 宝盒点按由 index.html 统一处理，此处不绑定 */
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
     else wire();
   })();
-  document.addEventListener('keydown', function(e){
-    if (e.key === 'Escape' && document.getElementById('fortuneModal') && document.getElementById('fortuneModal').classList.contains('show')) {
-      closeFortuneWheel();
-    }
-  });
 

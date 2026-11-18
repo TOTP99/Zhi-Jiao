@@ -4,42 +4,12 @@
 // ============================================================
 (function () {
   'use strict';
-  var $ = function (id) { return document.getElementById(id); };
-  var BIRTH_KEY = 'yumiao_shared_birth_v1';
+
+  // 本地小助手（消除对 01 全局 $ 的隐式依赖；与 01 同语义）
+  function $(id) { return document.getElementById(id); }
 
   /* ── 农历表 1900–2100：bit16=闰月大小，bit15..4=1~12月大小，低4位=闰哪个月 ── */
-  var LUNAR_INFO = [0x04bd8,0x04ae0,0x0a570,0x054d5,0x0d260,0x0d950,0x16554,0x056a0,0x09ad0,0x055d2,0x04ae0,0x0a5b6,0x0a4d0,0x0d250,0x1d255,0x0b540,0x0d6a0,0x18da3,0x095b0,0x14977,0x04970,0x0a4b0,0x1b0b6,0x06a50,0x06d40,0x1ab54,0x02b60,0x09570,0x052f2,0x04970,0x06566,0x0d4a0,0x0ea50,0x16a95,0x05ad0,0x02b60,0x186e3,0x092e0,0x1c8d7,0x0c950,0x0d4a0,0x1d8a6,0x0b550,0x056a0,0x1a5b4,0x025d0,0x092d0,0x0d2b2,0x0a950,0x0b557,0x06ca0,0x0b550,0x15355,0x04da0,0x0a5b0,0x18573,0x052b0,0x0a9a8,0x0e950,0x06aa0,0x0aea6,0x0ab50,0x04b60,0x0aae4,0x0a570,0x05260,0x0f263,0x0d950,0x05b57,0x056a0,0x096d0,0x04dd5,0x04ad0,0x0a4d0,0x0d4d4,0x0d250,0x0d558,0x0b540,0x0b6a0,0x195a6,0x095b0,0x049b0,0x0a974,0x0a4b0,0x0b27a,0x06a50,0x06d40,0x1ad47,0x0ab60,0x09570,0x04af5,0x04970,0x064b0,0x074a3,0x0ea50,0x06b58,0x05ac0,0x0ab60,0x096e5,0x092e0,0x0c960,0x0d954,0x0d4a0,0x0da50,0x07552,0x056a0,0x0abb7,0x025d0,0x092d0,0x0cab5,0x0a950,0x0b4a0,0x0baa4,0x0ad50,0x055d9,0x04ba0,0x0a5b0,0x15176,0x052b0,0x0a930,0x07954,0x06aa0,0x0ad50,0x05b52,0x04b60,0x0a6e6,0x0a4e0,0x0d260,0x0ea65,0x0d530,0x05aa0,0x076a3,0x096d0,0x04afb,0x04ad0,0x0a4d0,0x1d0b6,0x0d250,0x0d520,0x0dd45,0x0b5a0,0x056d0,0x055b2,0x049b0,0x0a577,0x0a4b0,0x0aa50,0x1b255,0x06d20,0x0ada0,0x14b63,0x09370,0x049f8,0x04970,0x064b0,0x168a6,0x0ea50,0x06b20,0x1a6c4,0x0aae0,0x092e0,0x0d2e3,0x0c960,0x0d557,0x0d4a0,0x0da50,0x05d55,0x056a0,0x0a6d0,0x055d4,0x092d0,0x0a9b8,0x0a950,0x0b4a0,0x0b6a6,0x0ad50,0x055a0,0x0aba4,0x0a5b0,0x052b0,0x0b273,0x06930,0x07337,0x06aa0,0x0ad50,0x14b55,0x04b60,0x0a570,0x054e4,0x0d160,0x0e968,0x0d520,0x0daa0,0x16aa6,0x056d0,0x04ae0,0x0a9d4,0x0a2d0,0x0d150,0x0f252,0x0d520];
-  var BASE = Date.UTC(1900, 0, 31);
-  function leapMonth(y) { return LUNAR_INFO[y - 1900] & 15; }
-  function leapDays(y) { return leapMonth(y) ? ((LUNAR_INFO[y - 1900] & 0x10000) ? 30 : 29) : 0; }
-  function monthDays(y, m) { return (LUNAR_INFO[y - 1900] & (0x10000 >> m)) ? 30 : 29; }
-  function yearDays(y) {
-    var s = 348, i;
-    for (i = 0x8000; i > 0x8; i >>= 1) s += (LUNAR_INFO[y - 1900] & i) ? 1 : 0;
-    return s + leapDays(y);
-  }
-  /* 公历 → 农历 {year, month, day, leap} */
-  function solarToLunar(y, m, d) {
-    if (y < 1900 || y > 2100) return null;
-    var off = Math.round((Date.UTC(y, m - 1, d) - BASE) / 864e5);
-    if (off < 0) return null;
-    var ly = 1900, n;
-    while (ly < 2101 && off >= (n = yearDays(ly))) { off -= n; ly++; }
-    if (ly > 2100) return null;
-    var lm = leapMonth(ly), isLeap = false, mo = 1, len;
-    for (; mo <= 12; mo++) {
-      len = monthDays(ly, mo);
-      if (off < len) break;
-      off -= len;
-      if (mo === lm) {
-        len = leapDays(ly);
-        if (off < len) { isLeap = true; break; }
-        off -= len;
-      }
-    }
-    return { year: ly, month: mo, day: off + 1, leap: isLeap };
-  }
-  window.__solarToLunar = solarToLunar;
+  /* 农历换算已抽到共享模块 js/00a-lunar.js（以 15 的表为准）；此处改调 window.YumiaoLunar.solarToLunar */
 
   /* ── 骨重表（单位：钱） ── */
   var GAN = '甲乙丙丁戊己庚辛壬癸', ZHI = '子丑寅卯辰巳午未申酉戌亥';
@@ -56,14 +26,9 @@
   function fmt(q) { return Math.floor(q / 10) + '两' + (q % 10 ? (q % 10) + '钱' : ''); }
 
   /* ── 读取共用生辰 ── */
-  function readBirth() {
-    try {
-      var b = JSON.parse(localStorage.getItem(BIRTH_KEY) || 'null');
-      return (b && typeof window.yumiaoStdBirth === 'function') ? window.yumiaoStdBirth(b) : b;
-    } catch (_) { return null; }
-  }
   function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    if (s == null) return '';
+    return (typeof window.escapeHtml === 'function') ? window.escapeHtml(String(s)) : String(s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
@@ -73,17 +38,22 @@
     var y = +b.year, m = +b.month, d = +b.day;
     var h = (b.hour == null || b.hour === '') ? 12 : +b.hour;
     if (![y, m, d, h].every(isFinite)) return { error: '生辰档案不完整，请点「更换」重新录入。' };
-    var lu = solarToLunar(y, m, d);
+    var lu = window.YumiaoLunar.solarToLunar(y, m, d);
     if (!lu) return { error: '农历换算范围为 1900–2100 年，请检查生辰档案。' };
     var gz = ganzhi(lu.year);
     var hi = Math.floor((h + 1) / 2) % 12;
-    var yw = YEAR_W[gz.idx], mw = MONTH_W[lu.month - 1], dw = DAY_W[lu.day - 1], hw = HOUR_W[hi];
+    // 闰月半月制（与 15-ziwei.js effectiveMonth 同口径，原样复用）：闰月 1–15 日按本月，16 日后算下月。
+    // 闰十二月下半月推到正月时，年重仍按本年——紫微亦只进年干（palaceGan 用）、不动年份/年支。
+    // 注：1900–2100 年间无闰十二月，该分支在范围内不可达，留作与紫微一致的兜底。
+    var effMonth = lu.month;
+    if (lu.isLeap && lu.day > 15) { effMonth = lu.month + 1; if (effMonth > 12) effMonth = 1; }
+    var yw = YEAR_W[gz.idx], mw = MONTH_W[effMonth - 1], dw = DAY_W[lu.day - 1], hw = HOUR_W[hi];
     var total = yw + mw + dw + hw;
     return {
       lunar: lu, gz: gz.name, hourName: ZHI[hi], hourRange: HOUR_RANGE[hi],
       hourDefault: (b.hour == null || b.hour === ''),
       yw: yw, mw: mw, dw: dw, hw: hw, total: total,
-      lunarText: lu.year + '年（' + gz.name + '）' + (lu.leap ? '闰' : '') + MONTH_N[lu.month - 1] + '月' + DAY_N[lu.day - 1]
+      lunarText: lu.year + '年（' + gz.name + '）' + (lu.isLeap ? '闰' : '') + MONTH_N[lu.month - 1] + '月' + DAY_N[lu.day - 1]
     };
   }
   window.__chengguCalc = calc;
@@ -105,7 +75,7 @@
   function render() {
     var box = $('chengguResult');
     if (!box) return;
-    var b = readBirth();
+    var b = (typeof readBirth === 'function') ? readBirth({ dst: true }) : null;
     if (!b || !b.year || !b.month || !b.day) {
       box.innerHTML = '<p class="cg-hint">还没有生辰档案。录入一次，八字、星座、星盘、称骨都会共用。</p>';
       return;
@@ -114,7 +84,7 @@
     if (r.error) { box.innerHTML = '<p class="cg-hint">' + esc(r.error) + '</p>'; return; }
     var rows = [
       ['年', r.gz + '年', r.yw],
-      ['月', (r.lunar.leap ? '闰' : '') + MONTH_N[r.lunar.month - 1] + '月', r.mw],
+      ['月', (r.lunar.isLeap ? '闰' : '') + MONTH_N[r.lunar.month - 1] + '月', r.mw],
       ['日', DAY_N[r.lunar.day - 1], r.dw],
       ['时', r.hourName + '时 · ' + r.hourRange, r.hw]
     ];
@@ -132,7 +102,6 @@
 
   /* ── 自带样式与弹窗 DOM（不依赖 index.html / style.css 里的称骨代码） ── */
   var CSS = [
-    '.cg-result{padding-bottom:8px}',
     '.cg-hint{font-size:var(--fs-sm);color:var(--muted);text-align:center;line-height:1.8;padding:18px 0}',
     '.cg-weight{display:flex;flex-direction:column;align-items:center;gap:4px;padding:16px 0 6px}',
     '.cg-kicker{font-size:var(--fs-xs);letter-spacing:3px;color:var(--faint)}',
@@ -160,7 +129,8 @@
         '<p class="mbti-intro">以出生的农历年、月、日、时各取一份骨重，相加得总骨重，再看对应批语。生辰与八字、星座、星盘共用同一份档案。</p>' +
         '<div class="profile-bar" id="chengguProfileBar" data-bar="chenggu"></div>' +
       '</div>' +
-      '<div id="chengguResult" class="cg-result"></div>' +
+      '<div id="chengguResult" class="mbti-report"></div>' +
+      '<div class="tarot-actions"><button type="button" class="btn-gold btn-sm" onclick="copyReport(\'chengguResult\')">复制结果</button></div>' +
     '</div>';
   function ensureDom() {
     if ($('chengguModal')) return;
@@ -182,23 +152,25 @@
     if (typeof window.renderProfileBar === 'function') window.renderProfileBar('chengguProfileBar');
     render();
     var m = $('chengguModal'), bd = $('chengguBackdrop');
-    if (bd) bd.classList.add('show');
-    if (m) m.classList.add('show');
+    if (typeof ModalUI !== 'undefined' && ModalUI.open) ModalUI.open('chenggu');
+    else {
+      if (bd) bd.classList.add('show');
+      if (m) m.classList.add('show');
+      if (window.YumiaoNav) window.YumiaoNav.noteOpened('chengguModal');
+    }
     lock(true);
-    try { if (navigator.vibrate) navigator.vibrate(15); } catch (e) { console.warn('[yumiao] 11:184', e); }
+    try { if (navigator.vibrate) navigator.vibrate(15); } catch (e) { console.warn('[yumiao] 11', e); }
   };
   window.closeChenggu = function () {
-    var m = $('chengguModal'), bd = $('chengguBackdrop');
-    if (m) m.classList.remove('show');
-    if (bd) bd.classList.remove('show');
+    if (typeof ModalUI !== 'undefined' && ModalUI.close) ModalUI.close('chenggu');
+    else {
+      var m = $('chengguModal'), bd = $('chengguBackdrop');
+      if (m) m.classList.remove('show');
+      if (bd) bd.classList.remove('show');
+      if (window.YumiaoNav) window.YumiaoNav.noteClosed('chengguModal');
+    }
     lock(false);
   };
-
-  /* ESC 关闭 */
-  document.addEventListener('keydown', function (e) {
-    var m = $('chengguModal');
-    if (e.key === 'Escape' && m && m.classList.contains('show')) window.closeChenggu();
-  });
 
   /* 档案更换后自动重算 */
   var prev = window.refreshProfileBars;

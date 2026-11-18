@@ -1,5 +1,5 @@
 // ============================================================
-// 掷筊核心：滚动锁 / 弹窗开关 / 瑞兽信息 / 音效 / 签文数据库 / 问卜菜单
+// 掷筊核心：瑞兽信息 / 音效 / 签文数据库 / 问卜菜单（v2.15：滚动锁 / 视口高度 / ModalUI / saveReportHTML / $ / readBirth / readStorageJSON 移入 js/00b-core.js）
 // 原始行号（拆分前单文件 script.js 中的位置）: 1-1244
 // ---- 神秘变体抽取器（全局）：同 salt 恒得同一变体 —— 同一命盘判词稳定，异命则各见其妙 ----
   function yumiaoHash(str) {
@@ -12,79 +12,7 @@
     if (!Array.isArray(pool) || pool.length === 0) return '';
     return pool[yumiaoHash(salt) % pool.length];
   }
-// ============================================================
-  // ---- 弹层滚动锁：打开星盘/八字/星座/MBTI/记录 等浮层时，锁住背景掷筊页面的滚动，
-  // 避免在浮层内上下滑动选择年月日时时，手指误触发背景页面跟着滚动。
-  // 用计数器支持"浮层里再叠一层"（如星盘小词典）的嵌套开关场景。
-  let _scrollLockCount = 0;
-  let _savedScrollY = 0;
-  function lockPageScroll() {
-    if (_scrollLockCount === 0) {
-      _savedScrollY = window.scrollY || document.documentElement.scrollTop || 0;
-      document.body.style.position = 'fixed';
-      document.body.style.top = (-_savedScrollY) + 'px';
-      document.body.style.left = '0';
-      document.body.style.right = '0';
-      document.body.style.width = '100%';
-      document.documentElement.classList.add('scroll-locked');
-    }
-    _scrollLockCount++;
-  }
-  function unlockPageScroll() {
-    _scrollLockCount = Math.max(0, _scrollLockCount - 1);
-    if (_scrollLockCount === 0) {
-      document.documentElement.classList.remove('scroll-locked');
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.left = '';
-      document.body.style.right = '';
-      document.body.style.width = '';
-      window.scrollTo(0, _savedScrollY);
-    }
-  }
-  // ---- 统一弹窗开关层（ModalUI）----
-  // 只负责"弹窗怎么开/怎么关"这类纯 UI 行为（加减 show class、背景滚动锁）。
-  // 各业务模块（八字/星座/星盘/MBTI）打开或关闭前后要做的具体业务动作
-  // （加载表单数据、初始化滚轮、清空状态等）仍留在各自的 openXxxPanel/closeXxxPanel 里，
-  // 这里不替它们决定该做什么业务逻辑，只统一"显示/隐藏 + 滚动锁"这一层。
-  const ModalRegistry = {
-    mbti:    { backdrop: 'mbtiBackdrop',    modal: 'mbtiModal' },
-    bazi:    { backdrop: 'baziBackdrop',    modal: 'baziModal' },
-    zodiac:  { backdrop: 'zodiacBackdrop',  modal: 'zodiacModal' },
-    tarot:   { backdrop: 'tarotBackdrop',   modal: 'tarotModal' },
-    wuge:    { backdrop: 'wugeBackdrop',    modal: 'wugeModal' },
-    western: { backdrop: 'westernBackdrop', modal: 'westernModal' },
-    fortune: { backdrop: 'fortuneBackdrop', modal: 'fortuneModal' },
-    shengxiao: { backdrop: 'shengxiaoBackdrop', modal: 'shengxiaoModal' },
-    ziwei: { backdrop: 'ziweiBackdrop', modal: 'ziweiModal' }
-  };
-  const ModalUI = {
-    isOpen(name) {
-      const cfg = ModalRegistry[name];
-      if (!cfg) return false;
-      const backdrop = document.getElementById(cfg.backdrop);
-      return !!(backdrop && backdrop.classList.contains('show'));
-    },
-    open(name) {
-      const cfg = ModalRegistry[name];
-      if (!cfg) return;
-      const backdrop = document.getElementById(cfg.backdrop);
-      const modal = document.getElementById(cfg.modal);
-      const wasOpen = !!(backdrop && backdrop.classList.contains('show'));
-      if (backdrop) backdrop.classList.add('show');
-      if (modal) modal.classList.add('show');
-      if (!wasOpen) lockPageScroll();
-    },
-    close(name) {
-      const cfg = ModalRegistry[name];
-      if (!cfg) return;
-      const backdrop = document.getElementById(cfg.backdrop);
-      const modal = document.getElementById(cfg.modal);
-      if (backdrop) backdrop.classList.remove('show');
-      if (modal) modal.classList.remove('show');
-      unlockPageScroll();
-    }
-  };
+  // v2.15：弹层滚动锁 / 视口高度 / ModalRegistry / ModalUI 已移入 js/00b-core.js（加载顺序 00 → 00a → 00b → 01；调用方行为不变）。
   let selectedBeast = null;
   const beastInfo = {
     dragon: { name: '唤醒天龙', style: '突破与转机' },
@@ -676,36 +604,44 @@
   }
   // 请示记录：持久化到本机，最多 8 条
 
-  /* 详细报告捕获：报告渲染完成后存完整 HTML，供「记录下载」生成 PDF */
-  var QUERY_LOG_KEY = 'yumiao_records_v1'; // 统一质询记录：按时间顺序，供按质询次序打印
-  var QUERY_LOG_MAX = 24;
-  function appendQueryRecord(title, html) {
-    try {
-      if (!html || html.length < 20) return;
-      var raw = localStorage.getItem(QUERY_LOG_KEY);
-      var arr = raw ? JSON.parse(raw) : [];
-      if (!Array.isArray(arr)) arr = [];
-      arr.push({ title: title, ts: Date.now(), html: html });
-      while (arr.length > QUERY_LOG_MAX) arr.shift();
-      localStorage.setItem(QUERY_LOG_KEY, JSON.stringify(arr));
-    } catch (_) { /* 存储失败不影响主流程 */ }
+  /* v2.15：QUERY_LOG_KEY / QUERY_LOG_MAX 已移入 js/00b-core.js。 */
+  // 报告存储键全集（13 键，与各模块 saveReportHTML 调用一致；05 的 PDF 老数据兜底共用此表）
+  const REPORT_KEYS = [
+    'yumiao_report_bazi_v1', 'yumiao_report_mbti_v1', 'yumiao_report_zodiac_v1',
+    'yumiao_report_western_v1', 'yumiao_report_tarot_v1', 'yumiao_report_wuge_v1',
+    'yumiao_report_ziwei_v1', 'yumiao_report_shengxiao_v1', 'yumiao_report_chenggu_v1',
+    'yumiao_report_fortune_v1', 'yumiao_report_jiao_v1',
+    'yumiao_report_palm_fortune_v1', 'yumiao_report_palm_diag_v1'
+  ];
+  window.REPORT_KEYS = REPORT_KEYS;
+  /* v2.15：appendQueryRecord / saveReportHTML 已移入 js/00b-core.js。 */
+  /* 复制纯文本（掌纹的复制模式，全报告共用）：剪贴板 API + textarea 兜底 */
+  function copyText(t) {
+    function done() { toast('已复制'); }
+    function fallback() {
+      var ta = document.createElement('textarea');
+      ta.value = t; ta.style.cssText = 'position:fixed;top:0;opacity:0';
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      try { document.execCommand('copy'); done(); } catch (e) { toast('复制失败，请长按选择文字复制'); }
+      ta.remove();
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, fallback); else fallback();
   }
-  function saveReportHTML(key, title, elId) {
-    try {
-      const el = document.getElementById(elId);
-      if (!el || !el.innerHTML || el.innerHTML.length < 50) return;
-      if (el.dataset.prevHtml) return; // 词典覆盖态不存
-      const html = el.innerHTML;
-      localStorage.setItem(key, JSON.stringify({ html: html, ts: Date.now(), title: title }));
-      appendQueryRecord(title, html); // 同时记入统一质询记录（按质询次序）
-    } catch (_) { /* 存储失败不影响主流程 */ }
+  /* 复制一份报告的纯文本（取报告元素的 innerText，折叠多余空行） */
+  function copyReport(elId) {
+    var el = document.getElementById(elId);
+    if (!el) return;
+    var t = (el.innerText || el.textContent || '').replace(/\n{3,}/g, '\n\n').trim();
+    if (!t) { toast('暂无可复制的内容'); return; }
+    copyText(t);
   }
+  window.copyText = copyText;
+  window.copyReport = copyReport;
 
   const HISTORY_KEY = 'yumiao_history_v1';
   const history = (function () {
     try {
-      const raw = localStorage.getItem(HISTORY_KEY);
-      const arr = raw ? JSON.parse(raw) : [];
+      const arr = readStorageJSON(HISTORY_KEY, []);
       return Array.isArray(arr) ? arr.filter(function (h) { return h && typeof h.q === 'string' && h.result; }).slice(0, 8) : [];
     } catch (_) { return []; }
   })();
@@ -716,19 +652,28 @@
   // 若某项已测过，记录面板会以「不超过 20 字」的极简说明 + 时间戳展示，无需重新测试即可一眼看到此前结果。
   const PROFILE_SUMMARY_KEY = 'yumiao_profile_summary_v1';
   const PROFILE_LABELS = { mbti: '性格', bazi: '八字', zodiac: '星座', western: '西盘' };
-  // ---- 轻量存储工具：统一处理 JSON + localStorage 异常 ----
-  function readStorageJSON(key, fallback = null) {
-    try {
-      const raw = localStorage.getItem(key);
-      return raw ? JSON.parse(raw) : fallback;
-    } catch (_) {
-      return fallback;
+  /* ── Hook 注册表：统一的函数包装器（取代各处手写的 _yumiaoPatched/_yumiaoSoundHooked/_yumiaoWrapped 标记）──
+     用法：YumiaoHook.wrap(obj, name, function (orig) { return function () { ...; return orig.apply(this, arguments); }; })
+     同一函数只包一次（以 _yumiaoHooked 标记为准），重复调用返回 false。 */
+  var YumiaoHook = {
+    wrap: function (obj, name, makeWrapper) {
+      if (!obj || typeof obj[name] !== 'function' || obj[name]._yumiaoHooked) return false;
+      var wrapped = makeWrapper(obj[name]);
+      wrapped._yumiaoHooked = true;
+      obj[name] = wrapped;
+      return true;
     }
-  }
+  };
+  window.YumiaoHook = YumiaoHook;
+  /* ── 小助手单点：pad 补零、yumiaoMod 正余数（$ 已移入 js/00b-core.js）── */
+  const LS_SOUND = 'yumiao_sound_v1'; /* 仪式音效开关：10 与 16 共用，此处单点 */
+  /* v2.15：$ 已移入 js/00b-core.js。 */
+  const pad = n => String(n).padStart(2, '0');
+  function yumiaoMod(n, m) { return ((n % m) + m) % m; }
+  /* v2.15：BIRTH_KEY / readBirth / readStorageJSON 已移入 js/00b-core.js。 */
   function loadProfileSummaries() {
     try {
-      const raw = localStorage.getItem(PROFILE_SUMMARY_KEY);
-      return raw ? JSON.parse(raw) : {};
+      return readStorageJSON(PROFILE_SUMMARY_KEY, {});
     } catch (_) { return {}; }
   }
   function saveProfileSummary(kind, text) {
@@ -744,7 +689,6 @@
   function formatProfileTime(ts) {
     try {
       const d = new Date(ts);
-      const pad = n => String(n).padStart(2, '0');
       return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
     } catch (_) { return ''; }
   }
@@ -755,15 +699,15 @@
     if (!items.length) return '';
     const chips = items.map(k => {
       const d = data[k];
-      return `<div class="history-item" style="opacity:0.92;"><span>${escapeHtml(PROFILE_LABELS[k])}已验 · ${escapeHtml(d.text)}<br><span style="color:var(--muted);font-size:11px;">${escapeHtml(formatProfileTime(d.time))}</span></span></div>`;
+      return `<div class="history-item dim"><span>${escapeHtml(PROFILE_LABELS[k])}已验 · ${escapeHtml(d.text)}<br><span class="fine">${escapeHtml(formatProfileTime(d.time))}</span></span></div>`;
     }).join('');
-    return `<div class="history-empty" style="text-align:left;padding:2px 6px 6px;color:var(--muted);font-size:11px;">已验档案（本机存储）</div>${chips}`;
+    return `<div class="hist-head">已验档案（本机存储）</div>${chips}`;
   }
   let castToken = 0;
   let lastQuestion = '';
   let lastQuestionAt = 0;
   let lastBeastIdentity = null; // 记录上次实际请示的瑞兽（或 'random'），换一位即可不受冷却限制
-  const SAME_Q_COOLDOWN_MS = 90000;
+  const SAME_Q_COOLDOWN_MS = 30000; /* 同问同兽冷却：90 秒太久，放宽到 30 秒；报错文案已说明规则与换瑞兽的绕法 */
   const POST_CAST_COOLDOWN_MS = 1200;
   function rollJiaoType() {
     const r = Math.random();
@@ -792,6 +736,7 @@
     return pickGuardianOracle(t, cat);
   }
   function escapeHtml(s) {
+    if (s == null) return '';
     return String(s).replace(/[&<>"']/g, c => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     }[c]));
@@ -946,6 +891,7 @@
     menuPinned = false;
     const casual = document.getElementById('casualMenu');
     if (casual) casual.classList.remove('show');
+    if (window.YumiaoNav) window.YumiaoNav.noteClosed('casualMenu');
   }
   function onQuestionInput() {
     customEditing = true;
@@ -987,6 +933,7 @@
     if (!casual) return;
     if (!casualMenuRendered) renderCasualMenu();
     casual.classList.add('show');
+    if (window.YumiaoNav) window.YumiaoNav.noteOpened('casualMenu', 'menu');
     bindOutsideClickOnce();
     // 滚动列表时保持钉住，避免误关
     const grid = document.getElementById('casualMenuGrid');

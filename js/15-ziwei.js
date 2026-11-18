@@ -1,5 +1,5 @@
 // ============================================================
-// 紫微斗数：排盘引擎 + 命盘弹窗（自研算法，与 iztro 交叉验证零差异）
+// 紫微斗数：排盘引擎 + 命盘弹窗（自研算法；十二宫自命宫起按逆时针排列）
 // 读共用生辰档案 yumiao_shared_birth_v1，直接显示完整命盘
 // ============================================================
 (function () {
@@ -8,66 +8,9 @@
   /* ────────── 农历换算（1900–2100，自研数据表） ────────── */
   var GAN = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
   var ZHI = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
-  function mod(n, m) { return ((n % m) + m) % m; }
+  function mod(n, m) { return (typeof window !== 'undefined' && typeof window.yumiaoMod === 'function') ? window.yumiaoMod(n, m) : ((n % m) + m) % m; }
 
-  var LUNAR_DATA = [
-    0x04bd8,0x04ae0,0x0a570,0x054d5,0x0d260,0x0d950,0x16554,0x056a0,0x09ad0,0x055d2,
-    0x04ae0,0x0a5b6,0x0a4d0,0x0d250,0x1d255,0x0b540,0x0d6a0,0x0ada2,0x095b0,0x14977,
-    0x04970,0x0a4b0,0x0b4b5,0x06a50,0x06d40,0x1ab54,0x02b60,0x09570,0x052f2,0x04970,
-    0x06566,0x0d4a0,0x0ea50,0x16a95,0x05ad0,0x02b60,0x186e3,0x092e0,0x1c8d7,0x0c950,
-    0x0d4a0,0x1d8a6,0x0b550,0x056a0,0x1a5b4,0x025d0,0x092d0,0x0d2b2,0x0a950,0x0b557,
-    0x06ca0,0x0b550,0x15355,0x04da0,0x0a5b0,0x14573,0x052b0,0x0a9a8,0x0e950,0x06aa0,
-    0x0aea6,0x0ab50,0x04b60,0x0aae4,0x0a570,0x05260,0x0f263,0x0d950,0x05b57,0x056a0,
-    0x096d0,0x04dd5,0x04ad0,0x0a4d0,0x0d4d4,0x0d250,0x0d558,0x0b540,0x0b6a0,0x195a6,
-    0x095b0,0x049b0,0x0a974,0x0a4b0,0x0b27a,0x06a50,0x06d40,0x0af46,0x0ab60,0x09570,
-    0x04af5,0x04970,0x064b0,0x074a3,0x0ea50,0x06b58,0x05ac0,0x0ab60,0x096d5,0x092e0,
-    0x0c960,0x0d954,0x0d4a0,0x0da50,0x07552,0x056a0,0x0abb7,0x025d0,0x092d0,0x0cab5,
-    0x0a950,0x0b4a0,0x0baa4,0x0ad50,0x055d9,0x04ba0,0x0a5b0,0x15176,0x052b0,0x0a930,
-    0x07954,0x06aa0,0x0ad50,0x05b52,0x04b60,0x0a6e6,0x0a4e0,0x0d260,0x0ea65,0x0d530,
-    0x05aa0,0x076a3,0x096d0,0x04afb,0x04ad0,0x0a4d0,0x1d0b6,0x0d250,0x0d520,0x0dd45,
-    0x0b5a0,0x056d0,0x055b2,0x049b0,0x0a577,0x0a4b0,0x0aa50,0x1b255,0x06d20,0x0ada0,
-    0x14b63,0x09370,0x049f8,0x04970,0x064b0,0x168a6,0x0ea50,0x06b20,0x1a6c4,0x0aae0,
-    0x092e0,0x0d2e3,0x0c960,0x0d557,0x0d4a0,0x0da50,0x05d55,0x056a0,0x0a6d0,0x055d4,
-    0x052d0,0x0a9b8,0x0a950,0x0b4a0,0x0b6a6,0x0ad50,0x055a0,0x0aba4,0x0a5b0,0x052b0,
-    0x0b273,0x06930,0x07337,0x06aa0,0x0ad50,0x14b55,0x04b60,0x0a570,0x054e4,0x0d160,
-    0x0e968,0x0d520,0x0daa0,0x16aa6,0x056d0,0x04ae0,0x0a9d4,0x0a2d0,0x0d150,0x0f252,
-    0x0d520
-  ];
-  function leapMonth(y) { return LUNAR_DATA[y - 1900] & 0xf; }
-  function monthDays(y, m) { return (LUNAR_DATA[y - 1900] & (0x10000 >> m)) ? 30 : 29; }
-  function leapDays(y) { var d = LUNAR_DATA[y - 1900]; return (d & 0xf) ? ((d & 0x10000) ? 30 : 29) : 0; }
-  function yearDays(y) {
-    var s = 348, d = LUNAR_DATA[y - 1900];
-    for (var i = 0x8000; i > 0x8; i >>= 1) s += (d & i) ? 1 : 0;
-    return s + leapDays(y);
-  }
-  function solarToLunar(y, m, d) {
-    var base = Date.UTC(1900, 0, 31), target = Date.UTC(y, m - 1, d);
-    var offset = Math.round((target - base) / 86400000);
-    if (offset < 0 || y < 1900 || y > 2100) return null;
-    var yy = 1900, dm, isLeap = false;
-    for (yy = 1900; yy <= 2100; yy++) {
-      var yd = yearDays(yy);
-      if (offset < yd) break;
-      offset -= yd;
-    }
-    var lm = leapMonth(yy);
-    for (dm = 1; dm <= 12; dm++) {
-      var md = monthDays(yy, dm);
-      if (offset < md) break;
-      offset -= md;
-      if (dm === lm) {
-        var ld = leapDays(yy);
-        if (offset < ld) { isLeap = true; break; }
-        offset -= ld;
-      }
-    }
-    return { year: yy, month: dm, day: offset + 1, isLeap: isLeap,
-             yearGanZhi: yearGanZhi(yy) };
-  }
-  function yearGanZhi(y) {
-    return GAN[mod(y - 4, 10)] + ZHI[mod(y - 4, 12)];
-  }
+  /* 农历换算已抽到共享模块 js/00a-lunar.js（以本文件的表为准）；此处改调 window.YumiaoLunar.solarToLunar */
   function hourToDiZhi(h) {
     return ZHI[mod(Math.floor(((h % 24) + 1) / 2), 12)];
   }
@@ -215,7 +158,7 @@
     return out;
   }
   function chart(opt) {
-    var lunar = solarToLunar(opt.year, opt.month, opt.day);
+    var lunar = window.YumiaoLunar.solarToLunar(opt.year, opt.month, opt.day);
     if (!lunar) throw new Error('日期超出范围（1900–2100）');
     var hourZhi = hourToDiZhi(opt.hour);
     var yearGan = lunar.yearGanZhi[0], yearZhi = lunar.yearGanZhi[1];
@@ -231,7 +174,7 @@
     var aux = auxStars(eff.month, hourZhi, yearGan, yearZhi, lunar.day, ming, shen);
     var palaces = [];
     for (var i = 0; i < 12; i++) {
-      var br = mod(ming + i, 12);
+      var br = mod(ming - i, 12); // 十二宫逆时针：命宫→兄弟→夫妻……，地支递减
       palaces.push({ name: PALACES[i], branch: ZHI[br], ganzhi: palaceGan(eff.yearGan, br) + ZHI[br] });
     }
     var sihua = SIHUA[yearGan], sihuaMap = {};
@@ -247,7 +190,6 @@
   }
 
   /* ────────── 弹窗界面 ────────── */
-  var BIRTH_KEY = 'yumiao_shared_birth_v1';
   var LAYOUT = [
     ['巳',1,1],['午',1,2],['未',1,3],['申',1,4],
     ['辰',2,1],['CENTER',2,2],['酉',2,4],
@@ -255,19 +197,8 @@
     ['寅',4,1],['丑',4,2],['子',4,3],['亥',4,4]
   ];
   function esc(s) {
-    return (typeof window.escapeHtml === 'function') ? window.escapeHtml(String(s)) : String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; });
-  }
-  function readBirth() {
-    try {
-      var b = JSON.parse(localStorage.getItem(BIRTH_KEY) || 'null');
-      if (!b || !b.year || !b.month || !b.day) return null;
-      if (typeof window.yumiaoStdBirth === 'function') b = window.yumiaoStdBirth(b); /* 夏令时回拨到标准时 */
-      return {
-        year: +b.year, month: +b.month, day: +b.day,
-        hour: (b.hour == null || b.hour === '') ? 12 : +b.hour,
-        gender: (b.sex === 'F') ? '女' : '男'
-      };
-    } catch (e) { return null; }
+    if (s == null) return '';
+    return (typeof window.escapeHtml === 'function') ? window.escapeHtml(String(s)) : String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
   }
   function starsIn(c, br) {
     var out = [];
@@ -289,7 +220,7 @@
     LAYOUT.forEach(function (item) {
       var br = item[0];
       if (br === 'CENTER') {
-        h += '<div class="zw-cell zw-center zw-tap" style="grid-row:2/span 2;grid-column:2/span 2;" onclick="openZwCenter()" role="button" tabindex="0">' +
+        h += '<div class="zw-cell zw-center zw-tap zw-center" onclick="openZwCenter()" role="button" tabindex="0">' +
           '<div class="zw-center-title">紫微斗数</div>' +
           '<div>农历 ' + c.lunar.year + '年' + (c.lunar.isLeap ? '闰' : '') + c.lunar.month + '月' + c.lunar.day + '日 ' + esc(c.hourZhi) + '时</div>' +
           '<div>' + esc(c.yearGanZhi) + '年 · ' + esc(c.input.gender) + '命</div>' +
@@ -318,8 +249,9 @@
     return h;
   }
   function openZiwei() {
+    if (typeof window.renderProfileBar === 'function') window.renderProfileBar('ziweiProfileBar');
     var body = document.getElementById('ziweiBody');
-    var b = readBirth();
+    var b = (typeof readBirth === 'function') ? readBirth({ dst: true, validate: true, shape: true }) : null;
     if (!b) {
       body.innerHTML = '<p class="mbti-intro">请先到「我的」录入生辰档案。</p>';
     } else {
@@ -327,24 +259,20 @@
         var c = chart({ year: b.year, month: b.month, day: b.day, hour: b.hour, gender: b.gender });
         zwCurrent = c; // 供子弹窗取数
         body.innerHTML = renderChart(c);
-        if (typeof saveReportHTML === 'function') saveReportHTML('yumiao_report_ziwei_v1', '紫微斗数', 'ziweiBody');
+        if (typeof saveReportHTML === 'function') {
+          /* 只存报告片段（.mbti-report：四化/大限摘要），不存交互命盘（.zw-board） */
+          var _rep = body.querySelector('.mbti-report');
+          saveReportHTML('yumiao_report_ziwei_v1', '紫微斗数', 'ziweiBody', _rep ? _rep.outerHTML : null);
+        }
       } catch (e) {
         body.innerHTML = '<p class="mbti-intro">排盘失败，请检查生辰档案是否正确。</p>';
       }
     }
     if (typeof ModalUI !== 'undefined' && ModalUI.open) ModalUI.open('ziwei');
-    else {
-      document.getElementById('ziweiBackdrop').classList.add('show');
-      document.getElementById('ziweiModal').classList.add('show');
-    }
   }
   function closeZiwei() {
     closeZwPop();
     if (typeof ModalUI !== 'undefined' && ModalUI.close) ModalUI.close('ziwei');
-    else {
-      document.getElementById('ziweiBackdrop').classList.remove('show');
-      document.getElementById('ziweiModal').classList.remove('show');
-    }
   }
   /* ── 子弹窗：宫格即按钮，底图模糊，说明分层递进 ── */
   var zwCurrent = null; // 当前命盘，供弹窗取数
@@ -388,6 +316,7 @@
     b.innerHTML = html;
     b.scrollTop = 0;
     bd.classList.add('show');
+    if (window.YumiaoNav) window.YumiaoNav.noteOpened('zwPop', 'zwpop');
     if (typeof YumiaoSound !== 'undefined') YumiaoSound.pop();
   }
   function closeZwPop() {
@@ -398,12 +327,13 @@
     } else if (bd) {
       bd.classList.remove('show');
     }
+    if (window.YumiaoNav) window.YumiaoNav.noteClosed('zwPop');
   }
   function zwMoreBtn(fn) {
     return '<button type="button" class="zw-more" onclick="' + fn + '">详细说明</button>';
   }
   function zwBackBtn(fn) {
-    return '<button type="button" class="zw-back" onclick="' + fn + '">← 返回上一层</button>';
+    return '<button type="button" class="btn-back" onclick="' + fn + '">← 返回上一层</button>';
   }
   // 某宫的星曜（含四化）
   function zwPalaceStars(palaceName) {
@@ -425,14 +355,14 @@
   function openZwPalace(name) {
     var p = zwCurrent ? zwCurrent.palaces.filter(function (x) { return x.name === name; })[0] : null;
     var h = '<div><b>' + esc(name) + '</b>：' + esc(ZW_PALACE_MEAN[name] || '') + '</div>';
-    if (p) h += '<div style="margin-top:8px;">本宫星曜：' + zwPalaceStars(name) + '</div>';
+    if (p) h += '<div class="mt-8">本宫星曜：' + zwPalaceStars(name) + '</div>';
     h += zwMoreBtn("openZwPalace2('" + name + "')");
     zwPop(name, h);
   }
   // 十二宫弹窗 · 第二层（详细）
   function openZwPalace2(name) {
     var h = '<div><b>' + esc(name) + '</b>：' + esc(ZW_PALACE_MEAN[name] || '') + '</div>';
-    h += '<div style="margin-top:8px;">本宫星曜：' + zwPalaceStars(name) + '</div>';
+    h += '<div class="mt-8">本宫星曜：' + zwPalaceStars(name) + '</div>';
     if (zwCurrent) {
       var p = zwCurrent.palaces.filter(function (x) { return x.name === name; })[0];
       var majors = [];
@@ -440,7 +370,7 @@
         if (ZHI[zwCurrent.majorStars[nm]] === p.branch) majors.push(nm);
       });
       if (majors.length) {
-        h += '<div style="margin-top:8px;">' + majors.map(function (nm) {
+        h += '<div class="mt-8">' + majors.map(function (nm) {
           return '· <b>' + esc(nm) + '</b>' + (zwCurrent.sihua[nm] ? '<i class="zw-hua">' + zwCurrent.sihua[nm] + '</i>' : '') +
             '：' + esc(ZW_STAR_MEAN[nm] || '吉星') +
             (zwCurrent.sihua[nm] ? '（化' + zwCurrent.sihua[nm] + '：' + ZW_HUA_MEAN[zwCurrent.sihua[nm]] + '）' : '');
@@ -455,8 +385,8 @@
     if (!zwCurrent) return;
     var c = zwCurrent;
     var h = '<div>你的性格底盘在<b>命宫' + esc(c.mingGanzhi) + '</b>；</div>';
-    h += '<div style="margin-top:6px;">中年后重心看<b>身宫（' + esc(c.shenBranch) + '）</b>；</div>';
-    h += '<div style="margin-top:6px;"><b>' + esc(c.ju.name) + '</b>，' + c.ju.num + '岁起运，十年一换大限。</div>';
+    h += '<div class="mt-6">中年后重心看<b>身宫（' + esc(c.shenBranch) + '）</b>；</div>';
+    h += '<div class="mt-6"><b>' + esc(c.ju.name) + '</b>，' + c.ju.num + '岁起运，十年一换大限。</div>';
     h += zwMoreBtn('openZwCenter2()');
     zwPop('命盘总览', h);
   }
@@ -465,10 +395,10 @@
     if (!zwCurrent) return;
     var c = zwCurrent;
     var h = '<div><b>命宫' + esc(c.mingGanzhi) + '</b>：先天性格与一生格局，整张盘的核心。</div>';
-    h += '<div style="margin-top:6px;"><b>身宫居' + esc(c.shenBranch) + '</b>：后天修为与归宿，中年后影响渐重；命身同宫者表里如一。</div>';
-    h += '<div style="margin-top:6px;"><b>' + esc(c.ju.name) + '</b>：决定起运早晚，局数越小起运越早。</div>';
-    h += '<div style="margin-top:6px;"><b>命主' + esc(c.mingzhu) + '</b>、<b>身主' + esc(c.shenzhu) + '</b>：命身二宫的守护星，辅助参看吉凶。</div>';
-    h += '<div style="margin-top:6px;">十四主星：' + Object.keys(ZW_STAR_MEAN).map(function (k) {
+    h += '<div class="mt-6"><b>身宫居' + esc(c.shenBranch) + '</b>：后天修为与归宿，中年后影响渐重；命身同宫者表里如一。</div>';
+    h += '<div class="mt-6"><b>' + esc(c.ju.name) + '</b>：决定起运早晚，局数越小起运越早。</div>';
+    h += '<div class="mt-6"><b>命主' + esc(c.mingzhu) + '</b>、<b>身主' + esc(c.shenzhu) + '</b>：命身二宫的守护星，辅助参看吉凶。</div>';
+    h += '<div class="mt-6">十四主星：' + Object.keys(ZW_STAR_MEAN).map(function (k) {
       return '<br>· <b>' + k + '</b>：' + ZW_STAR_MEAN[k];
     }).join('') + '</div>';
     h += zwBackBtn('openZwCenter()');
@@ -479,7 +409,7 @@
     if (!zwCurrent) return;
     var c = zwCurrent;
     var h = '<div>出生年天干带来的四种变化，标在星名右上角小圈里：</div>';
-    h += '<div style="margin-top:6px;">' + Object.keys(c.sihua).map(function (nm) {
+    h += '<div class="mt-6">' + Object.keys(c.sihua).map(function (nm) {
       return '· <b>' + esc(nm) + '</b>化<b>' + c.sihua[nm] + '</b>（' + ZW_HUA_MEAN[c.sihua[nm]] + '）';
     }).join('<br>') + '</div>';
     h += zwMoreBtn('openZwSihua2()');
@@ -498,7 +428,7 @@
       return '· <b>' + esc(nm) + '</b>化<b>' + c.sihua[nm] + '</b>在<b>' + esc(palaceOfStar(nm)) + '</b>：' +
         ZW_HUA_MEAN[c.sihua[nm]] + '之力落在此宫';
     }).join('<br>') + '</div>';
-    h += '<div style="margin-top:8px;color:var(--muted);font-size:var(--fs-sm);">化忌所在之宫，是这辈子最费心的地方；化禄所在，多有得益。</div>';
+    h += '<div class="note">化忌所在之宫，是这辈子最费心的地方；化禄所在，多有得益。</div>';
     h += zwBackBtn('openZwSihua()');
     zwPop('生年四化 · 详解', h);
   }
@@ -509,7 +439,7 @@
     var now = new Date().getFullYear() - c.input.year + 1; // 虚岁
     var cur = c.daxian.filter(function (x) { return now >= x.from && now <= x.to; })[0] || c.daxian[0];
     var h = '<div>大限是十年一站的运势车站，每十年走一宫。</div>';
-    h += '<div style="margin-top:6px;">你今年虚岁<b>' + now + '</b>，正走<b>' + esc(cur.ganzhi) + '（' + cur.from + '–' + cur.to + '岁）</b>大限。</div>';
+    h += '<div class="mt-6">你今年虚岁<b>' + now + '</b>，正走<b>' + esc(cur.ganzhi) + '（' + cur.from + '–' + cur.to + '岁）</b>大限。</div>';
     h += zwMoreBtn('openZwDaxian2()');
     zwPop('大限', h);
   }
@@ -520,7 +450,7 @@
       var p = c.palaces.filter(function (pl) { return ZHI[x.branch] === pl.branch; })[0];
       return '· <b>' + esc(x.ganzhi) + '</b> ' + x.from + '–' + x.to + '岁（' + esc(p ? p.name : '') + '）';
     }).join('<br>') + '</div>';
-    h += '<div style="margin-top:8px;color:var(--muted);font-size:var(--fs-sm);">看某阶段运势，重心落在该大限之宫，合参本命盘同宫星曜一起看。</div>';
+    h += '<div class="note">看某阶段运势，重心落在该大限之宫，合参本命盘同宫星曜一起看。</div>';
     h += zwBackBtn('openZwDaxian()');
     zwPop('大限 · 详解', h);
   }

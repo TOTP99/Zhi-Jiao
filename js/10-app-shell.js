@@ -6,12 +6,13 @@
 (function () {
   'use strict';
 
+  // 本地小助手（消除对 01 全局 $/pad 的隐式依赖；与 01 同语义）
+  function $(id) { return document.getElementById(id); }
+  function pad(n) { return String(n).padStart(2, '0'); }
+
   var LS_ONBOARDED = 'yumiao_onboarded_v1';
-  var LS_BIRTH = 'yumiao_shared_birth_v1';
-  var LS_SOUND = 'yumiao_sound_v1';
   var LS_DAILY = 'yumiao_daily_v1';
 
-  function $(id) { return document.getElementById(id); }
   function onReady(fn) {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn);
     else fn();
@@ -29,8 +30,98 @@
   }
   window.toast = toast;
 
+  /* ── 统一导航 YumiaoNav：弹窗入 history + 中央返回/ESC ──
+     规则：① 任意覆盖层（弹窗/周易/紫微子弹窗/108 问菜单）打开时 push 一条 history state，
+     返回键先关最顶层覆盖层，关完才回上一 tab/退出；② X/遮罩/ESC 关闭时，若该覆盖层
+     的 state 在栈顶，用 history.back() 抵消，popstate 回声用 navEchoCount 认领后跳过；
+     ③ noteClosed 是幂等的，任意关闭路径都可调，重复调不会多弹 history.back()。 */
+  var navStack = [];   /* 打开的覆盖层栈（底→顶）：{kind:'sheet'|'yi'|'zwpop'|'menu', id} */
+  var navEchoCount = 0; /* UI 关闭触发的 history.back() 产生的 popstate 回声个数 */
+  function navPush(entry) { navStack.push(entry); }
+  function navTop() { return navStack.length ? navStack[navStack.length - 1] : null; }
+  function navRemove(id) {
+    for (var i = navStack.length - 1; i >= 0; i--) {
+      if (navStack[i].id === id) { navStack.splice(i, 1); return true; }
+    }
+    return false;
+  }
+  function navPushState(state) {
+    try { window.history.pushState(state, ''); } catch (e) { console.warn('[yumiao] nav push', e); }
+  }
+  /* 弹窗 id → 专属关闭函数名（X/遮罩/ESC/返回键共用；zwPop 与 108 问菜单不在 .sheet 体系内也登记于此） */
+  var closerMap = {
+    fortuneModal: 'closeFortuneWheel', historyModal: 'toggleHistory',
+    mbtiModal: 'closeMbtiQuiz', baziModal: 'closeBaziPanel',
+    zodiacModal: 'closeZodiacPanel', westernModal: 'closeWesternPanel',
+    tarotModal: 'closeTarotPanel', wugeModal: 'closeWugePanel', palmModal: 'closePalmPanel',
+    ziweiModal: 'closeZiwei', shengxiaoModal: 'closeShengxiao', chengguModal: 'closeChenggu',
+    dailySheet: 'closeDailySheet', memberSheet: 'closeMemberSheet',
+    disclaimerSheet: 'closeDisclaimer',
+    zwPop: 'closeZwPop', casualMenu: 'closeCasualMenu'
+  };
+  /* 按 id 关一个覆盖层；返回 false 表示被拒绝（如圆盘旋转中），此时不改 history */
+  function closeSheetById(id) {
+    var fn = window[closerMap[id]];
+    if (typeof fn === 'function') {
+      try { if (fn() === false) return false; } catch (e) { console.warn('[yumiao] sheet closer', e); }
+    } else {
+      var el = document.getElementById(id);
+      if (el) el.classList.remove('show');
+    }
+    YumiaoNav.noteClosed(id);
+    return true;
+  }
+  var YumiaoNav = {
+    /* 覆盖层打开后登记：进栈 + 入 history（重复打开先出栈再入栈，防重复） */
+    noteOpened: function (id, kind) {
+      if (!id) return;
+      for (var i = 0; i < navStack.length; i++) if (navStack[i].id === id) return;  /* 已在栈内：重复打开不再入栈/入 history（防重复 state） */
+      navPush({ kind: kind || 'sheet', id: id });
+      navPushState({ yumiaoSheet: id });
+    },
+    /* 覆盖层关闭后登记：出栈；若其 state 在栈顶则 history.back() 抵消（回声由 popstate 认领） */
+    noteClosed: function (id) {
+      if (!id) return;
+      if (!navRemove(id)) return;   /* 已出栈：重复调用直接跳过 */
+      var st = null;
+      try { st = window.history.state; } catch (e) { console.warn('[yumiao] nav state', e); }
+      if (st && st.yumiaoSheet === id) {
+        navEchoCount++;
+        try { window.history.back(); } catch (e) { console.warn('[yumiao] nav back', e); }
+      }
+    },
+    /* 关最顶层覆盖层（返回键/ESC 的统一入口）；返回 false 表示被拒绝 */
+    closeTop: function () {
+      var top = navTop();
+      if (!top) return false;
+      if (top.kind === 'yi') { window.closeYi(); return true; }
+      return closeSheetById(top.id);
+    },
+    topId: function () { var t2 = navTop(); return t2 ? t2.id : null; },
+    isOpen: function (id) {
+      for (var i = 0; i < navStack.length; i++) if (navStack[i].id === id) return true;
+      return false;
+    }
+  };
+  window.YumiaoNav = YumiaoNav;
+  /* 中央 popstate：回声跳过 → 关最顶层覆盖层 → 回上一 tab → 退出（默认） */
+  window.addEventListener('popstate', function () {
+    if (navEchoCount > 0) { navEchoCount--; return; }
+    var top = navTop();
+    if (top) {
+      if (top.kind === 'yi') { hideYi(); return; }
+      closeSheetById(top.id);
+      return;
+    }
+    var st = null;
+    try { st = window.history.state; } catch (e) { console.warn('[yumiao] popstate', e); }
+    var tab = (st && st.yumiaoTab) ? st.yumiaoTab : 'divine';
+    if (tab !== currentTab) switchTab(tab, true);
+  });
+
   /* ── 底部导航 ── */
-  function switchTab(name) {
+  var currentTab = 'divine';   /* 当前 tab（供返回键回上一 tab 用） */
+  function switchTab(name, fromPop) {
     document.querySelectorAll('.view').forEach(function (v) {
       v.classList.toggle('on', v.id === 'view-' + name);
     });
@@ -40,7 +131,10 @@
     var views = $('views');
     if (views) views.scrollTop = 0;
     window.scrollTo(0, 0);
-    try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) { console.warn('[yumiao] 10:43', e); }
+    try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) { console.warn('[yumiao] 10', e); }
+    /* tab 切换入 history：返回键先回上一 tab；popstate 回切时不重复入栈 */
+    if (!fromPop && name !== currentTab) navPushState({ yumiaoTab: name });
+    currentTab = name;
   }
   window.switchTab = switchTab;
 
@@ -69,18 +163,20 @@
     /* 周易查阅留痕：外部页面无法抓取结果，只记查阅时间，供记录下载 */
     try {
       if (typeof appendQueryRecord === 'function') {
-        var d = new Date(), pad = function (n) { return String(n).padStart(2, '0'); };
-        appendQueryRecord('周易占卜', '<p style="color:var(--cream-dim)">于 ' + d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
+        var d = new Date();
+        appendQueryRecord('周易占卜', '<p class="c-dim">于 ' + d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
           ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ' 打开周易起卦（外部页面，结果请在周易页内查看）。</p>');
       }
     } catch (e) { console.warn('[yumiao] yi record', e); }
-    try { window.history.pushState({ yumiaoYi: 1 }, ''); } catch (e) { console.warn('[yumiao] 10:69', e); }
-    try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) { console.warn('[yumiao] 10:70', e); }
+    navPush({ kind: 'yi', id: 'yiOverlay' });
+    navPushState({ yumiaoYi: 1 });
+    try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) { console.warn('[yumiao] 10', e); }
   };
   function hideYi() {
     var ov = $('yiOverlay'), fr = yiFrameEl();
     if (!yiOpen) return;
     yiOpen = false;
+    navRemove('yiOverlay');
     if (ov) { ov.classList.remove('show'); ov.setAttribute('aria-hidden', 'true'); }
     if (fr) { fr.onload = null; fr.removeAttribute('src'); fr.classList.remove('loaded'); }
     lockScroll(false);
@@ -88,26 +184,24 @@
   window.closeYi = function () {
     if (!yiOpen) return;
     var st = null;
-    try { st = window.history.state; } catch (e) { console.warn('[yumiao] 10:83', e); }
+    try { st = window.history.state; } catch (e) { console.warn('[yumiao] 10', e); }
     if (st && st.yumiaoYi) window.history.back();   /* 交给 popstate 统一收尾，保持历史栈干净 */
     else hideYi();
   };
-  window.addEventListener('popstate', function () { if (yiOpen) hideYi(); });
 
   /* ── 音效开关（包裹 01 的播放函数） ── */
   function soundOn() {
     try { return localStorage.getItem(LS_SOUND) !== 'off'; } catch (_) { return true; }
   }
   function wrapSound() {
+    if (typeof YumiaoHook === 'undefined' || !YumiaoHook.wrap) return;
     ['playBell', 'playQing', 'playZhong', 'playJiaoLand'].forEach(function (n) {
-      if (typeof window[n] !== 'function' || window[n]._yumiaoWrapped) return;
-      var orig = window[n];
-      var wrapped = function () {
-        if (!soundOn()) return;
-        return orig.apply(window, arguments);
-      };
-      wrapped._yumiaoWrapped = true;
-      window[n] = wrapped;
+      YumiaoHook.wrap(window, n, function (orig) {
+        return function () {
+          if (!soundOn()) return;
+          return orig.apply(window, arguments);
+        };
+      });
     });
   }
   function refreshSoundUI() {
@@ -118,7 +212,7 @@
     if (st) st.textContent = on ? '已开启' : '已关闭';
   }
   window.toggleSound = function () {
-    try { localStorage.setItem(LS_SOUND, soundOn() ? 'off' : 'on'); } catch (e) { console.warn('[yumiao] 10:113', e); }
+    try { localStorage.setItem(LS_SOUND, soundOn() ? 'off' : 'on'); } catch (e) { console.warn('[yumiao] 10', e); }
     refreshSoundUI();
     toast(soundOn() ? '仪式音效已开启' : '仪式音效已关闭');
   };
@@ -155,25 +249,24 @@
     if (z && typeof window.selectBeast === 'function') window.selectBeast(z);
   };
   function patchBeastText() {
-    if (typeof window.selectBeast !== 'function' || window.selectBeast._yumiaoPatched) return;
-    var origSelect = window.selectBeast;
-    window.selectBeast = function (el) {
-      origSelect(el);
-      var line = $('selectedLine');
-      if (!line) return;
-      var active = document.querySelector('.jade-zone.active');
-      if (active && BEAST_NAMES[active.dataset.beast]) {
-        line.innerHTML = '已请 ' + (window.beastIconHTML ? window.beastIconHTML(active.dataset.beast) : '') + '<span>' + BEAST_NAMES[active.dataset.beast] + '</span> 护法';
-      } else {
-        line.textContent = '轻触瑞兽请护法，不选则随机';
-      }
-      syncBeastLabels();
-      updateBeastOverlay();
-    };
-    window.selectBeast._yumiaoPatched = true;
-    if (typeof window.resetAll === 'function' && !window.resetAll._yumiaoPatched) {
-      var origReset = window.resetAll;
-      window.resetAll = function () {
+    if (typeof YumiaoHook === 'undefined' || !YumiaoHook.wrap) return;
+    YumiaoHook.wrap(window, 'selectBeast', function (origSelect) {
+      return function (el) {
+        origSelect(el);
+        var line = $('selectedLine');
+        if (!line) return;
+        var active = document.querySelector('.jade-zone.active');
+        if (active && BEAST_NAMES[active.dataset.beast]) {
+          line.innerHTML = '已请 ' + (window.beastIconHTML ? window.beastIconHTML(active.dataset.beast) : '') + '<span>' + BEAST_NAMES[active.dataset.beast] + '</span> 护法';
+        } else {
+          line.textContent = '轻触瑞兽请护法，不选则随机';
+        }
+        syncBeastLabels();
+        updateBeastOverlay();
+      };
+    });
+    YumiaoHook.wrap(window, 'resetAll', function (origReset) {
+      return function () {
         origReset();
         var line = $('selectedLine');
         if (line) line.textContent = '轻触瑞兽请护法，不选则随机';
@@ -184,8 +277,7 @@
           c.classList.remove('on');
         });
       };
-      window.resetAll._yumiaoPatched = true;
-    }
+    });
   }
 
   /* ── 问卜方式 chips ── */
@@ -194,11 +286,8 @@
     shenyang: { tz: 8, lng: 123.4, lat: 41.8, tzName: 'Asia/Shanghai', label: '沈阳' },
     toronto: { tz: -5, lng: -79.4, lat: 43.7, tzName: 'America/Toronto', label: '多伦多' }
   };
-  function readBirth() {
-    try { return JSON.parse(localStorage.getItem(LS_BIRTH) || 'null'); } catch (_) { return null; }
-  }
   function saveBirth(obj) {
-    try { localStorage.setItem(LS_BIRTH, JSON.stringify(obj)); } catch (e) { console.warn('[yumiao] 10:206', e); }
+    try { localStorage.setItem(BIRTH_KEY, JSON.stringify(obj)); } catch (e) { console.warn('[yumiao] 10', e); }
     renderProfile();
   }
   function birthLabel(b) {
@@ -217,17 +306,13 @@
   window.renderProfile = renderProfile;
 
   /* ── 统一生辰档案条：各命盘面板共用，一次录入、处处可用 ── */
-  function escHtml(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
-  }
   window.renderProfileBar = function (elId, opts) {
     var el = typeof elId === 'string' ? $(elId) : elId;
     if (!el) return;
     opts = opts || {};
-    el.setAttribute('data-bar', '1');
-    try { el.setAttribute('data-bar-opts', JSON.stringify(opts)); } catch (e) { console.warn('[yumiao] 10:235', e); }
+    // data-bar 保留种类值（ziwei/shengxiao/bazi/…），不再覆写为 '1'；已渲染标记另存 data-bar-kind
+    if (!el.getAttribute('data-bar-kind')) el.setAttribute('data-bar-kind', el.getAttribute('data-bar') || '');
+    try { el.setAttribute('data-bar-opts', JSON.stringify(opts)); } catch (e) { console.warn('[yumiao] 10', e); }
     var b = readBirth();
     if (!b || !b.year) {
       el.innerHTML = '<div class="profile-empty"><p>尚未录入生辰档案<br>录入一次，八字 · 星座 · 星盘皆可共用</p>' +
@@ -243,16 +328,16 @@
     if (!extraText && opts.extraFn && typeof window[opts.extraFn] === 'function') {
       try { extraText = window[opts.extraFn]() || ''; } catch (_) { extraText = ''; }
     }
-    var extra = extraText ? '<div class="pb-extra">' + escHtml(extraText) + '</div>' : '';
+    var extra = extraText ? '<div class="pb-extra">' + escapeHtml(extraText) + '</div>' : '';
     el.innerHTML = '<div class="pb-info"><div class="pb-kicker">生辰档案</div>' +
-      '<div class="pb-text">' + escHtml(b.year + '年' + b.month + '月' + b.day + '日' + t) + '</div>' +
-      '<div class="pb-sub">' + escHtml(sub) + '</div>' + extra + '</div>' +
+      '<div class="pb-text">' + escapeHtml(b.year + '年' + b.month + '月' + b.day + '日' + t) + '</div>' +
+      '<div class="pb-sub">' + escapeHtml(sub) + '</div>' + extra + '</div>' +
       '<button type="button" class="btn-ghost btn-sm" onclick="editProfile()">更换</button>';
   };
   window.refreshProfileBars = function () {
     document.querySelectorAll('.profile-bar[data-bar]').forEach(function (el) {
       var opts = {};
-      try { opts = JSON.parse(el.getAttribute('data-bar-opts') || '{}'); } catch (e) { console.warn('[yumiao] 10:260', e); }
+      try { opts = JSON.parse(el.getAttribute('data-bar-opts') || '{}'); } catch (e) { console.warn('[yumiao] 10', e); }
       window.renderProfileBar(el, opts);
     });
   };
@@ -307,7 +392,7 @@
     }
   }
   function finishOnboard() {
-    try { localStorage.setItem(LS_ONBOARDED, '1'); } catch (e) { console.warn('[yumiao] 10:315', e); }
+    try { localStorage.setItem(LS_ONBOARDED, '1'); } catch (e) { console.warn('[yumiao] 10', e); }
     var ob = $('onboard');
     if (ob) ob.classList.remove('show');
     setTimeout(function () { if (ob) ob.setAttribute('aria-hidden', 'true'); }, 450);
@@ -317,12 +402,24 @@
     var t = ($('obTime') || {}).value || '';
     if (!d) { toast('请选择出生日期'); return null; }
     var parts = d.split('-');
+    var y = +parts[0], mo = +parts[1], da = +parts[2];
+    if (!isFinite(y) || y < 1900 || y > 2100) { toast('出生年份需在 1900–2100 年之间'); return null; }
+    var _today = new Date(); _today.setHours(0, 0, 0, 0);
+    if (new Date(y, mo - 1, da) > _today) { toast('出生日期不能是未来日期'); return null; }
     var tp = t ? t.split(':') : ['', ''];   /* 没填出生时间就留空，各模块自行按午时并提示 */
     var city = segVal('obCity') || 'toronto';
     var preset = CITY_PRESETS[city];
-    var tz = preset ? preset.tz : (parseFloat(($('obTz') || {}).value) || 0);
-    var lat = preset ? preset.lat : (parseFloat(($('obLat') || {}).value) || null);
-    var lng = preset ? preset.lng : (parseFloat(($('obLng') || {}).value) || null);
+    var tzRaw = (($('obTz') || {}).value || '').trim();
+    var latRaw = (($('obLat') || {}).value || '').trim();
+    var lngRaw = (($('obLng') || {}).value || '').trim();
+    var tz = preset ? preset.tz : (tzRaw === '' ? 0 : parseFloat(tzRaw));
+    var lat = preset ? preset.lat : (latRaw === '' ? null : parseFloat(latRaw));
+    var lng = preset ? preset.lng : (lngRaw === '' ? null : parseFloat(lngRaw));
+    if (!preset) {
+      if (tzRaw !== '' && (!isFinite(tz) || tz < -12 || tz > 14)) { toast('时区需在 -12 到 +14 之间'); return null; }
+      if (latRaw !== '' && (!isFinite(lat) || lat < -90 || lat > 90)) { toast('纬度需在 -90 到 +90 之间'); return null; }
+      if (lngRaw !== '' && (!isFinite(lng) || lng < -180 || lng > 180)) { toast('经度需在 -180 到 +180 之间'); return null; }
+    }
     return {
       year: +parts[0], month: +parts[1], day: +parts[2],
       hour: tp[0] === '' ? '' : +tp[0], minute: tp[1] === '' ? '' : +tp[1],   /* 留空 = 不知道时辰 */
@@ -331,13 +428,13 @@
       sex: segVal('obSex') || 'M'
     };
   }
+  window.collectProfile = collectProfile; /* 供 ui-tests.html 直接驱动边界校验 */
   window.editProfile = function () {
     var ob = $('onboard');
     if (!ob) return;
     /* 预填已有档案 */
     var b = readBirth();
     if (b) {
-      var pad = function (x) { return String(x).padStart(2, '0'); };
       var dEl = $('obDate');
       if (dEl && b.year) dEl.value = b.year + '-' + pad(b.month) + '-' + pad(b.day);
       var tEl = $('obTime');
@@ -374,8 +471,13 @@
       toast('生辰档案已保存');
     });
     if (skip) skip.addEventListener('click', finishOnboard);
+    /* 直达档案屏：跳过三页介绍，直接到录入生辰档案 */
+    var direct = $('obDirect');
+    if (direct) direct.addEventListener('click', function () {
+      showObStep(document.querySelectorAll('.ob-slide').length);
+    });
     var done = false;
-    try { done = localStorage.getItem(LS_ONBOARDED) === '1'; } catch (e) { console.warn('[yumiao] 10:383', e); }
+    try { done = localStorage.getItem(LS_ONBOARDED) === '1'; } catch (e) { console.warn('[yumiao] 10', e); }
     if (!done) {
       var ob = $('onboard');
       showObStep(0);
@@ -432,34 +534,17 @@
     var verse = VERSES[idx];
     var drawn = false;
     try {
-      var saved = JSON.parse(localStorage.getItem(LS_DAILY) || 'null');
+      var saved = (typeof readStorageJSON === 'function') ? readStorageJSON(LS_DAILY, null) : JSON.parse(localStorage.getItem(LS_DAILY) || 'null');
       drawn = !!(saved && saved.date === todayKey());
     } catch (e) { console.warn('[yumiao] daily state', e); }
     return { idx: idx, verse: verse, drawn: drawn };
   }
   function markDrawn(idx) {
-    try { localStorage.setItem(LS_DAILY, JSON.stringify({ date: todayKey(), idx: idx })); } catch (e) { console.warn('[yumiao] 10:446', e); }
-  }
-  function renderDailyCard() {
-    var d = getDaily();
-    var kicker = $('dailyKicker');
-    var verseEl = $('dailyVerse');
-    var btn = $('dailyDrawBtn');
-    if (!kicker || !verseEl || !btn) return;
-    var dt = new Date();
-    kicker.textContent = (dt.getMonth() + 1) + '月' + dt.getDate() + '日 · ' + '星期' + '日一二三四五六'.charAt(dt.getDay());
-    if (d.drawn) {
-      verseEl.textContent = d.verse.v.split('\n').slice(0, 2).join('，');
-      btn.textContent = '查看';
-    } else {
-      verseEl.textContent = '抽一支今日之签，观宜忌吉凶';
-      btn.textContent = '抽签';
-    }
+    try { localStorage.setItem(LS_DAILY, JSON.stringify({ date: todayKey(), idx: idx })); } catch (e) { console.warn('[yumiao] 10', e); }
   }
   function openDailySheet() {
     var d = getDaily();
     markDrawn(d.idx);
-    renderDailyCard();
     var dt = new Date();
     var dateEl = $('dailyDate');
     if (dateEl) dateEl.textContent = dt.getFullYear() + ' 年 ' + (dt.getMonth() + 1) + ' 月 ' + dt.getDate() + ' 日';
@@ -482,7 +567,7 @@
         if (ds) appendQueryRecord('每日运程', ds.innerHTML);
       }
     } catch (e) { console.warn('[yumiao] daily record', e); }
-    try { if (navigator.vibrate) navigator.vibrate(15); } catch (e) { console.warn('[yumiao] 10:483', e); }
+    try { if (navigator.vibrate) navigator.vibrate(15); } catch (e) { console.warn('[yumiao] 10', e); }
   }
   window.openDailySheet = openDailySheet;
   window.closeDailySheet = function () { closeSheet('dailySheet', 'dailyBackdrop'); };
@@ -491,16 +576,29 @@
   function lockScroll(on) {
     document.documentElement.classList.toggle('scroll-locked', !!on);
   }
+  var sheetNameById = { dailySheet: 'daily', memberSheet: 'member', disclaimerSheet: 'disclaimer' };
   function openSheet(modalId, backdropId) {
-    var m = $(modalId), b = $(backdropId);
-    if (m) m.classList.add('show');
-    if (b) b.classList.add('show');
+    var name = sheetNameById[modalId];
+    if (name && typeof ModalUI !== 'undefined' && ModalUI.open) {
+      ModalUI.open(name); /* 含滚动锁 + 入 history */
+    } else {
+      var m = $(modalId), b = $(backdropId);
+      if (m) m.classList.add('show');
+      if (b) b.classList.add('show');
+      YumiaoNav.noteOpened(modalId);
+    }
     lockScroll(true);
   }
   function closeSheet(modalId, backdropId) {
-    var m = $(modalId), b = $(backdropId);
-    if (m) m.classList.remove('show');
-    if (b) b.classList.remove('show');
+    var name = sheetNameById[modalId];
+    if (name && typeof ModalUI !== 'undefined' && ModalUI.close) {
+      ModalUI.close(name);
+    } else {
+      var m = $(modalId), b = $(backdropId);
+      if (m) m.classList.remove('show');
+      if (b) b.classList.remove('show');
+      YumiaoNav.noteClosed(modalId);
+    }
     lockScroll(false);
   }
   /* ── 万能关闭：× 与遮罩共用。先试模块专属关闭，再校验，不成则强制关 ── */
@@ -529,18 +627,14 @@
     } catch (_) { sheet = null; }
     if (!sheet) return;
     var id = sheet.id || '';
-    var closerMap = {
-      fortuneModal: 'closeFortuneWheel', historyBox: 'toggleHistory',
-      mbtiModal: 'closeMbtiQuiz', baziModal: 'closeBaziPanel',
-      zodiacModal: 'closeZodiacPanel', westernModal: 'closeWesternPanel',
-      tarotModal: 'closeTarotPanel', wugeModal: 'closeWugePanel', palmModal: 'closePalmPanel',
-      dailySheet: 'closeDailySheet', memberSheet: 'closeMemberSheet',
-      disclaimerSheet: 'closeDisclaimer'
-    };
+    /* 先走模块专属关闭（它负责清子弹窗/旋转锁等）；返回 false = 拒绝关闭（如圆盘旋转中），此时不强制关、不改 history */
     var fn = window[closerMap[id]];
-    if (typeof fn === 'function' && !fn._yumiaoStub) {
-      try { fn(); } catch (e) { console.warn('[yumiao] sheet closer', e); }
+    var refused = false;
+    if (typeof fn === 'function') {
+      try { if (fn() === false) refused = true; } catch (e) { console.warn('[yumiao] sheet closer', e); }
     }
+    if (refused) return;
+    YumiaoNav.noteClosed(id);
     if (sheet.classList.contains('show')) {
       sheet.classList.remove('show');
       var bd = document.getElementById(id.replace(/(Modal|Box|Sheet)$/, 'Backdrop'));
@@ -549,8 +643,8 @@
         bd = sheet.previousElementSibling;
       }
       if (bd) bd.classList.remove('show');
-      try { if (typeof unlockPageScroll === 'function') unlockPageScroll(); } catch (e) { console.warn('[yumiao] 10:550', e); }
-      try { lockScroll(false); } catch (e) { console.warn('[yumiao] 10:551', e); }
+      try { if (typeof unlockPageScroll === 'function') unlockPageScroll(); } catch (e) { console.warn('[yumiao] 10', e); }
+      try { lockScroll(false); } catch (e) { console.warn('[yumiao] 10', e); }
     }
   };
   window.openMemberSheet = function () { openSheet('memberSheet', 'memberBackdrop'); };
@@ -635,7 +729,7 @@
         cv.toBlob(function (blob) {
           if (!blob) { downloadCanvas(cv, name); return; }
           var file = null;
-          try { file = new File([blob], name, { type: 'image/png' }); } catch (e) { console.warn('[yumiao] 10:636', e); }
+          try { file = new File([blob], name, { type: 'image/png' }); } catch (e) { console.warn('[yumiao] 10', e); }
           if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
             navigator.share({ files: [file], title: '御猫灵局' }).catch(function () {
               downloadCanvas(cv, name);
@@ -646,7 +740,7 @@
         }, 'image/png');
         return;
       }
-    } catch (e) { console.warn('[yumiao] 10:647', e); }
+    } catch (e) { console.warn('[yumiao] 10', e); }
     downloadCanvas(cv, name);
   }
   window.shareReading = function () {
@@ -685,7 +779,7 @@
         if (k && k.indexOf('yumiao_') === 0) keys.push(k);
       }
       keys.forEach(function (k) { localStorage.removeItem(k); });
-    } catch (e) { console.warn('[yumiao] 10:686', e); }
+    } catch (e) { console.warn('[yumiao] 10', e); }
     toast('已清除，页面即将刷新');
     setTimeout(function () { location.reload(); }, 900);
   };
@@ -702,7 +796,6 @@
       e.preventDefault();
     });
     renderProfile();
-    renderDailyCard();
     initOnboard();
     /* 开屏：6 秒金色进度条，一秒一格 */
     (function(){
@@ -721,17 +814,13 @@
         }
       }, 1000);
     })();
-    /* ESC 关闭本壳抽屉 */
+    /* 中央 ESC：先关最顶层覆盖层（圆盘旋转中会被拒绝），再关 108 问菜单；各模块的分散 ESC 已并入此处 */
     document.addEventListener('keydown', function (e) {
       if (e.key !== 'Escape') return;
       if (yiOpen) { window.closeYi(); return; }
-      /* 只关本壳的三张抽屉；模块弹窗走各自的关闭逻辑 */
-      [['dailySheet', 'dailyBackdrop'], ['memberSheet', 'memberBackdrop'], ['disclaimerSheet', 'disclaimerBackdrop']].forEach(function (pair) {
-        var s = $(pair[0]), b = $(pair[1]);
-        if (s && s.classList.contains('show')) { s.classList.remove('show'); }
-        if (b && b.classList.contains('show')) { b.classList.remove('show'); }
-      });
-      lockScroll(false);
+      if (navTop()) { YumiaoNav.closeTop(); return; }
+      var cm = $('casualMenu');
+      if (cm && cm.classList.contains('show') && typeof closeCasualMenu === 'function') closeCasualMenu();
     });
   });
 })();

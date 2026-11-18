@@ -6,6 +6,7 @@
  */
 'use strict';
 
+var LS_WUGE = 'yumiao_wuge_v1'; /* 五格上次测算姓名 */
 /* ── 康熙笔画字典（字→笔画），构建脚本见仓库外注 ── */
 var WG_STROKES={
 "一":1,"丁":2,"七":2,"万":15,"丈":3,"三":3,"上":3,"下":3,
@@ -825,10 +826,10 @@ function wgGeInfo(n, label) {
 function wugeBody() { return document.getElementById('wugeBody'); }
 function openWugePanel() {
   wugeToForm();
-  ModalUI.open('wuge');
+  if (typeof ModalUI !== 'undefined' && ModalUI.open) ModalUI.open('wuge');
 }
 function closeWugePanel() {
-  ModalUI.close('wuge');
+  if (typeof ModalUI !== 'undefined' && ModalUI.close) ModalUI.close('wuge');
   if (typeof clearPreferredCategory === 'function') clearPreferredCategory();
   if (typeof fillQuestionText === 'function') fillQuestionText('');
 }
@@ -836,7 +837,7 @@ function wugeToForm() {
   var el = wugeBody();
   if (!el) return;
   var lastName = '';
-  try { lastName = JSON.parse(localStorage.getItem('yumiao_wuge_v1') || '{}').name || ''; } catch (e) { console.warn('[yumiao] 13:830', e); }
+  try { var _w = (typeof readStorageJSON === 'function') ? readStorageJSON(LS_WUGE, {}) : JSON.parse(localStorage.getItem(LS_WUGE) || '{}'); lastName = (_w && _w.name) || ''; } catch (e) { console.warn('[yumiao] 13', e); }
   el.innerHTML =
     '<div class="tarot-step">' +
     '<p class="mbti-intro">输入姓名，按《康熙字典》笔画起五格三才。</p>' +
@@ -844,8 +845,9 @@ function wugeToForm() {
     '<input type="text" id="wugeName" class="question-box wuge-name-input" maxlength="4" placeholder="请输入姓名（2–4 字）" autocomplete="off" value="' + escapeHtml(lastName) + '">' +
     '<p class="wuge-note">以康熙字典繁体笔画计；简体字自动按繁体折算（如刘→劉 15 画）。生僻字暂不支持。</p>' +
     '</div>' +
-    '<div class="tarot-actions"><button type="button" class="btn-gold btn-block" onclick="submitWugeForm()">起格测算</button></div>' +
     '</div>';
+  var _wf = document.getElementById('wugeFoot');
+  if (_wf) { _wf.innerHTML = '<button type="button" class="btn-gold btn-block" onclick="submitWugeForm()">起格测算</button>'; _wf.style.display = 'flex'; }
   var inp = document.getElementById('wugeName');
   if (inp) {
     inp.focus();
@@ -910,16 +912,17 @@ function wugeRenderResult() {
     '<div class="wuge-ge-grid">' + geHtml + '</div>' +
     '<div class="wuge-sancai"><span>三才 ' + escapeHtml(r.wxT + ' ' + r.wxR + ' ' + r.wxD) + '</span><b class="' + scCls + '">' + escapeHtml(scjx) + '</b></div>' +
     '<div class="mbti-report" id="wugeReport">' + detailHtml + '</div>' +
-    '<div class="tarot-actions"><button type="button" class="btn-ghost btn-sm" onclick="wugeToForm()">重测姓名</button></div>' +
     '</div>';
+  var _wf = document.getElementById('wugeFoot');
+  if (_wf) { _wf.innerHTML = '<button type="button" class="btn-ghost btn-sm" onclick="wugeToForm()">重测姓名</button><button type="button" class="btn-gold btn-sm" onclick="copyReport(\'wugeReport\')">复制结果</button>'; _wf.style.display = 'flex'; }
   try {
     if (typeof saveReportHTML === 'function') saveReportHTML('yumiao_report_wuge_v1', '姓名五格', 'wugeReport');
   } catch (e) { console.warn('[yumiao] wuge save report', e); }
-  try { wugeSaveState(); } catch (e) { console.warn('[yumiao] 13:909', e); }
+  try { wugeSaveState(); } catch (e) { console.warn('[yumiao] 13', e); }
 }
 function wugeSaveState() {
   try {
-    localStorage.setItem('yumiao_wuge_v1', JSON.stringify({ name: _wugeResult ? _wugeResult.name : '' }));
-  } catch (e) { console.warn('[yumiao] 13:914', e); }
+    localStorage.setItem(LS_WUGE, JSON.stringify({ name: _wugeResult ? _wugeResult.name : '' }));
+  } catch (e) { console.warn('[yumiao] 13', e); }
 }
 var _wugeResult = null;

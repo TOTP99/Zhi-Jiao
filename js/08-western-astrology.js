@@ -9,6 +9,7 @@
   // 流程：滚轮选生日时间 → 开始分析 → 折叠报告 / 小词典 → 知道了返回
   // ============================================================
   // ============================================================
+  const LS_WESTERN_FAB = 'yumiao_western_fab_v1'; /* 星盘「开始分析」悬浮按钮位置 */
   const W_SIGN = ['白羊座','金牛座','双子座','巨蟹座','狮子座','处女座','天秤座','天蝎座','射手座','摩羯座','水瓶座','双鱼座'];
   const W_SIGN_GLYPH = ['♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓'];
   function signName(idx){ return W_SIGN_GLYPH[idx]+W_SIGN[idx]; }
@@ -564,7 +565,7 @@
         WESTERN_DICT.map(item =>
           '<div class="w-dict-item"><strong>'+item.k+'</strong><p>'+item.d+'</p></div>'
         ).join('') +
-        '<div style="text-align:center;margin-top:10px;"><button class="mbti-reset" type="button" onclick="toggleWesternDict()">返回分析</button></div>';
+        '<div class="ta-c mt-10"><button class="btn-ghost btn-sm" type="button" onclick="toggleWesternDict()">返回分析</button></div>';
       dict.style.display = 'block';
       report.style.display = 'none';
     }
@@ -572,7 +573,7 @@
   // 统一生辰档案：一次录入，星盘直接取用（无独立表单）
   function openWesternPanel(){
     backToWesternForm();
-    ModalUI.open('western');
+    if (typeof ModalUI !== 'undefined' && ModalUI.open) ModalUI.open('western');
     westernFabShow();
   }
   function closeWesternPanel(){
@@ -580,7 +581,7 @@
     const report = document.getElementById('westernReport');
     if (dict) { dict.style.display = 'none'; dict.innerHTML = ''; }
     if (report) report.style.display = '';
-    ModalUI.close('western');
+    if (typeof ModalUI !== 'undefined' && ModalUI.close) ModalUI.close('western');
     westernFabHide();
     if (typeof clearQuestionSelectionToDefault === 'function') clearQuestionSelectionToDefault();
   }
@@ -591,7 +592,7 @@
     if (!fab) return;
     fab.classList.remove('hidden');
     if (!_fabPos) {
-      try { _fabPos = JSON.parse(localStorage.getItem('yumiao_western_fab_v1') || 'null'); } catch (e) { console.warn('[yumiao] 08:561', e); }
+      try { _fabPos = (typeof readStorageJSON === 'function') ? readStorageJSON(LS_WESTERN_FAB, null) : JSON.parse(localStorage.getItem(LS_WESTERN_FAB) || 'null'); } catch (e) { console.warn('[yumiao] 08', e); }
     }
     if (_fabPos && typeof _fabPos.x === 'number') {
       fab.style.left = _fabPos.x + 'px';
@@ -642,7 +643,7 @@
         _fabWasDragged = true;
         const r = fab.getBoundingClientRect();
         _fabPos = { x: Math.round(r.left), y: Math.round(r.top) };
-        try { localStorage.setItem('yumiao_western_fab_v1', JSON.stringify(_fabPos)); } catch (e) { console.warn('[yumiao] 08:612', e); }
+        try { localStorage.setItem(LS_WESTERN_FAB, JSON.stringify(_fabPos)); } catch (e) { console.warn('[yumiao] 08', e); }
         setTimeout(function(){ _fabWasDragged = false; }, 300);
       }
       fab.classList.remove('dragging');
@@ -682,6 +683,8 @@
     if (report) report.style.display = '';
     if (reveal) reveal.style.display = 'none';
     if (form) form.style.display = '';
+    const modal = document.getElementById('westernModal');
+    if (modal) modal.classList.remove('is-reveal');
     if (chartWrap) chartWrap.classList.remove('hidden', 'chart-leaving');
     if (typeof window.renderProfileBar === 'function') window.renderProfileBar('westernProfileBar');
     westernFabShow();
@@ -724,6 +727,8 @@
       }
       if (form) form.style.display = 'none';
       if (reveal) reveal.style.display = 'flex';
+      const modal = document.getElementById('westernModal');
+      if (modal) modal.classList.add('is-reveal');
       const chartWrap = document.getElementById('westernChartWrap') || document.querySelector('.western-chart-wrap');
       if (chartWrap) chartWrap.classList.add('hidden');
     } catch (err) {

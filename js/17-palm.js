@@ -8,6 +8,9 @@
 (function () {
   'use strict';
 
+  // 本地小助手（消除对 01 全局 $ 的隐式依赖；与 01 同语义）
+  function $(id) { return document.getElementById(id); }
+
   /* ════════════════════════════════════════════════════════════
      A. 图像核心（纯数组运算，不碰 DOM，可在 Node 里直接测试）
      ════════════════════════════════════════════════════════════ */
@@ -594,7 +597,10 @@
 
   /* 报告生成（纯函数，便于测试） */
   function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
+    if (s == null) return '';
+    return (typeof window.escapeHtml === 'function') ? window.escapeHtml(String(s)) : String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
   }
   function dateText() {
     var d = new Date();
@@ -664,14 +670,12 @@
   var ST = null;
   function freshState() {
     var sex = null;
-    try { var b = JSON.parse(localStorage.getItem('yumiao_shared_birth_v1') || 'null'); sex = b && b.sex || null; } catch (_) { sex = null; }
+    var b = (typeof readBirth === 'function') ? readBirth() : null; sex = b && b.sex || null;
     return {
       mode: 'fortune', hand: sex === 'F' ? '右' : '左', sex: sex,
       ana: null, auto: {}, conf: {}, selF: {}, selD: {}, overlay: true, token: 0, lastText: ''
     };
   }
-  function $(id) { return document.getElementById(id); }
-  function toast(m) { if (typeof window.toast === 'function') window.toast(m); }
 
   var HTML_BODY =
     '<div class="palm">' +
@@ -721,9 +725,6 @@
     '<div id="palmPickers"></div>' +
     '<button type="button" class="btn-gold btn-block" id="palmGo">生成解读</button>' +
     '<div class="mbti-report palm-report" id="palmReport" hidden></div>' +
-    '<div class="mbti-reveal-actions palm-result-actions" id="palmResultActions" hidden>' +
-    '<button type="button" class="btn-ghost btn-sm" id="palmBack">返回修改</button>' +
-    '<button type="button" class="btn-gold btn-sm" id="palmCopy">复制结果</button></div>' +
     '<p class="foot-note" id="palmFoot"></p>' +
     '</div></div></div>';
 
@@ -819,6 +820,24 @@
 
   /* 读取照片：缩到长边 PW，返回 ImageData */
   function loadImageData(file) {
+    // EXIF 方向显式处理：优先用 createImageBitmap + imageOrientation:'from-image'（由解码器校正方向）；
+    // 不支持或解码失败时回退到 <img> 路径（浏览器解码 <img> 时同样按 EXIF 方向处理）。两路都失败才报 decode。
+    if (typeof createImageBitmap === 'function') {
+      return createImageBitmap(file, { imageOrientation: 'from-image' }).then(function (bmp) {
+        try {
+          var s = Math.min(1, PW / Math.max(bmp.width, bmp.height));
+          var w = Math.max(1, Math.round(bmp.width * s)), h = Math.max(1, Math.round(bmp.height * s));
+          var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+          var ctx = cv.getContext('2d', { willReadFrequently: true });
+          ctx.drawImage(bmp, 0, 0, w, h);
+          if (bmp.close) bmp.close();
+          return ctx.getImageData(0, 0, w, h);
+        } catch (e) { return loadImageDataViaImg(file); }
+      }, function () { return loadImageDataViaImg(file); });
+    }
+    return loadImageDataViaImg(file);
+  }
+  function loadImageDataViaImg(file) {
     return new Promise(function (resolve, reject) {
       var url = URL.createObjectURL(file), img = new Image();
       img.onload = function () {
@@ -842,11 +861,15 @@
     palmcut: '手掌不完整或光线不足，无法定位掌纹。请把手指和手腕都拍进去、光线均匀后重拍；也可以手动选择。',
     lowcontrast: '照片偏暗或偏糊，看不清掌纹。请在明亮均匀的光线下、对好焦后重拍；也可以手动选择。',
     decode: '这张照片读取不了，请换一张 JPG 或 PNG 照片。',
+    heic: '这张是 HEIC 格式照片，当前浏览器读不出来。请在相册里选一张 JPG 或 PNG，或者把照片转存为 JPG 后再传；也可以直接在下方手动选择。',
     error: '识别过程出了点问题，请重拍一张；也可以直接在下方手动选择。'
   };
 
   async function onFile(file) {
     if (!file || !ST) return;
+    /* 前置拦截：非图片、超大文件直接提示，不进识别流程 */
+    if (file.type && !/^image\//.test(file.type)) { setStatus('请选一张照片（JPG 或 PNG）', 'warn'); return; }
+    if (file.size && file.size > 10 * 1024 * 1024) { setStatus('照片太大了（超过 10MB），请换一张小一点的', 'warn'); return; }
     var token = ++ST.token;
     ST.ana = null; ST.auto = {}; ST.conf = {}; ST.selF = {}; ST.overlay = true;
     /* selD 不清：掌诊是手动对照，与照片无关，换照片也保留 */
@@ -866,7 +889,9 @@
       if (!res.ok && !res.show) res.show = { data: im.data, w: im.width, h: im.height };
     } catch (e) {
       if (token !== ST.token) return;
-      res = { ok: false, reason: (e && e.message === 'decode') ? 'decode' : 'error' };
+      // HEIC/HEIF 在部分浏览器（桌面 Chrome、旧安卓）解码不了：给明确提示，不静默失败
+      var _isHeic = /hei[cf]/i.test(file.type || '') || /\.hei[cf]$/i.test(file.name || '');
+      res = { ok: false, reason: (e && e.message === 'decode') ? (_isHeic ? 'heic' : 'decode') : 'error' };
       console.warn('[yumiao] palm', e);
     }
     showBusy(false);
@@ -900,7 +925,7 @@
 
   function genReport() {
     var out = ST.mode === 'fortune' ? buildFortune(ST.selF, ST.hand, ST.sex) : buildDiag(ST.selD, ST.hand);
-    if (!out) { toast(ST.mode === 'fortune' ? '请至少选择一条纹路' : '请至少选择一项观察'); return; }
+    if (!out) { if (typeof window.toast === 'function') window.toast(ST.mode === 'fortune' ? '请至少选择一条纹路' : '请至少选择一项观察'); return; }
     ST.lastText = out.text;
     var r = $('palmReport'); r.innerHTML = out.html; r.hidden = false;
     $('palmResultActions').hidden = false; $('palmGo').hidden = true;
@@ -912,18 +937,6 @@
     var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
     r.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
   }
-  function copyText(t) {
-    function done() { toast('已复制'); }
-    function fallback() {
-      var ta = document.createElement('textarea');
-      ta.value = t; ta.style.cssText = 'position:fixed;top:0;opacity:0';
-      document.body.appendChild(ta); ta.focus(); ta.select();
-      try { document.execCommand('copy'); done(); } catch (e) { toast('复制失败，请长按选择文字复制'); }
-      ta.remove();
-    }
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, fallback); else fallback();
-  }
-
   function bind() {
     $('palmShoot').onclick = function () { $('palmFileShoot').click(); };
     $('palmPick').onclick = function () { $('palmFilePick').click(); };
@@ -952,7 +965,7 @@
     $('palmGo').onclick = genReport;
     $('palmBack').onclick = function () {
       hideReport();
-      var el = $('palmMode'); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      var el = $('palmStage'); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
     $('palmCopy').onclick = function () { if (ST.lastText) copyText(ST.lastText); };
   }

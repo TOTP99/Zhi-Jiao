@@ -5,7 +5,6 @@
 // ============================================================
 (function () {
   'use strict';
-  var LS_SOUND = 'yumiao_sound_v1';
   var ctx = null;
   var unlocked = false;
 
@@ -114,7 +113,7 @@
         });
       } catch (_) {}
     },
-    /* 选中：清脆小铃 */
+    /* 选中：清脆小铃（公开 API 之一，tests.html 核对六种方法齐全；暂无内部调用） */
     select: function () {
       if (!enabled()) return;
       try {
@@ -133,11 +132,13 @@
   function hook() {
     // 1) 所有 ModalUI 弹窗：开/关自动音效
     try {
-      if (typeof ModalUI !== 'undefined' && ModalUI && !ModalUI._yumiaoSoundHooked) {
-        ModalUI._yumiaoSoundHooked = true;
-        var oOpen = ModalUI.open, oClose = ModalUI.close;
-        ModalUI.open = function () { S.open(); return oOpen.apply(ModalUI, arguments); };
-        ModalUI.close = function () { S.close(); return oClose.apply(ModalUI, arguments); };
+      if (typeof ModalUI !== 'undefined' && ModalUI && typeof YumiaoHook !== 'undefined' && YumiaoHook.wrap) {
+        YumiaoHook.wrap(ModalUI, 'open', function (oOpen) {
+          return function () { S.open(); return oOpen.apply(ModalUI, arguments); };
+        });
+        YumiaoHook.wrap(ModalUI, 'close', function (oClose) {
+          return function () { S.close(); return oClose.apply(ModalUI, arguments); };
+        });
       }
     } catch (_) {}
     // 2) 底栏 tab 点击
@@ -149,27 +150,24 @@
     } catch (_) {}
     // 3) 周易打开
     try {
-      if (typeof window.openYi === 'function' && !window.openYi._yumiaoSoundHooked) {
-        var oYi = window.openYi;
-        var nYi = function () { S.yi(); return oYi.apply(window, arguments); };
-        nYi._yumiaoSoundHooked = true;
-        window.openYi = nYi;
+      if (typeof YumiaoHook !== 'undefined' && YumiaoHook.wrap) {
+        YumiaoHook.wrap(window, 'openYi', function (oYi) {
+          return function () { S.yi(); return oYi.apply(window, arguments); };
+        });
       }
     } catch (_) {}
     // 4) openSheet 系弹窗（每日运程/会员/声明）：开/关音效
     try {
-      [['openDailySheet', 'open'], ['closeDailySheet', 'close'],
-       ['openMemberSheet', 'open'], ['closeMemberSheet', 'close'],
-       ['openDisclaimer', 'open'], ['closeDisclaimer', 'close']].forEach(function (pair) {
-        var fnName = pair[0], snd = pair[1];
-        if (typeof window[fnName] === 'function' && !window[fnName]._yumiaoSoundHooked) {
-          (function (orig, s) {
-            var w = function () { S[s](); return orig.apply(window, arguments); };
-            w._yumiaoSoundHooked = true;
-            window[fnName] = w;
-          })(window[fnName], snd);
-        }
-      });
+      if (typeof YumiaoHook !== 'undefined' && YumiaoHook.wrap) {
+        [['openDailySheet', 'open'], ['closeDailySheet', 'close'],
+         ['openMemberSheet', 'open'], ['closeMemberSheet', 'close'],
+         ['openDisclaimer', 'open'], ['closeDisclaimer', 'close']].forEach(function (pair) {
+          YumiaoHook.wrap(window, pair[0], function (orig) {
+            var s = pair[1];
+            return function () { S[s](); return orig.apply(window, arguments); };
+          });
+        });
+      }
     } catch (_) {}
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', hook);

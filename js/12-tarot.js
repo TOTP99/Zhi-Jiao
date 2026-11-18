@@ -1,4 +1,5 @@
 // 牌号 → taro/ 图片文件名
+var LS_TAROT = 'yumiao_tarot_v1'; /* 塔罗牌阵状态 */
 var TAROT_ROMAN = { '0':'00','I':'01','II':'02','III':'03','IV':'04','V':'05','VI':'06','VII':'07','VIII':'08','IX':'09','X':'10','XI':'11','XII':'12','XIII':'13','XIV':'14','XV':'15','XVI':'16','XVII':'17','XVIII':'18','XIX':'19','XX':'20','XXI':'21' };
 function tarotImgFile(no) { return (TAROT_ROMAN[no] || '00') + '.webp'; }
 var TAROT_MAJOR = [
@@ -69,10 +70,10 @@ function tarotPosLabels() {
 }
 function openTarotPanel() {
   tarotToSpread();
-  ModalUI.open('tarot');
+  if (typeof ModalUI !== 'undefined' && ModalUI.open) ModalUI.open('tarot');
 }
 function closeTarotPanel() {
-  ModalUI.close('tarot');
+  if (typeof ModalUI !== 'undefined' && ModalUI.close) ModalUI.close('tarot');
   if (typeof clearPreferredCategory === 'function') clearPreferredCategory();
   if (typeof fillQuestionText === 'function') fillQuestionText('');
 }
@@ -86,14 +87,22 @@ function tarotToSpread() {
     '<div class="tarot-step">' +
     '<p class="mbti-intro">二十二张大阿卡纳，心诚则显。默念所问，选定牌阵。</p>' +
     '<div class="tarot-spread-row">' +
-    '<button type="button" class="btn-gold tarot-spread-btn" onclick="tarotChooseSpread(\'single\')"><strong>单张指引</strong><span>一牌断当下</span></button>' +
-    '<button type="button" class="btn-gold tarot-spread-btn" onclick="tarotChooseSpread(\'three\')"><strong>三张牌阵</strong><span>过去 · 现在 · 未来</span></button>' +
+    '<button type="button" class="btn-gold btn-col" onclick="tarotChooseSpread(\'single\')"><strong>单张指引</strong><span>一牌断当下</span></button>' +
+    '<button type="button" class="btn-gold btn-col" onclick="tarotChooseSpread(\'three\')"><strong>三张牌阵</strong><span>过去 · 现在 · 未来</span></button>' +
     '</div></div>';
-  try { tarotSaveState(); } catch (e) { console.warn('[yumiao] 12:90', e); }
+  var _tf = document.getElementById('tarotFoot');
+  if (_tf) { _tf.style.display = 'none'; _tf.innerHTML = ''; }
+  try { tarotSaveState(); } catch (e) { console.warn('[yumiao] 12', e); }
 }
 function tarotChooseSpread(s) {
   _tarotSpread = s;
   _tarotNeed = (s === 'three') ? 3 : 1;
+  _tarotDeck = tarotShuffle();
+  _tarotDrawn = [];
+  tarotRenderDraw();
+}
+/* 同牌阵重抽：保留当前牌阵与张数，只洗牌重抽（「重新抽牌」用；「重选牌阵」仍回牌阵选择） */
+function tarotRedraw() {
   _tarotDeck = tarotShuffle();
   _tarotDrawn = [];
   tarotRenderDraw();
@@ -109,8 +118,9 @@ function tarotRenderDraw() {
     '<div class="tarot-step">' +
     '<p class="mbti-intro">牌已洗匀。凝神静气，点选 ' + _tarotNeed + ' 张。<span class="tarot-prog" id="tarotProg">已抽 0 / ' + _tarotNeed + '</span></p>' +
     '<div class="tarot-grid">' + backs + '</div>' +
-    '<div class="tarot-actions"><button type="button" class="btn-ghost btn-sm" onclick="tarotToSpread()">重选牌阵</button></div>' +
     '</div>';
+  var _tf = document.getElementById('tarotFoot');
+  if (_tf) { _tf.innerHTML = '<button type="button" class="btn-ghost btn-sm" onclick="tarotToSpread()">重选牌阵</button>'; _tf.style.display = 'flex'; }
 }
 function tarotPick(i) {
   if (_tarotDrawn.length >= _tarotNeed) return;
@@ -130,7 +140,7 @@ function tarotRenderReveal() {
   var el = tarotBody();
   if (!el) return;
   var labels = tarotPosLabels();
-  var html = '<div class="tarot-step"><p class="mbti-intro">牌面已定，牌义如下。</p><div class="tarot-result">';
+  var html = '<div class="tarot-step"><p class="mbti-intro">牌面已定，牌义如下。</p><div class="mbti-report tarot-cards">';
   for (var i = 0; i < _tarotDrawn.length; i++) {
     var d = _tarotDrawn[i];
     var pos = labels[i] || ('第' + (i + 1) + '张');
@@ -153,16 +163,17 @@ function tarotRenderReveal() {
       escapeHtml(d.reversed ? d.card.rev : d.card.up) + '<br>' + escapeHtml(d.card.text) + '</div>';
   }
   html += '<div class="mbti-brief-note">牌示方向，行止仍在人为。</div></div>' +
-    '<div class="tarot-actions"><button type="button" class="btn-ghost btn-sm" onclick="tarotToSpread()">重新抽牌</button></div>' +
     '</div>';
   el.innerHTML = html;
+  var _tf = document.getElementById('tarotFoot');
+  if (_tf) { _tf.innerHTML = '<button type="button" class="btn-ghost btn-sm" onclick="tarotRedraw()">重新抽牌</button><button type="button" class="btn-gold btn-sm" onclick="copyReport(\'tarotReport\')">复制结果</button>'; _tf.style.display = 'flex'; }
   try {
     if (typeof saveReportHTML === 'function') saveReportHTML('yumiao_report_tarot_v1', '塔罗牌阵', 'tarotReport');
   } catch (e) { console.warn('[yumiao] tarot save report', e); }
-  try { tarotSaveState(); } catch (e) { console.warn('[yumiao] 12:160', e); }
+  try { tarotSaveState(); } catch (e) { console.warn('[yumiao] 12', e); }
 }
 function tarotSaveState() {
   try {
-    localStorage.setItem('yumiao_tarot_v1', JSON.stringify({ spread: _tarotSpread, drawn: _tarotDrawn.map(function(d){ return { no: d.card.no, reversed: d.reversed }; }) }));
-  } catch (e) { console.warn('[yumiao] 12:165', e); }
+    localStorage.setItem(LS_TAROT, JSON.stringify({ spread: _tarotSpread, drawn: _tarotDrawn.map(function(d){ return { no: d.card.no, reversed: d.reversed }; }) }));
+  } catch (e) { console.warn('[yumiao] 12', e); }
 }

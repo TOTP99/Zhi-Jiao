@@ -98,7 +98,7 @@
   function loadMbtiAnswers() {
     try {
       const raw = localStorage.getItem(MBTI_STORAGE_KEY);
-      mbtiAnswers = raw ? JSON.parse(raw) : {};
+      mbtiAnswers = (typeof readStorageJSON === 'function') ? readStorageJSON(MBTI_STORAGE_KEY, {}) : (raw ? JSON.parse(raw) : {});
     } catch (e) {
       mbtiAnswers = {};
     }
@@ -227,7 +227,7 @@
       return n;
     })();
     if (baseDone >= 48 && !mbtiExtraMode && done >= 48) {
-      el.innerHTML = `四十八问已毕 · <button type="button" class="mbti-reset" style="min-height:0;padding:0 6px;border:none;background:none;text-decoration:underline;" onclick="startMbtiExtra()">再测 24 题更准</button> · <button type="button" class="mbti-reset" style="min-height:0;padding:0 6px;border:none;background:none;text-decoration:underline;" onclick="showMbtiResult()">不想，直接看结果</button>`;
+      el.innerHTML = `四十八问已毕 · <button type="button" class="btn-ghost btn-sm btn-link" onclick="startMbtiExtra()">再测 24 题更准</button> · <button type="button" class="btn-ghost btn-sm btn-link" onclick="showMbtiResult()">不想，直接看结果</button>`;
     } else if (done >= total) {
       if (total > 48) {
         const v = checkTrapValidity();
@@ -321,7 +321,7 @@
     loadMbtiAnswers();
     applyMbtiAnswersToUI();
     backToMbtiQuiz();
-    ModalUI.open('mbti');
+    if (typeof ModalUI !== 'undefined' && ModalUI.open) ModalUI.open('mbti');
   }
   // ---- 48 问答毕后：直接显示完整人格报告 ----
   function buildEngineAnswers() {
@@ -341,7 +341,7 @@
     if (reveal) reveal.style.display = 'none';
     if (list) list.style.display = '';
     const modal = document.getElementById('mbtiModal');
-    if (modal) { modal.classList.remove('is-reveal'); modal.scrollTop = 0; }
+    if (modal) { modal.classList.remove('is-reveal'); var _sc = modal.querySelector('.sheet-scroll'); if (_sc) _sc.scrollTop = 0; }
   }
   function showMbtiResult() {
     const done = Object.keys(mbtiAnswers).length;
@@ -353,22 +353,22 @@
     if (list) list.style.display = 'none';
     reveal.style.display = 'flex';
     const modalEl = document.getElementById('mbtiModal');
-    if (modalEl) { modalEl.classList.add('is-reveal'); modalEl.scrollTop = 0; }
+    if (modalEl) { modalEl.classList.add('is-reveal'); var _sc = modalEl.querySelector('.sheet-scroll'); if (_sc) _sc.scrollTop = 0; }
     renderMbtiFull();
   }
   function openMbtiDict() {
     const types = (window.MBTI && MBTI.types) || {};
     const order = ['ISTJ','ISFJ','INFJ','INTJ','ISTP','ISFP','INFP','INTP','ESTP','ESFP','ENFP','ENTP','ESTJ','ESFJ','ENFJ','ENTJ'];
-    let html = '<div class="mbti-intro" style="margin-bottom:8px;">十六型人格简释（仅供参考）。点「返回」回到测试结果。</div>';
+    let html = '<div class="mbti-intro mb-8">十六型人格简释（仅供参考）。点「返回」回到测试结果。</div>';
     order.forEach(code => {
       const t = types[code];
       if (!t) return;
-      html += `<div class="mbti-sec" style="margin-bottom:8px;"><span class="mbti-sec-label">${escapeHtml(code)}</span><strong>${escapeHtml(t.name)}</strong><br><span style="color:var(--cream-dim);">${escapeHtml(t.summary)}</span></div>`;
+      html += `<div class="mbti-sec mb-8"><span class="mbti-sec-label">${escapeHtml(code)}</span><strong>${escapeHtml(t.name)}</strong><br><span class="c-dim">${escapeHtml(t.summary)}</span></div>`;
     });
     const reportEl = document.getElementById('mbtiReport');
     if (reportEl) {
       reportEl.dataset.prevHtml = reportEl.innerHTML;
-      reportEl.innerHTML = html + '<div style="text-align:center;margin-top:10px;"><button class="mbti-reset" onclick="closeMbtiDict()">返回测试结果</button></div>';
+      reportEl.innerHTML = html + '<div class="ta-c mt-10"><button class="btn-ghost btn-sm" onclick="closeMbtiDict()">返回测试结果</button></div>';
     }
   }
   function closeMbtiDict() {
@@ -395,11 +395,11 @@
       return;
     }
     saveProfileSummary('mbti', `${report.type}·${report.name}`);
-    const dictBtn = '<div style="text-align:center;margin-top:10px;"><button class="mbti-cast-btn" onclick="openMbtiDict()">人格词典</button></div>';
+    const dictBtn = '<div class="ta-c mt-10"><button class="btn-ghost btn-sm" onclick="openMbtiDict()">人格词典</button></div>';
     let secHTML = '';
     if (report.secondaries && report.secondaries.length) {
       secHTML = report.secondaries.map(s =>
-        `<div class="mbti-sec"><span class="mbti-sec-label">次要</span><strong>${escapeHtml(s.type)} · ${escapeHtml(s.name)}</strong>（约 ${s.percent}%）<br><span style="color:var(--muted);font-size:11px;">${escapeHtml(s.reason)}</span></div>`
+        `<div class="mbti-sec"><span class="mbti-sec-label">次要</span><strong>${escapeHtml(s.type)} · ${escapeHtml(s.name)}</strong>（约 ${s.percent}%）<br><span class="fine">${escapeHtml(s.reason)}</span></div>`
       ).join('');
     }
     let trapNoteHTML = '';
