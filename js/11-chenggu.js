@@ -125,12 +125,14 @@
     '<div class="sheet" id="chengguModal" role="dialog" aria-label="称骨算命">' +
       '<div class="sheet-handle"></div>' +
       '<div class="sheet-head"><h3>称骨算命</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>' +
-      '<div class="cg-side">' +
-        '<p class="mbti-intro">以出生的农历年、月、日、时各取一份骨重，相加得总骨重，再看对应批语。生辰与八字、星座、星盘共用同一份档案。</p>' +
-        '<div class="profile-bar" id="chengguProfileBar" data-bar="chenggu"></div>' +
+      '<div class="sheet-scroll">' +
+        '<div class="cg-side">' +
+          '<p class="mbti-intro">以出生的农历年、月、日、时各取一份骨重，相加得总骨重，再看对应批语。生辰与八字、星座、星盘共用同一份档案。</p>' +
+          '<div class="profile-bar" id="chengguProfileBar" data-bar="chenggu"></div>' +
+        '</div>' +
+        '<div id="chengguResult" class="mbti-report"></div>' +
       '</div>' +
-      '<div id="chengguResult" class="mbti-report"></div>' +
-      '<div class="tarot-actions"><button type="button" class="btn-gold btn-sm" onclick="copyReport(\'chengguResult\')">复制结果</button></div>' +
+      '<div class="mbti-reveal-actions"><button type="button" class="btn-gold btn-sm" onclick="copyReport(\'chengguResult\')">复制结果</button></div>' +
     '</div>';
   function ensureDom() {
     if ($('chengguModal')) return;
