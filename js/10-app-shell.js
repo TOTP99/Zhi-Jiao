@@ -533,7 +533,7 @@
       fortuneModal: 'closeFortuneWheel', historyBox: 'toggleHistory',
       mbtiModal: 'closeMbtiQuiz', baziModal: 'closeBaziPanel',
       zodiacModal: 'closeZodiacPanel', westernModal: 'closeWesternPanel',
-      tarotModal: 'closeTarotPanel', wugeModal: 'closeWugePanel',
+      tarotModal: 'closeTarotPanel', wugeModal: 'closeWugePanel', palmModal: 'closePalmPanel',
       dailySheet: 'closeDailySheet', memberSheet: 'closeMemberSheet',
       disclaimerSheet: 'closeDisclaimer'
     };
