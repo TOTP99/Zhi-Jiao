@@ -106,6 +106,7 @@
   window.YumiaoNav = YumiaoNav;
   /* 中央 popstate：回声跳过 → 关最顶层覆盖层 → 回上一 tab → 退出（默认） */
   window.addEventListener('popstate', function () {
+    if (yiUnwinding) return;
     if (navEchoCount > 0) { navEchoCount--; return; }
     var top = navTop();
     if (top) {
@@ -172,21 +173,42 @@
     navPushState({ yumiaoYi: 1 });
     try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) { console.warn('[yumiao] 10', e); }
   };
-  function hideYi() {
-    var ov = $('yiOverlay'), fr = yiFrameEl();
+  /* 销毁旧 iframe、换上空白新 iframe（停声音、释放内存） */
+  function resetYiFrame() {
+    var fr = yiFrameEl();
+    if (!fr) return;
+    fr.onload = null;
+    var nf = fr.cloneNode(false);
+    nf.removeAttribute('src'); nf.classList.remove('loaded');
+    if (fr.parentNode) fr.parentNode.replaceChild(nf, fr);
+  }
+  var yiUnwinding = false;   /* 正在退回周易入栈前的 history：期间 popstate 不再重复处理 */
+  /* 收起浮层；keepFrame=true 时先不销毁 iframe（等 history 退干净再销毁） */
+  function hideYi(keepFrame) {
+    var ov = $('yiOverlay');
     if (!yiOpen) return;
     yiOpen = false;
     navRemove('yiOverlay');
     if (ov) { ov.classList.remove('show'); ov.setAttribute('aria-hidden', 'true'); }
-    if (fr) { fr.onload = null; fr.removeAttribute('src'); fr.classList.remove('loaded'); }
+    if (!keepFrame) resetYiFrame();
     lockScroll(false);
+  }
+  /* 周易页内每次跳转都会在整个页面的 history 里多一条；返回时必须连同这些条目一起退掉，
+     直到回到御猫灵局自己的那条 state 之前，否则会退回周易内部（或空白页）、浮层关不掉 */
+  function unwindYiHistory(left) {
+    var st = null;
+    try { st = window.history.state; } catch (e) { console.warn('[yumiao] 10', e); }
+    if (!(st && st.yumiaoYi) || left <= 0) { yiUnwinding = false; resetYiFrame(); return; }
+    try { window.history.back(); } catch (e) { console.warn('[yumiao] yi back', e); yiUnwinding = false; resetYiFrame(); return; }
+    setTimeout(function () { unwindYiHistory(left - 1); }, 90);
   }
   window.closeYi = function () {
     if (!yiOpen) return;
     var st = null;
     try { st = window.history.state; } catch (e) { console.warn('[yumiao] 10', e); }
-    if (st && st.yumiaoYi) window.history.back();   /* 交给 popstate 统一收尾，保持历史栈干净 */
-    else hideYi();
+    hideYi(true);   /* 先关浮层（立即生效，不依赖 history） */
+    if (st && st.yumiaoYi) { yiUnwinding = true; unwindYiHistory(20); }
+    else resetYiFrame();
   };
 
   /* ── 音效开关（包裹 01 的播放函数） ── */
