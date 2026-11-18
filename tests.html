@@ -471,6 +471,22 @@
     function g(len, deg) { return { found: true, conf: 3, lenRel: len, cont: 1, bulge: 0.05, chordDeg: deg, end: { u: 0.7, v: 0.5 } }; }
     return eq([PM.autoPick('head', g(0.6, 15)), PM.autoPick('head', g(0.6, 35)), PM.autoPick('head', g(0.4, 15))], [0, 1, 2]);
   });
+  t('图像核心：肤色分割能区分肤色与非肤色', function () {
+    var d = new Uint8ClampedArray([200, 150, 120, 255, 0, 0, 255, 255, 0, 255, 0, 255, 200, 150, 120, 255]);
+    return eq(Array.prototype.slice.call(PM.skinMask(d, 2, 2)), [1, 0, 0, 1]);
+  });
+  t('图像核心：最小代价路径走对角线、走不通返回 null', function () {
+    var c = new Float32Array(9), tg = new Uint8Array(9), i, p;
+    for (i = 0; i < 9; i++) c[i] = 1;
+    tg[8] = 1;
+    p = PM.minPath(c, 3, 3, [0], tg);
+    if (!p || p[0] !== 0 || p[p.length - 1] !== 8) return '路径不对 ' + JSON.stringify(p);
+    for (i = 0; i < 9; i++) c[i] = Infinity;
+    return PM.minPath(c, 3, 3, [0], tg) === null || '阻塞应返回 null';
+  });
+  t('图像核心：置信度按清晰度分三档', function () {
+    return eq([PM.confOf({ meanR: 0.7, cont: 0.9 }), PM.confOf({ meanR: 0.5, cont: 0.75 }), PM.confOf({ meanR: 0.3, cont: 0.5 })], [3, 2, 1]);
+  });
 
   /* ────────── 错误边界 ────────── */
   section('错误边界');
