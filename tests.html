@@ -23,6 +23,7 @@
 <script src="js/14-shengxiao.js"></script>
 <script src="js/15-ziwei.js"></script>
 <script src="js/16-sound.js"></script>
+<script src="js/17-palm.js"></script>
 <script>
 (function () {
   var out = document.getElementById('out'), pass = 0, fail = 0;
@@ -421,6 +422,55 @@
   t('音效系统已加载', function () { return !!YS; });
   t('六种音效方法齐全', function () { return ['tap', 'open', 'close', 'yi', 'select', 'pop'].every(function (m) { return typeof YS[m] === 'function'; }) || '方法缺失'; });
   t('音效开关默认开启', function () { return YS.enabled() === true; });
+
+  /* ────────── 掌纹分析 ────────── */
+  section('掌纹分析');
+  var PM = window.YumiaoPalm;
+  t('掌纹模块已加载', function () { return !!PM && typeof PM.analyzeImage === 'function' && typeof window.openPalmPanel === 'function'; });
+  t('算命 6 条纹路，每个选项含 标题/特质/解读 且无空值', function () {
+    if (PM.LINES.length !== 6) return '纹路数 ' + PM.LINES.length;
+    for (var i = 0; i < PM.LINES.length; i++) for (var j = 0; j < PM.LINES[i].opts.length; j++) {
+      var o = PM.LINES[i].opts[j];
+      if (!o[0] || !o[1] || !o[2] || o[2].length < 15) return PM.LINES[i].name + '#' + j + ' 内容缺失';
+    }
+    return true;
+  });
+  t('四条主线的选项都带小建议', function () {
+    return PM.LINES.slice(0, 4).every(function (l) { return l.opts.every(function (o) { return o[3] && o[3].length > 5; }); }) || '缺小建议';
+  });
+  t('掌诊 6 项，关注度只能是 ok / watch / doctor', function () {
+    if (PM.DIAG.length !== 6) return '项数 ' + PM.DIAG.length;
+    return PM.DIAG.every(function (d) { return d.opts.every(function (o) { return /^(ok|watch|doctor)$/.test(o[1]) && o[2]; }); }) || '关注度非法';
+  });
+  t('掌诊含就医提示条目', function () { return PM.DOCTOR_IF.length >= 4 || '条目过少'; });
+  t('未选任何纹路 / 观察项时不出报告', function () { return eq([PM.buildFortune({}, '左', 'M'), PM.buildDiag({}, '左')], [null, null]); });
+  t('算命报告含所选纹路与取手提示，无 undefined', function () {
+    var r = PM.buildFortune({ life: 0, heart: 1, head: 1, fate: -1 }, '左', 'M');
+    if (!r) return '无报告';
+    if (/undefined|NaN/.test(r.html + r.text)) return '含 undefined/NaN';
+    return (r.html.indexOf('生命线 · 长而深') >= 0 && r.html.indexOf('感情线 · 长而直') >= 0 && r.html.indexOf('事业线') < 0 && r.text.indexOf('男看左手') >= 0) || '内容不符';
+  });
+  t('取手提示：男取左手、女取右手', function () {
+    var m = PM.buildFortune({ life: 0 }, '右', 'M').text, f = PM.buildFortune({ life: 0 }, '左', 'F').text;
+    return (m.indexOf('宜以左手为主') >= 0 && f.indexOf('宜以右手为主') >= 0) || '取手提示不对';
+  });
+  t('掌诊：全是常见项 → 整体 ok；含建议就医项 → doctor，且都带免责与就医清单', function () {
+    var a = PM.buildDiag({ color: 0, temp: 0 }, '左'), b = PM.buildDiag({ color: 0, nails: 4 }, '右');
+    if (a.worst !== 'ok' || b.worst !== 'doctor') return '关注度汇总不对 ' + a.worst + '/' + b.worst;
+    return (b.html.indexOf('建议就医检查') >= 0 && b.html.indexOf('请看医生') >= 0 && b.text.indexOf('不能替代医学诊断') >= 0 && !/undefined|NaN/.test(b.html)) || '免责或就医清单缺失';
+  });
+  t('特征→选项：找不到 / 模糊的纹路返回 -1，不乱猜', function () {
+    var weak = { found: true, conf: 1, lenRel: 0.7, cont: 0.9, bulge: 0.1, chordDeg: 20, end: { u: 0.3, v: 0.4 } };
+    return eq([PM.autoPick('life', { found: false }), PM.autoPick('life', weak), PM.autoPick('heart', weak), PM.autoPick('fate', weak)], [-1, -1, -1, -1]);
+  });
+  t('特征→选项：清晰的感情线按长短、弯直归类', function () {
+    function h(endU, bulge) { return { found: true, conf: 3, lenRel: 0.45, cont: 1, bulge: bulge, chordDeg: -150, end: { u: endU, v: 0.2 } }; }
+    return eq([PM.autoPick('heart', h(0.4, 0.12)), PM.autoPick('heart', h(0.4, 0.05)), PM.autoPick('heart', h(0.7, 0.12)), PM.autoPick('heart', h(0.7, 0.05))], [0, 1, 2, 3]);
+  });
+  t('特征→选项：智慧线按走势、长短归类', function () {
+    function g(len, deg) { return { found: true, conf: 3, lenRel: len, cont: 1, bulge: 0.05, chordDeg: deg, end: { u: 0.7, v: 0.5 } }; }
+    return eq([PM.autoPick('head', g(0.6, 15)), PM.autoPick('head', g(0.6, 35)), PM.autoPick('head', g(0.4, 15))], [0, 1, 2]);
+  });
 
   /* ────────── 错误边界 ────────── */
   section('错误边界');
