@@ -11,10 +11,12 @@
 </style></head><body>
 <h1>御猫灵局 · UI 自检页</h1>
 <p>用浏览器打开本文件即可（需与 index.html / js/ 同目录）。在下方内嵌的真实应用里跑 UI 断言：tab 切换、弹窗开关、档案边界、掌纹图像端到端。只读，不改动应用数据（生辰档案测试会临时写入并立即恢复）。</p>
+<p id="fileWarn" style="display:none;color:#ffb454;border:1px solid #6b4a14;padding:8px 10px;border-radius:6px">检测到用 file:// 直接打开：浏览器会拦截内嵌应用的跨域访问，测试会整页失败。请在本文件夹运行 <code>python3 -m http.server</code>，再访问 http://localhost:8000/ui-tests.html。</p>
 <p id="sum">等待应用加载…</p><ul id="out"></ul>
 <iframe id="frame" src="index.html" title="御猫灵局应用"></iframe>
 <script>
 (function () {
+  if (location.protocol === 'file:') document.getElementById('fileWarn').style.display = 'block';
   var out = document.getElementById('out'), pass = 0, fail = 0;
   function section(title) {
     var h = document.createElement('h2'); h.textContent = title; out.appendChild(h);
@@ -90,10 +92,16 @@
         W.closeSheetByBtn(D.querySelector('#ziweiModal .sheet-close'));
         return !hasShow('ziweiModal') || '紫微未关闭';
       });
-      await t('八字打开即排（有档案时直接出结果）', function () {
+      await t('八字打开即排（有档案时直接出结果）', async function () {
         W.localStorage.setItem('yumiao_shared_birth_v1', JSON.stringify({ year: 1990, month: 6, day: 15, hour: 12, sex: 'M', tzOffset: 8, city: 'Toronto' }));
         W.openBaziPanel();
-        var rep = D.getElementById('baziReport').innerHTML;
+        /* 八字模块懒加载，轮询等报告出现，最多 6 秒 */
+        var rep = '';
+        for (var i = 0; i < 30; i++) {
+          rep = D.getElementById('baziReport').innerHTML;
+          if (rep.length > 100) break;
+          await sleepMs(200);
+        }
         W.closeBaziPanel();
         return rep.length > 100 || ('report len ' + rep.length);
       });
