@@ -667,7 +667,7 @@
     try { var b = JSON.parse(localStorage.getItem('yumiao_shared_birth_v1') || 'null'); sex = b && b.sex || null; } catch (_) { sex = null; }
     return {
       mode: 'fortune', hand: sex === 'F' ? '右' : '左', sex: sex,
-      img: null, ana: null, auto: {}, conf: {}, selF: {}, selD: {}, overlay: true, busy: false, token: 0, lastText: ''
+      ana: null, auto: {}, conf: {}, selF: {}, selD: {}, overlay: true, token: 0, lastText: ''
     };
   }
   function $(id) { return document.getElementById(id); }
@@ -677,7 +677,7 @@
     '<div class="palm">' +
     '<p class="mbti-intro">拍摄或选择一张手掌照片，自动找出主要掌纹，再对照确认。照片只在本机处理，不会上传，也不会保存。</p>' +
     '<div class="palm-cols">' +
-    '<div class="palm-col palm-col-a">' +
+    '<div class="palm-col">' +
     '<div class="palm-stage" id="palmStage">' +
     '<div class="palm-empty" id="palmEmpty">' +
     '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 41c-3-4-6-8-8-12-1-2 0-4 2-4s3 1 4 3V13c0-2 4-2 4 0v10-14c0-2 4-2 4 0v14-12c0-2 4-2 4 0v13-8c0-2 4-2 4 0v16c0 6-2 11-6 15"/></svg>' +
@@ -712,7 +712,7 @@
     '<text x="150" y="392" text-anchor="middle">事业线</text><text x="174" y="150">太阳线</text><text x="256" y="176">婚姻线</text></g></svg>' +
     '<p>示意图：拇指在左，掌心朝向镜头。各人纹路位置略有差异，仅作对照。</p></div>' +
     '</div>' +
-    '<div class="palm-col palm-col-b">' +
+    '<div class="palm-col">' +
     '<div class="form-row palm-hand-row"><label>所拍的手</label><div class="seg" id="palmHand">' +
     '<button type="button" data-v="左">左手</button><button type="button" data-v="右">右手</button></div></div>' +
     '<div class="seg palm-mode" id="palmMode" role="tablist" aria-label="解读方式">' +
@@ -849,8 +849,9 @@
     if (!file || !ST) return;
     var token = ++ST.token;
     ST.ana = null; ST.auto = {}; ST.conf = {}; ST.selF = {}; ST.overlay = true;
+    /* selD 不清：掌诊是手动对照，与照片无关，换照片也保留 */
     hideReport(); drawCanvas(); renderPickers(); setStatus('');
-    ST.busy = true; showBusy(true, '读取照片…');
+    showBusy(true, '读取照片…');
     var res = null;
     try {
       var im = await loadImageData(file);
@@ -868,7 +869,7 @@
       res = { ok: false, reason: (e && e.message === 'decode') ? 'decode' : 'error' };
       console.warn('[yumiao] palm', e);
     }
-    ST.busy = false; showBusy(false);
+    showBusy(false);
     ST.ana = res;
     if (res.ok) {
       var good = [], weak = [];
@@ -973,10 +974,19 @@
     var body = $('palmBody'); if (body) body.innerHTML = '';   /* 照片只在内存里，关闭即释放 */
   }
   if (typeof ModalRegistry !== 'undefined' && !ModalRegistry.palm) ModalRegistry.palm = { backdrop: 'palmBackdrop', modal: 'palmModal' };
-  window.openPalmPanel = openPalmPanel;
-  window.closePalmPanel = closePalmPanel;
-  window.YumiaoPalm = {
+  /* 挂到 window 供页面调用；无 window 时（Node）不挂，只导出纯函数，供测试直接取用 */
+  var YumiaoPalmExport = {
     analyzeImage: analyzeImage, autoPick: autoPick, buildFortune: buildFortune, buildDiag: buildDiag,
-    LINES: LINES, DIAG: DIAG, DOCTOR_IF: DOCTOR_IF, CONF_LABEL: CONF_LABEL
+    LINES: LINES, DIAG: DIAG, DOCTOR_IF: DOCTOR_IF, CONF_LABEL: CONF_LABEL,
+    /* A 节纯函数（不碰 DOM），供 Node / tests.html 直接测试 */
+    skinMask: skinMask, morph: morph, labelComps: labelComps, keepLargest: keepLargest, fillHoles: fillHoles,
+    pcaTilt: pcaTilt, valleyResponse: valleyResponse, minPath: minPath, smoothPoints: smoothPoints,
+    palmFrame: palmFrame, measureLine: measureLine, confOf: confOf
   };
+  if (typeof window !== 'undefined') {
+    window.openPalmPanel = openPalmPanel;
+    window.closePalmPanel = closePalmPanel;
+    window.YumiaoPalm = YumiaoPalmExport;
+  }
+  if (typeof module !== 'undefined' && module.exports) module.exports = YumiaoPalmExport;
 })();
