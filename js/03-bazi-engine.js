@@ -435,6 +435,10 @@
     function calculatePillars(input) {
       const timezone = input.timezone == null ? 8 : Number(input.timezone);
       const utc = localDateToUTC(input);
+      /* v2.18：下一个节气（当前节气之后；若是当年最后一个则取次年第一个） */
+      const _allJ = allJieQi(utc.getUTCFullYear());
+      let _nextJ = null;
+      for (let i = 0; i < _allJ.length; i++) { if (_allJ[i].date.getTime() > utc.getTime()) { _nextJ = _allJ[i]; break; } }
       const year = getYearPillar(utc);
       const month = getMonthPillar(utc);
       // 日柱必须按「出生地当地日历日期」换日，而不是 utc 时间戳自身的 UTC 日期——
@@ -448,7 +452,8 @@
         year: decoratePillar(year), month: decoratePillar(month),
         day: decoratePillar(day), hour: decoratePillar(hour),
         text: year.text + " " + month.text + " " + day.text + " " + hour.text,
-        jieqi: { name: month.jieqi, date: month.jieqiDate ? month.jieqiDate.toISOString() : null }
+        jieqi: { name: month.jieqi, date: month.jieqiDate ? month.jieqiDate.toISOString() : null },
+        nextJieqi: _nextJ ? { name: _nextJ.name, date: _nextJ.date.toISOString() } : null
       };
     }
     function calculateFiveElements(pillars) {

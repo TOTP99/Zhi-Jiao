@@ -781,6 +781,21 @@
     return -1;
   }
 
+  /* v2.18：引导卡片显示规则（纯函数）：失败必显示；成功但四条主线未全自动选中、或有警告时显示；全清才隐藏 */
+  function palmGuideNeeded(ok, autoCount, warnsLen) {
+    if (!ok) return true;
+    return autoCount < 4 || warnsLen > 0;
+  }
+  /* v2.18：线条画法（纯函数）：lm 引擎下看不清（conf<2）的线画灰色虚线；旧引擎保持原行为（found 画、未 found 不画） */
+  function palmLineStyle(engine, m) {
+    if (!m || !m.found) return { draw: false, greyDash: false };
+    if (engine === 'lm' && m.conf < 2) return { draw: true, greyDash: true };
+    return { draw: true, greyDash: false };
+  }
+  function renderGuide(show) {
+    var el = $('palmGuideCard'); if (el) el.hidden = !show;
+  }
+
   /* ════════════════════════════════════════════════════════════
      B. 内容：算命（纹路 → 选项 → 解读）与掌诊
      选项：[标题, 一句特质, 解读, 小建议]
@@ -968,6 +983,13 @@
     '<div class="palm-busy" id="palmBusy" hidden><span class="palm-spin" aria-hidden="true"></span><span id="palmBusyTxt">分析中…</span></div>' +
     '</div>' +
     '<div class="palm-status" id="palmStatus" role="status" aria-live="polite"></div>' +
+    '<div class="palm-guide-card" id="palmGuideCard" hidden>' +
+    '<strong>拍不清楚？这样拍更容易识别</strong>' +
+    '<ul><li>手掌完全张开，拇指在画面内</li><li>光线均匀，避免强反光</li><li>手腕尽量拍入</li><li>推荐用后置摄像头，保持 20–30cm</li></ul>' +
+    '<div class="palm-guide-card-actions">' +
+    '<button type="button" class="btn-gold btn-sm" id="palmGuideRetake">重新拍一张</button>' +
+    '<button type="button" class="btn-ghost btn-sm" id="palmGuideManual">对照照片手动选择</button>' +
+    '</div></div>' +
     '<div class="palm-actions">' +
     '<button type="button" class="btn-gold btn-sm" id="palmShoot">拍照</button>' +
     '<button type="button" class="btn-ghost btn-sm" id="palmPick">相册</button>' +
@@ -1023,7 +1045,8 @@
       if (fortune && it.manual && !moreOpen) { html += '<div class="palm-more">更多纹路（选填）</div>'; moreOpen = true; }
       var conf = fortune && ST.conf[it.id], note = '';
       if (fortune && ST.ana && CORE_IDS.indexOf(it.id) >= 0) {
-        note = conf ? '<span class="palm-conf c' + conf + '">识别' + CONF_LABEL[conf] + '</span>' : '<span class="palm-conf c0">未识别，请自选</span>';
+        if (conf && ST.ana.engine === 'lm' && conf < 2) note = '<span class="palm-conf c0">看不清，请自选</span>';
+        else note = conf ? '<span class="palm-conf c' + conf + '">识别' + CONF_LABEL[conf] + '</span>' : '<span class="palm-conf c0">未识别，请自选</span>';
       }
       html += '<div class="palm-pk" data-id="' + it.id + '"><div class="palm-pk-head"><strong>' + it.name + '</strong>' + note + '</div>' +
         '<div class="palm-pk-desc">' + it.desc + '</div><div class="palm-chips">';
@@ -1064,6 +1087,7 @@
     hideReport();
     renderPickers();
     renderInsight();
+    if (!fortune) renderGuide(false);
     drawCanvas();
   }
   function hideReport() {
@@ -1084,18 +1108,20 @@
     var k = Math.max(1, s.w / 360);
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     CORE_IDS.forEach(function (id) {
-      var m = ST.ana.lines[id]; if (!m || !m.found) return;
-      if (ST.ana.engine === 'lm' && m.conf < 2) return;   /* v2.17：看不清的线不画，免得误导 */
+      var m = ST.ana.lines[id];
+      var st = palmLineStyle(ST.ana.engine, m);
+      if (!st.draw) return;
       var line = LINE_BY_ID[id];
+      var col = st.greyDash ? 'rgba(138,131,120,.9)' : line.color;
       ctx.save();
-      ctx.lineWidth = 4.5 * k; ctx.strokeStyle = 'rgba(11,9,6,.7)'; ctx.setLineDash([]);
+      ctx.lineWidth = 4.5 * k; ctx.strokeStyle = st.greyDash ? 'rgba(11,9,6,.5)' : 'rgba(11,9,6,.7)'; ctx.setLineDash(st.greyDash ? [7 * k, 5 * k] : []);
       path(ctx, m.pts); ctx.stroke();
-      ctx.lineWidth = 2.6 * k; ctx.strokeStyle = line.color; ctx.setLineDash(m.conf === 1 ? [7 * k, 5 * k] : []);
+      ctx.lineWidth = 2.6 * k; ctx.strokeStyle = col; ctx.setLineDash(st.greyDash || m.conf === 1 ? [7 * k, 5 * k] : []);
       path(ctx, m.pts); ctx.stroke();
       ctx.restore();
       var mid = m.pts[Math.floor(m.pts.length / 2)];
       ctx.font = '700 ' + Math.round(12 * k) + 'px "Noto Sans SC","PingFang SC",sans-serif';
-      ctx.lineWidth = 3 * k; ctx.strokeStyle = 'rgba(11,9,6,.85)'; ctx.fillStyle = line.color;
+      ctx.lineWidth = 3 * k; ctx.strokeStyle = 'rgba(11,9,6,.85)'; ctx.fillStyle = col;
       var tx = clampN(mid.x + 6 * k, 4, s.w - 44 * k), ty = clampN(mid.y - 8 * k, 14 * k, s.h - 4);
       ctx.strokeText(line.name, tx, ty); ctx.fillText(line.name, tx, ty);
     });
@@ -1160,7 +1186,7 @@
     var token = ++ST.token;
     ST.ana = null; ST.auto = {}; ST.conf = {}; ST.selF = {}; ST.overlay = true; ST.insight = null;
     /* selD 不清：掌诊是手动对照，与照片无关，换照片也保留 */
-    hideReport(); drawCanvas(); renderPickers(); renderInsight(); setStatus('');
+    hideReport(); drawCanvas(); renderPickers(); renderInsight(); setStatus(''); renderGuide(false);
     showBusy(true, '读取照片…');
     var res = null, rectState = 'skipped';
     try {
@@ -1239,8 +1265,10 @@
       if (rectState === 'done') msg += '已按标准位置摆正。';
       else if (rectState === 'failed') msg += '未摆正，沿用原识别。';
       setStatus(msg, warns.length || !good.length ? 'warn' : 'ok');
+      renderGuide(palmGuideNeeded(true, good.length, warns.length));
     } else {
       setStatus(FAIL_TEXT[res.reason] || FAIL_TEXT.error, 'warn');
+      renderGuide(palmGuideNeeded(false, 0, 0));
     }
     applyMode();
   }
@@ -1271,6 +1299,8 @@
       $(id).onchange = function (e) { var f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) onFile(f); };
     });
     $('palmGuideBtn').onclick = function () { var g = $('palmGuide'); g.hidden = !g.hidden; this.classList.toggle('on', !g.hidden); };
+    $('palmGuideRetake').onclick = function () { $('palmFileShoot').click(); };
+    $('palmGuideManual').onclick = function () { renderGuide(false); };
     $('palmOverlayBtn').onclick = function () { ST.overlay = !ST.overlay; this.classList.toggle('on', ST.overlay); drawCanvas(); };
     $('palmHand').onclick = function (e) {
       var b = e.target.closest('button'); if (!b) return;
@@ -1290,6 +1320,7 @@
       hideReport();
     };
     $('palmGo').onclick = genReport;
+    $('palmRetake').onclick = function () { $('palmFileShoot').click(); };
     $('palmBack').onclick = function () {
       hideReport();
       var el = $('palmStage'); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1323,7 +1354,8 @@
     /* A 节纯函数（不碰 DOM），供 Node / tests.html 直接测试 */
     skinMask: skinMask, morph: morph, labelComps: labelComps, keepLargest: keepLargest, fillHoles: fillHoles,
     pcaTilt: pcaTilt, valleyResponse: valleyResponse, minPath: minPath, smoothPoints: smoothPoints,
-    palmFrame: palmFrame, measureLine: measureLine, confOf: confOf, measureMounts: measureMounts
+    palmFrame: palmFrame, measureLine: measureLine, confOf: confOf, measureMounts: measureMounts,
+    palmGuideNeeded: palmGuideNeeded, palmLineStyle: palmLineStyle
   };
   if (typeof window !== 'undefined') {
     window.openPalmPanel = openPalmPanel;

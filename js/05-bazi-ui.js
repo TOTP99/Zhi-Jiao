@@ -35,7 +35,9 @@
     if (!b || !b.year || !b.month || !b.day) {
       return { error: '请先录入生辰档案，再来排盘。' };
     }
+    const hourDefaulted = (b.hour == null || b.hour === ''); /* v2.18：出生时间留空按午时 */
     if (typeof window.yumiaoStdBirth === 'function') b = window.yumiaoStdBirth(b); /* 夏令时回拨到标准时 */
+    const dstAdjusted = !!(b && b._dstAdjusted); /* v2.18：是否回拨过夏令时 */
     const year = +b.year, month = +b.month, day = +b.day;
     const hour = (b.hour == null || b.hour === '') ? 12 : +b.hour;
     const minute = (b.minute == null || b.minute === '') ? 0 : +b.minute;
@@ -50,7 +52,8 @@
       return { error: '档案中没有出生地经度：请到「我的」补录城市或经度后，再用真太阳时。' };
     }
     return {
-      input: { year, month, day, hour, minute, sex, timezone, trueSolar, longitude }
+      input: { year, month, day, hour, minute, sex, timezone, trueSolar, longitude },
+      hourDefaulted, dstAdjusted
     };
   }
   function submitBaziForm() {
@@ -69,6 +72,7 @@
       return;
     }
     baziResult = result;
+    baziResult._calcMeta = { hourDefaulted: !!parsed.hourDefaulted, dstAdjusted: !!parsed.dstAdjusted }; /* v2.18：计算说明用 */
     saveProfileSummary('bazi', `${result.bazi}·日主${result.dayMaster.stem}`);
     const form = document.getElementById('baziForm');
     const reveal = document.getElementById('baziReveal');
@@ -78,6 +82,45 @@
     if (modal) modal.classList.add('is-reveal');
     renderBaziFull();
   }
+  /* v2.18：八字「计算说明」（纯函数，不碰 DOM；缺失数据时该条省略，不写假话） */
+  function baziCalcNoteHTML(r) {
+    if (!r || !r.input || !r.pillars) return '';
+    var inp = r.input, meta = r._calcMeta || {}, items = [];
+    function pad2(n) { n = Math.floor(Number(n) || 0); return (n < 10 ? '0' : '') + n; }
+    /* 出生时刻（UTC 毫秒，纯算术换算，不依赖浏览器时区；不含真太阳时经度改正，临界提醒为约数） */
+    var tz = Number(inp.timezone) || 0;
+    var birthMs = Date.UTC(Number(inp.year), Number(inp.month) - 1, Number(inp.day), Number(inp.hour), Number(inp.minute) || 0) - tz * 3600000;
+    function fmtTz(ms) { /* 按出生时区显示「YYYY-MM-DD HH:MM」 */
+      var d = new Date(ms + tz * 3600000);
+      return d.getUTCFullYear() + '-' + pad2(d.getUTCMonth() + 1) + '-' + pad2(d.getUTCDate()) + ' ' + pad2(d.getUTCHours()) + ':' + pad2(d.getUTCMinutes());
+    }
+    /* 1. 真太阳时 */
+    if (inp.trueSolar) items.push('已用真太阳时' + (inp.longitude != null ? '（经度 ' + inp.longitude + '°）' : ''));
+    else items.push('未用真太阳时，按出生地标准时排盘');
+    /* 2. 夏令时 */
+    items.push(meta.dstAdjusted ? '出生时当地实行夏令时，已回拨到标准时' : '未做夏令时回拨');
+    /* 3. 出生时间 */
+    if (meta.hourDefaulted) items.push('出生时间未填，按午时（12:00）计算');
+    else items.push('出生时间 ' + pad2(inp.hour) + ':' + pad2(inp.minute || 0) + '（以档案为准）');
+    /* 4. 节气 */
+    var jie = r.pillars.jieqi, jieMs = null, inTable = (Number(inp.year) >= 1899 && Number(inp.year) <= 2101);
+    if (jie && jie.name && jie.date) {
+      jieMs = new Date(jie.date).getTime();
+      items.push('当前节气：' + jie.name + ' ' + fmtTz(jieMs) + '（' + (inTable ? '内置节气表' : '天文公式推算（表外年份）') + '）');
+    }
+    /* 5. 临界提醒（距当前或下一个节气不足 24 小时） */
+    var next = r.pillars.nextJieqi, nextMs = (next && next.date) ? new Date(next.date).getTime() : null;
+    var crit = null;
+    if (jieMs != null && !isNaN(jieMs)) { var d1 = birthMs - jieMs; if (d1 >= 0 && d1 < 24 * 3600000) crit = { name: jie.name, h: Math.round(d1 / 3600000) }; }
+    if (nextMs != null && !isNaN(nextMs)) { var d2 = nextMs - birthMs; if (d2 >= 0 && d2 < 24 * 3600000 && (!crit || d2 < (birthMs - jieMs))) crit = { name: next.name, h: Math.round(d2 / 3600000) }; }
+    if (crit) items.push('临界提醒：出生距「' + crit.name + '」仅约 ' + crit.h + ' 小时，月柱以节气时刻为准；若出生时间有分钟误差，月柱可能不同');
+    /* 6. 神煞 */
+    items.push('神煞仅供参考，非唯一体系');
+    if (!items.length) return '';
+    function esc(s) { return (typeof escapeHtml === 'function') ? escapeHtml(String(s)) : String(s).replace(/[&<>\"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    return '<details class="bazi-calc-note"><summary>计算说明</summary><ul>' + items.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ul></details>';
+  }
+  if (typeof window !== 'undefined') window.YumiaoBaziCalcNote = baziCalcNoteHTML;
   function renderBaziFull() {
     const reportEl = document.getElementById('baziReport');
     if (!reportEl || !baziResult) return;
@@ -86,6 +129,7 @@
     const trueSolarNote = r.input && r.input.trueSolar
       ? `<div class="mbti-brief-note">已按真太阳时排盘（经度 ${r.input.longitude}°）</div>`
       : '';
+    const calcNote = baziCalcNoteHTML(r); /* v2.18：可折叠计算说明 */
     const shenshaText = r.shensha.items.length
       ? r.shensha.items.map(it => `${it.name}(${it.positionNames.join('、')})`).join('、')
       : '未见明显神煞入命';
@@ -96,6 +140,7 @@
     reportEl.innerHTML = `
       <div class="mbti-type">${escapeHtml(r.bazi)}</div><div class="mbti-summary">日主 ${escapeHtml(r.dayMaster.stem)}（${escapeHtml(r.dayMaster.element)}）· ${escapeHtml(r.dayMaster.level)}</div>
       ${trueSolarNote}
+      ${calcNote}
       <div class="mbti-sec"><span class="mbti-sec-label">四柱</span>${escapeHtml(formatBaziPillar('年', p.year))}；${escapeHtml(formatBaziPillar('月', p.month))}；${escapeHtml(formatBaziPillar('日', p.day))}；${escapeHtml(formatBaziPillar('时', p.hour))}</div><div class="mbti-sec"><span class="mbti-sec-label">五行</span>木${r.fiveElements['木']} 火${r.fiveElements['火']} 土${r.fiveElements['土']} 金${r.fiveElements['金']} 水${r.fiveElements['水']}</div><div class="mbti-sec"><span class="mbti-sec-label">十神</span>年：${escapeHtml(r.tenGods.year)}；月：${escapeHtml(r.tenGods.month)}；时：${escapeHtml(r.tenGods.hour)}</div><div class="mbti-sec"><span class="mbti-sec-label">神煞</span>${escapeHtml(shenshaText)}</div><div class="mbti-sec"><span class="mbti-sec-label">地支</span>${escapeHtml(relationsText)}</div><div class="mbti-sec"><span class="mbti-sec-label">总论</span>${escapeHtml(f.zonglun)}</div><div class="mbti-sec"><span class="mbti-sec-label">财运</span>${escapeHtml(f.wealth)}</div><div class="mbti-sec"><span class="mbti-sec-label">婚姻</span>${escapeHtml(f.marriage)}</div><div class="mbti-sec"><span class="mbti-sec-label">事业</span>${escapeHtml(f.career)}</div><div class="mbti-sec"><span class="mbti-sec-label">健康</span>${escapeHtml(f.health)}</div><div class="mbti-sec"><span class="mbti-sec-label">大运</span>${escapeHtml(f.dayun)}</div><div class="mbti-sec"><span class="mbti-sec-label">流年</span>${escapeHtml(f.liunian)}</div><div class="mbti-brief-note">${escapeHtml(r.dayMaster.note)}</div>
     `;
     if (typeof saveReportHTML === 'function') saveReportHTML('yumiao_report_bazi_v1', '八字命盘', 'baziReport');
@@ -676,7 +721,8 @@
     }
     document.getElementById('recordBtn').classList.remove('on');
   }
-  document.getElementById('question').addEventListener('keydown', function(e) {
+  var _qEl = document.getElementById('question'); /* v2.18：空守卫，tests.html 加载本文件时页面无 #question */
+  if (_qEl) _qEl.addEventListener('keydown', function(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       castJiao();
