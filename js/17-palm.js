@@ -792,8 +792,12 @@
     if (engine === 'lm' && m.conf < 2) return { draw: true, greyDash: true };
     return { draw: true, greyDash: false };
   }
+  /* v2.19：引导状态单点收口——卡片、对照图、按钮三者同开同关；诊断模式下恒关 */
   function renderGuide(show) {
+    if (ST && ST.mode !== 'fortune') show = false;
     var el = $('palmGuideCard'); if (el) el.hidden = !show;
+    var g = $('palmGuide'); if (g) g.hidden = !show;
+    var b = $('palmGuideBtn'); if (b) b.classList.toggle('on', !!show);
   }
 
   /* ════════════════════════════════════════════════════════════
@@ -1081,7 +1085,6 @@
     $('palmFoot').textContent = FOOT[ST.mode];
     $('palmGo').textContent = fortune ? '生成算命解读' : '生成掌诊提示';
     $('palmGuideBtn').hidden = !fortune;
-    if (!fortune) $('palmGuide').hidden = true;
     $('palmOverlayBtn').hidden = !(fortune && ST.ana && ST.ana.ok);
     $('palmOverlayBtn').classList.toggle('on', ST.overlay);
     hideReport();
@@ -1116,7 +1119,8 @@
       ctx.save();
       ctx.lineWidth = 4.5 * k; ctx.strokeStyle = st.greyDash ? 'rgba(11,9,6,.5)' : 'rgba(11,9,6,.7)'; ctx.setLineDash(st.greyDash ? [7 * k, 5 * k] : []);
       path(ctx, m.pts); ctx.stroke();
-      ctx.lineWidth = 2.6 * k; ctx.strokeStyle = col; ctx.setLineDash(st.greyDash || m.conf === 1 ? [7 * k, 5 * k] : []);
+      var dash = (st.greyDash || m.conf === 1) ? [7 * k, 5 * k] : [];
+      ctx.lineWidth = 2.6 * k; ctx.strokeStyle = col; ctx.setLineDash(dash);
       path(ctx, m.pts); ctx.stroke();
       ctx.restore();
       var mid = m.pts[Math.floor(m.pts.length / 2)];
@@ -1298,7 +1302,7 @@
     ['palmFileShoot', 'palmFilePick'].forEach(function (id) {
       $(id).onchange = function (e) { var f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) onFile(f); };
     });
-    $('palmGuideBtn').onclick = function () { var g = $('palmGuide'); g.hidden = !g.hidden; this.classList.toggle('on', !g.hidden); };
+    $('palmGuideBtn').onclick = function () { renderGuide($('palmGuideCard').hidden); };
     $('palmGuideRetake').onclick = function () { $('palmFileShoot').click(); };
     $('palmGuideManual').onclick = function () { renderGuide(false); };
     $('palmOverlayBtn').onclick = function () { ST.overlay = !ST.overlay; this.classList.toggle('on', ST.overlay); drawCanvas(); };
