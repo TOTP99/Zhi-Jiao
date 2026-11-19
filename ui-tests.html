@@ -184,6 +184,17 @@
         var b = D.getElementById('palmRetake');
         return !!(b && b.parentElement && b.parentElement.id === 'palmResultActions') || 'palmRetake 不在结果操作栏';
       });
+      await t('引导卡片与对照图状态同步', function () {
+        W.openPalmPanel();
+        var btn = D.getElementById('palmGuideBtn'), card = D.getElementById('palmGuideCard'), diag = D.getElementById('palmGuide');
+        if (!btn || !card || !diag) { W.closePalmPanel(); return '引导元素缺失'; }
+        btn.click();
+        var open = !card.hidden && !diag.hidden && btn.classList.contains('on');
+        btn.click();
+        var closed = card.hidden && diag.hidden && !btn.classList.contains('on');
+        W.closePalmPanel();
+        return (open && closed) || '点开/点关后卡片、对照图、按钮状态不同步';
+      });
       await t('非肤色图 → nohand（纯蓝画布）', async function () {
         var im = makeImageData(W, function (ctx, w, h) { ctx.fillStyle = '#0000ff'; ctx.fillRect(0, 0, w, h); });
         var res = await PM.analyzeImage(im.data, im.width, im.height, { hand: 'L' });
