@@ -506,6 +506,252 @@
     return res;
   }
 
+  /* ════════════════════════════════════════════════════════════
+     A2. v2.17 地标驱动识别
+     MediaPipe 21 点 → 以（腕、食指掌指关节、小指掌指关节）三点把掌心从原始高清图直接裁成标准掌心图
+     → 局部对比归一 + 粗尺度纹线响应（压住细碎皱纹）→ 只保留“又长又连续”的纹
+     → 按解剖端点区域 + 宽走廊，用最小代价路径追踪四条主线。
+     ════════════════════════════════════════════════════════════ */
+  var CR = { W: 760, H: 700, ux: 180, wm: 400, uy: 60, wy: 600 };     /* 标准掌心图：食指根(180,60)、小指根(580,60)、腕(380,600) */
+  function crX(u) { return CR.ux + u * CR.wm; }
+  function crY(s) { return CR.uy + s * (CR.wy - CR.uy); }
+  /* 走向参考（u 横向：0=食指掌指关节、1=小指掌指关节；s 纵向：0=掌指关节线、1=腕横纹；拇指在左）。只做宽走廊的中轴，不硬套 */
+  var TPL = {
+    heart: [[1.12, .28], [.92, .22], [.68, .20], [.44, .20], [.24, .22]],
+    head:  [[.05, .26], [.30, .32], [.55, .42], [.82, .54], [1.05, .62]],
+    life:  [[.05, .26], [.14, .42], [.22, .62], [.30, .82], [.40, .98]],
+    fate:  [[.50, 1.00], [.50, .80], [.52, .60], [.52, .42], [.50, .26]]
+  };
+  /* 起止端点区域 [u0,u1,s0,s1]：宽松，只说明“大致从哪到哪”，具体走向由纹线自己决定 */
+  var ENDS = {
+    heart: [[1.02, 1.30, 0.10, 0.55], [0.00, 0.22, 0.05, 0.40]],
+    head:  [[-0.30, 0.18, 0.12, 0.45], [0.95, 1.30, 0.38, 0.90]],
+    life:  [[-0.30, 0.18, 0.12, 0.45], [0.10, 0.70, 0.80, 0.98]],
+    fate:  [[0.30, 0.70, 0.80, 0.98], [0.35, 0.65, 0.10, 0.32]]
+  };
+  function loadFullCanvas(file) {
+    var MAXS = 1800;
+    function fromSrc(src, sw, sh) {
+      var s = Math.min(1, MAXS / Math.max(sw, sh)), w = Math.max(1, Math.round(sw * s)), h = Math.max(1, Math.round(sh * s));
+      var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+      cv.getContext('2d', { willReadFrequently: true }).drawImage(src, 0, 0, w, h);
+      return { cv: cv, w: w, h: h };
+    }
+    function viaImg() {
+      return new Promise(function (resolve, reject) {
+        var url = URL.createObjectURL(file), img = new Image();
+        img.onload = function () { try { var o = fromSrc(img, img.naturalWidth, img.naturalHeight); URL.revokeObjectURL(url); resolve(o); } catch (e) { URL.revokeObjectURL(url); reject(e); } };
+        img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('decode')); };
+        img.src = url;
+      });
+    }
+    if (typeof createImageBitmap === 'function') {
+      return createImageBitmap(file, { imageOrientation: 'from-image' }).then(function (bmp) {
+        var o = fromSrc(bmp, bmp.width, bmp.height); if (bmp.close) bmp.close(); return o;
+      }, viaImg);
+    }
+    return viaImg();
+  }
+  function distSeg(px, py, a, b) {
+    var dx = b.x - a.x, dy = b.y - a.y, L2 = dx * dx + dy * dy, t = L2 ? ((px - a.x) * dx + (py - a.y) * dy) / L2 : 0;
+    t = t < 0 ? 0 : (t > 1 ? 1 : t);
+    return Math.hypot(px - (a.x + t * dx), py - (a.y + t * dy));
+  }
+  /* 到折线距离² / σ²（走廊罚项），只在给定框内计算 */
+  function corridorPen(poly, w, h, x0, x1, y0, y1, sigma) {
+    var pen = new Float32Array(w * h), x, y, k, d, best, s2 = sigma * sigma;
+    for (y = y0; y <= y1; y++) for (x = x0; x <= x1; x++) {
+      best = 1e9;
+      for (k = 1; k < poly.length; k++) { d = distSeg(x, y, poly[k - 1], poly[k]); if (d < best) best = d; }
+      pen[y * w + x] = (best * best) / s2;
+    }
+    return pen;
+  }
+  async function analyzeLM(full, lm, side, opts) {
+    opts = opts || {}; var prog = opts.onProgress || function () {};
+    var RC = window.YumiaoPalmRectify;
+    if (!RC || !RC.solveAffine || !lm || lm.length < 21) return null;
+    var res = { ok: false, reason: '', notes: [], engine: 'lm' }, i, x, y;
+    var W = CR.W, H = CR.H, n = W * H;
+    prog('裁切掌心');
+    var P = function (k) { return [lm[k].x * full.w, lm[k].y * full.h]; };
+    var xA = CR.ux, xB = CR.ux + CR.wm;
+    /* 无论拇指在哪侧，都映射成“拇指在左”的标准图（拇指在右时自然成为镜像，展示时翻回） */
+    var dst = [[(xA + xB) / 2, CR.wy], [xA, CR.uy], [xB, CR.uy]];
+    var m = RC.solveAffine([P(0), P(5), P(17)], dst);
+    if (!m) return null;
+    var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    var ctx = cv.getContext('2d', { willReadFrequently: true });
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
+    ctx.imageSmoothingQuality = 'high';
+    ctx.setTransform(m[0], m[1], m[2], m[3], m[4], m[5]);
+    ctx.drawImage(full.cv, 0, 0);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    var work = ctx.getImageData(0, 0, W, H).data;
+    var L = lm.map(function (q, k) { var p = P(k); return { x: m[0] * p[0] + m[2] * p[1] + m[4], y: m[1] * p[0] + m[3] * p[1] + m[5] }; });
+    await tickAsync(); prog('划定掌心');
+    /* 掌心区域：肤色 ∩ 掌指关节线以下；扣掉拇指指节 */
+    var sm = skinMask(work, W, H);
+    sm = morph(morph(sm, W, H, 2, 2, false), W, H, 2, 2, true);
+    var kl = keepLargest(sm, W, H);
+    var skin = fillHoles(morph(morph(kl.mask, W, H, 3, 3, true), W, H, 3, 3, false), W, H);
+    var dom = new Uint8Array(n), cnt = 0, capR = 0.16 * CR.wm, t3 = L[3], t4 = L[4];
+    var yWrist = Math.round(crY(0.98));     /* 腕横纹以下是手腕，不属于掌心 */
+    for (y = CR.uy - 6; y <= yWrist; y++) for (x = 0; x < W; x++) {
+      if (!skin[y * W + x]) continue;
+      if (distSeg(x, y, t3, t4) < capR) continue;
+      dom[y * W + x] = 1; cnt++;
+    }
+    if (cnt < 0.4 * CR.wm * CR.wm) {          /* 肤色分割失败（偏色、过曝）：退回多边形 */
+      dom.fill(0); cnt = 0;
+      var poly = [[130, 60], [640, 60], [665, 330], [620, 560], [540, 640], [300, 640], [190, 560], [110, 330]];
+      for (y = 60; y <= yWrist; y++) for (x = 0; x < W; x++) {
+        var inP = false;
+        for (var a = 0, b = poly.length - 1; a < poly.length; b = a++) {
+          if (((poly[a][1] > y) !== (poly[b][1] > y)) && (x < (poly[b][0] - poly[a][0]) * (y - poly[a][1]) / (poly[b][1] - poly[a][1]) + poly[a][0])) inP = !inP;
+        }
+        if (inP) { dom[y * W + x] = 1; cnt++; }
+      }
+      res.notes.push('polyDomain');
+    }
+    /* 区域边缘（肤色/背景交界、掌指线上沿）会产生很强的假纹：往里缩一圈 */
+    var dom2 = morph(dom, W, H, 13, 13, false);
+    for (y = 0; y < CR.uy + 14; y++) for (x = 0; x < W; x++) dom2[y * W + x] = 0;
+    await tickAsync(); prog('提取掌纹');
+    var g = new Float32Array(n), sum = 0;
+    for (i = 0; i < n; i++) { g[i] = work[i * 4 + 1]; if (dom[i]) sum += g[i]; }
+    var meanG = sum / Math.max(1, cnt);
+    for (i = 0; i < n; i++) if (!dom[i]) g[i] = meanG;
+    /* 清晰度：原图细节（σ≈1.6 以内的高频）能量占中频能量的比例；糊图细纹被抹掉，比值低 */
+    var gs = gaussBlur(g, W, H, 1.6), gm = gaussBlur(g, W, H, 5), eHi = 0, eMid = 0;
+    for (i = 0; i < n; i++) if (dom2[i]) { var dh = g[i] - gs[i], dmid = gs[i] - gm[i]; eHi += dh * dh; eMid += dmid * dmid; }
+    res.sharpness = eHi / (eMid + 1e-6);
+    var bg = gaussBlur(g, W, H, 18), n1 = new Float32Array(n), sq = new Float32Array(n);
+    for (i = 0; i < n; i++) { n1[i] = g[i] - bg[i]; sq[i] = n1[i] * n1[i]; }
+    var sdL = gaussBlur(sq, W, H, 40), sdSum = 0;
+    for (i = 0; i < n; i++) if (dom[i]) sdSum += sdL[i];
+    var sdG = Math.sqrt(sdSum / Math.max(1, cnt)) + 1e-3;
+    for (i = 0; i < n; i++) n1[i] = n1[i] / (0.5 * Math.sqrt(sdL[i]) + 0.5 * sdG);   /* 局部对比归一：明暗不均、偏糊都更稳 */
+    function multiScale(sigs) {
+      var out = new Float32Array(n);
+      for (var si = 0; si < sigs.length; si++) {
+        var vr = valleyResponse(n1, W, H, sigs[si]);
+        for (var q = 0; q < n; q++) if (vr[q] > out[q]) out[q] = vr[q];
+      }
+      return out;
+    }
+    var R = multiScale([2.0, 3.0]);               /* 细尺度：纹理疏密、特殊纹 */
+    await tickAsync();
+    var RM = multiScale([3.4, 4.6, 6.0]);         /* 粗尺度：只留主线，压住拇指根的细密皱纹 */
+    await tickAsync();
+    var p99 = percentileOf(R, dom2, 0.99) || 1, pm99 = percentileOf(RM, dom2, 0.99) || 1;
+    res.sharp = res.sharpness * 60;           /* 与旧口径同量级（<13 提示偏糊） */
+    for (i = 0; i < n; i++) {
+      R[i] = dom2[i] ? clampN(R[i] / p99, 0, 1) : 0;
+      RM[i] = dom2[i] ? clampN(RM[i] / pm99, 0, 1) : 0;
+    }
+    /* 长纹滞后阈值：含强点且足够长的连通块才算“主线候选”，其余杂纹降权 */
+    var weak = new Uint8Array(n), strong = new Uint8Array(n), hasStrong = {}, areaOf = {}, longM = new Uint8Array(n);
+    for (i = 0; i < n; i++) { if (RM[i] > 0.22) weak[i] = 1; if (RM[i] > 0.45) strong[i] = 1; }
+    var CC = labelComps(weak, W, H, 1);
+    CC.comps.forEach(function (c) { areaOf[c.id] = c.area; });
+    for (i = 0; i < n; i++) if (strong[i] && CC.lab[i] > 0) hasStrong[CC.lab[i]] = true;
+    for (i = 0; i < n; i++) { var lb = CC.lab[i]; if (lb > 0 && hasStrong[lb] && areaOf[lb] >= 700) longM[i] = 1; }
+    var RT = new Float32Array(n);
+    for (i = 0; i < n; i++) RT[i] = longM[i] ? RM[i] : RM[i] * 0.4;
+    /* 标准框架（与旧 palmFrame 同语义，供量测/丘位/解读层复用）；掌长、指长按原图关键点实测 */
+    var Wm = CR.wm, Wp = 1.25 * Wm, y0 = crY(0);
+    var dpx = function (a, b) { return Math.hypot((lm[a].x - lm[b].x) * full.w, (lm[a].y - lm[b].y) * full.h); };
+    var wmReal = dpx(5, 17) || 1, palmLenRel = dpx(0, 9) / (1.25 * wmReal), fingLenRel = dpx(9, 12) / (1.25 * wmReal);
+    var F = {
+      xL: crX(-.15), xR: crX(1.10), Wp: Wp, y0: y0, nGaps: 3, gapCx: [],
+      box: { x0: 0, x1: W - 1, y0: y0 - fingLenRel * Wp, y1: y0 + palmLenRel * Wp, w: W, h: H },
+      cropped: { thumb: false, ulnar: false, tips: false, wrist: false }
+    };
+    res.mounts = measureMounts(R, W, H, F, dom);
+    await tickAsync(); prog('追踪主线');
+    var lines = {}, paths = {}, sigma = 0.30 * CR.wm, LAM = 0.10;
+    function rectIdx(r) {
+      var out = [], xa = Math.round(crX(r[0])), xb = Math.round(crX(r[1])), ya = Math.round(crY(r[2])), yb = Math.round(crY(r[3]));
+      for (var yy = Math.max(0, ya); yy <= Math.min(H - 1, yb); yy++) for (var xx = Math.max(0, xa); xx <= Math.min(W - 1, xb); xx++) if (dom2[yy * W + xx]) out.push(yy * W + xx);
+      return out;
+    }
+    function trace(key, extra) {
+      var poly = TPL[key].map(function (q) { return { x: crX(q[0]), y: crY(q[1]) }; });
+      var xs = poly.map(function (q) { return q.x; }), ys = poly.map(function (q) { return q.y; }), pad = Math.round(3 * sigma);
+      var bx0 = clampN(Math.floor(Math.min.apply(null, xs)) - pad, 0, W - 1), bx1 = clampN(Math.ceil(Math.max.apply(null, xs)) + pad, 0, W - 1);
+      var by0 = clampN(Math.floor(Math.min.apply(null, ys)) - pad, 0, H - 1), by1 = clampN(Math.ceil(Math.max.apply(null, ys)) + pad, 0, H - 1);
+      var pen = corridorPen(poly, W, H, bx0, bx1, by0, by1, sigma), cost = new Float32Array(n).fill(Infinity);
+      for (y = by0; y <= by1; y++) for (x = bx0; x <= bx1; x++) {
+        var q = y * W + x;
+        if (!dom2[q] || pen[q] > 9) continue;
+        var c = 0.03 + Math.pow(1 - RT[q], 3) + LAM * pen[q];
+        if (extra && extra[q]) c = c * 4 + 0.6;
+        cost[q] = c;
+      }
+      var st = rectIdx(ENDS[key][0]), tg = rectIdx(ENDS[key][1]);
+      if (!st.length || !tg.length) return null;
+      var tgm = new Uint8Array(n); tg.forEach(function (t) { tgm[t] = 1; });
+      var path = minPath(cost, W, H, st, tgm);
+      return (path && path.length >= 12) ? path : null;
+    }
+    var MINLEN = { heart: 0.28, head: 0.3, life: 0.4, fate: 0.25 };
+    function finish(key, path) {
+      if (!path) { lines[key] = { found: false }; return; }
+      var pts = smoothPoints(path.map(function (p) { return { x: p % W, y: (p / W) | 0 }; }), 9);
+      /* 端点区域放得远，路径两头可能拖着没有纹的尾巴：按局部响应把弱尾巴剪掉 */
+      var rv = pts.map(function (q) { return RM[Math.round(q.y) * W + Math.round(q.x)]; });
+      var loc = function (k) { var a = Math.max(0, k - 12), b = Math.min(rv.length - 1, k + 12), t = 0; for (var j = a; j <= b; j++) t += rv[j]; return t / (b - a + 1); };
+      var lo = 0, hi = pts.length - 1;
+      while (lo < hi && loc(lo) < 0.16) lo++;
+      while (hi > lo && loc(hi) < 0.16) hi--;
+      pts = pts.slice(lo, hi + 1);
+      if (pts.length < 12) { lines[key] = { found: false }; return; }
+      var ms = measureLine(pts, RM, W, F);
+      if (ms.lenRel < MINLEN[key]) { lines[key] = { found: false }; return; }
+      ms.found = true; ms.conf = confOf(ms); ms.pts = pts;
+      lines[key] = ms;
+    }
+    paths.life = trace('life'); finish('life', paths.life);
+    var near = new Uint8Array(n), RAD = 5;
+    if (paths.life) paths.life.slice(Math.floor(paths.life.length * 0.22)).forEach(function (p) {
+      var px = p % W, py = (p / W) | 0;
+      for (var dy = -RAD; dy <= RAD; dy++) for (var dx = -RAD; dx <= RAD; dx++) {
+        var qx = px + dx, qy = py + dy;
+        if (qx >= 0 && qy >= 0 && qx < W && qy < H) near[qy * W + qx] = 1;
+      }
+    });
+    /* 感情线、智慧线、事业线都不许顺着生命线走（否则几条会挤在同一道沟里） */
+    paths.heart = trace('heart', near); finish('heart', paths.heart);
+    paths.head = trace('head', near); finish('head', paths.head);
+    paths.fate = trace('fate', near);
+    if (paths.fate) {
+      var shared = 0; paths.fate.forEach(function (p) { if (near[p]) shared++; });
+      if (shared / paths.fate.length > 0.35) paths.fate = null;
+    }
+    finish('fate', paths.fate);
+    var dens = 0;
+    for (i = 0; i < n; i++) if (dom2[i] && R[i] > 0.2) dens++;
+    res.density = dens / Math.max(1, cnt);
+    res.ok = true; res.lines = lines; res.frame = F; res.tilt = 0; res.skinFrac = kl.area / n;
+    res.thumbSide = side; res.thumbGuess = false; res.handLabel = side === 'L' ? '左' : '右';
+    /* 展示图与坐标：拇指原本在右时翻回原方向，线与响应图同步翻回 */
+    if (side === 'R') {
+      res.show = { data: flipRGBA(work, W, H), w: W, h: H };
+      Object.keys(lines).forEach(function (k) {
+        if (lines[k].found) lines[k].pts = lines[k].pts.map(function (p) { return { x: W - 1 - p.x, y: p.y }; });
+      });
+      var Rf = new Float32Array(n), yy, xx;
+      for (yy = 0; yy < H; yy++) for (xx = 0; xx < W; xx++) Rf[yy * W + xx] = R[yy * W + (W - 1 - xx)];
+      res.ridge = { R: Rf, w: W, h: H };
+    } else {
+      res.show = { data: work, w: W, h: H };
+      res.ridge = { R: R, w: W, h: H };
+    }
+    if (window.__palmDebug) { window.__palmLastDbg = { sharp: res.sharpness, lines: JSON.parse(JSON.stringify(lines, function (k, v) { return k === 'pts' ? undefined : v; })), R: R, RM: RM, RT: RT, longM: longM, dom: dom2, w: W, h: H, L: L }; }
+    return res;
+  }
+
   /* —— 特征 → 选项（返回 -1 = 没把握，交给用户选） —— */
   function autoPick(key, m) {
     if (!m || !m.found) return -1;
@@ -839,6 +1085,7 @@
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     CORE_IDS.forEach(function (id) {
       var m = ST.ana.lines[id]; if (!m || !m.found) return;
+      if (ST.ana.engine === 'lm' && m.conf < 2) return;   /* v2.17：看不清的线不画，免得误导 */
       var line = LINE_BY_ID[id];
       ctx.save();
       ctx.lineWidth = 4.5 * k; ctx.strokeStyle = 'rgba(11,9,6,.7)'; ctx.setLineDash([]);
@@ -928,10 +1175,22 @@
           var rc = await RC.rectify(im, { timeoutMs: 20000 });
           if (token !== ST.token) return;
           if (rc && rc.data) { useIm = { data: rc.data, width: rc.width, height: rc.height }; rectState = 'done'; }
-          else rectState = 'failed';
+          else rectState = (rc && rc.lm) ? 'lmonly' : 'failed';
         }
       } catch (e) { rectState = 'failed'; }
-      res = await analyzeImage(useIm.data, useIm.width, useIm.height, {
+      /* v2.17：有手部关键点时走地标驱动的高清识别；失败再回退到旧的肤色轮廓识别 */
+      res = null;
+      if (rc && rc.lm) {
+        try {
+          showBusy(true, '读取高清原图…');
+          var full = await loadFullCanvas(file);
+          if (token !== ST.token) return;
+          res = await analyzeLM(full, rc.lm, rc.thumbSide, { onProgress: function (t) { if (token === ST.token) showBusy(true, t + '…'); } });
+          if (res && !res.ok) res = null;
+        } catch (e2) { res = null; console.warn('[yumiao] palm-lm', e2); }
+        if (token !== ST.token) return;
+      }
+      if (!res) res = await analyzeImage(useIm.data, useIm.width, useIm.height, {
         hand: ST.hand === '右' ? 'R' : 'L',
         onProgress: function (t) { if (token === ST.token) showBusy(true, t + '…'); }
       });

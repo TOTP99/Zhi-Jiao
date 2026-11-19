@@ -56,7 +56,7 @@
     /* 张开：中指伸展、食指指尖与小指指尖张开 */
     var midExt = dist(lm[12], wrist) / (dist(midMcp, wrist) || 1);
     var spread = dist(lm[8], lm[20]) / palmW;
-    if (midExt < 1.3 || spread < 0.9) return { ok: false, reason: 'closed' };
+    if (midExt < 1.3 || spread < 0.5) return { ok: false, reason: 'closed' };
     /* 居中：腕点在框内 */
     if (wrist.x < 0.08 || wrist.x > 0.92 || wrist.y < 0.1 || wrist.y > 0.98) return { ok: false, reason: 'offcenter' };
     /* 正向：中指掌指关节在腕点上方（手指朝上），允许 ±75° 倾斜 */
@@ -107,8 +107,12 @@
         var landmarks = res && res.landmarks && res.landmarks[0];
         if (!landmarks) return null;
         var v = validateLandmarks(landmarks);
-        if (!v.ok) return null;
         var side = thumbSide(landmarks);
+        if (!v.ok) {
+          /* v2.17：手掌被裁边/略歪（offcenter、notupright）时不摆正整图，但关键点仍可用于高清掌心裁切 */
+          if (v.reason === 'offcenter' || v.reason === 'notupright') return { data: null, rectified: false, reason: v.reason, thumbSide: side, lm: landmarks.map(function (q) { return { x: q.x, y: q.y }; }) };
+          return null;
+        }
         var px = function (p) { return [p.x * w, p.y * h]; };
         var src = [px(landmarks[0]), px(landmarks[5]), px(landmarks[17])];
         /* 标准位置：整只手放得进框——腕 y≈0.92、指关节线 y≈0.42、掌指间距 0.30W，拇指统一在左。
@@ -127,7 +131,8 @@
         octx.setTransform(m[0], m[1], m[2], m[3], m[4], m[5]);
         octx.drawImage(cv, 0, 0);
         var data = octx.getImageData(0, 0, w, h);
-        return { data: data.data, width: w, height: h, thumbSide: side, rectified: true };
+        return { data: data.data, width: w, height: h, thumbSide: side, rectified: true,
+          lm: landmarks.map(function (q) { return { x: q.x, y: q.y }; }) };   /* v2.17：21 点（相对输入图 0~1），供高清掌心裁切与解剖端点追踪 */
       })(), timeoutMs);
     } catch (e) {
       return null;
