@@ -19,6 +19,7 @@
 <script src="js/11-chenggu.js"></script>
 <script src="js/02-mbti-engine.js"></script>
 <script src="js/03-bazi-engine.js"></script>
+<script src="js/05-bazi-ui.js"></script>
 <script src="js/12-tarot.js"></script>
 <script src="js/13-wuge.js"></script>
 <script src="js/08-western-astrology.js"></script>
@@ -693,6 +694,112 @@
     var d = new Uint8ClampedArray(4 * 4 * 4);
     var r = await PR.rectify({ data: d, width: 4, height: 4 }, { timeoutMs: 10000 });
     return r === null || '应返回 null，实得 ' + JSON.stringify(r);
+  });
+
+  /* ────────── v2.18 掌纹引导 + 八字计算说明 ────────── */
+  section('v2.18 掌纹引导 + 八字计算说明');
+  t('引导卡片：识别失败必显示', function () {
+    return eq([PM.palmGuideNeeded(false, 0, 0), PM.palmGuideNeeded(false, 4, 0)], [true, true]);
+  });
+  t('引导卡片：成功但弱显示（少于 4 条或有警告）', function () {
+    return eq([PM.palmGuideNeeded(true, 3, 0), PM.palmGuideNeeded(true, 4, 2), PM.palmGuideNeeded(true, 0, 0)], [true, true, true]);
+  });
+  t('引导卡片：四条都清晰且无警告时隐藏', function () {
+    return PM.palmGuideNeeded(true, 4, 0) === false || '应隐藏';
+  });
+  t('线条画法：lm 引擎看不清画灰虚线、清晰正常画、未找到不画', function () {
+    return eq([
+      PM.palmLineStyle('lm', { found: true, conf: 1 }),
+      PM.palmLineStyle('lm', { found: true, conf: 2 }),
+      PM.palmLineStyle('lm', { found: true, conf: 3 }),
+      PM.palmLineStyle('lm', { found: false })
+    ], [
+      { draw: true, greyDash: true }, { draw: true, greyDash: false },
+      { draw: true, greyDash: false }, { draw: false, greyDash: false }
+    ]);
+  });
+  t('线条画法：旧引擎 found 画、未 found 不画、从不画灰虚线', function () {
+    return eq([
+      PM.palmLineStyle(undefined, { found: true, conf: 1 }),
+      PM.palmLineStyle(undefined, { found: false }),
+      PM.palmLineStyle('skin', { found: true, conf: 3 })
+    ], [
+      { draw: true, greyDash: false }, { draw: false, greyDash: false }, { draw: true, greyDash: false }
+    ]);
+  });
+  var BN = window.YumiaoBaziCalcNote;
+  function fakeBaziR(o) {
+    var r = {
+      input: { year: 2024, month: 2, day: 4, hour: 12, minute: 0, timezone: 8, trueSolar: false, longitude: null },
+      pillars: { jieqi: { name: '立春', date: '2024-02-04T08:27:00.000Z' }, nextJieqi: { name: '惊蛰', date: '2024-03-05T02:23:00.000Z' } },
+      _calcMeta: {}
+    };
+    if (o) for (var k in o) r[k] = o[k];
+    return r;
+  }
+  t('计算说明：夏令时开/关文案', function () {
+    if (!BN) return 'YumiaoBaziCalcNote 未加载';
+    var a = BN(fakeBaziR({ _calcMeta: { dstAdjusted: true } }));
+    var b = BN(fakeBaziR({ _calcMeta: { dstAdjusted: false } }));
+    if (a.indexOf('已回拨到标准时') < 0) return '开应写已回拨 ' + a;
+    if (b.indexOf('未做夏令时回拨') < 0) return '关应写未回拨 ' + b;
+    return true;
+  });
+  t('计算说明：留空按午时、已填显示时间', function () {
+    var a = BN(fakeBaziR({ _calcMeta: { hourDefaulted: true } }));
+    var r2 = fakeBaziR({ _calcMeta: { hourDefaulted: false } });
+    r2.input.hour = 10; r2.input.minute = 30;
+    var b = BN(r2);
+    if (a.indexOf('按午时（12:00）计算') < 0) return '留空应写午时 ' + a;
+    if (b.indexOf('出生时间 10:30') < 0) return '已填应显示 10:30 ' + b;
+    return true;
+  });
+  t('计算说明：表内年份内置表、表外年份公式推算', function () {
+    var a = BN(fakeBaziR());
+    var r2 = fakeBaziR(); r2.input.year = 1850;
+    var b = BN(r2);
+    if (a.indexOf('内置节气表') < 0) return '表内应写内置表 ' + a;
+    if (b.indexOf('天文公式推算') < 0) return '表外应写公式推算 ' + b;
+    return true;
+  });
+  t('计算说明：临界 24h 内提醒、24h 外不提醒', function () {
+    var near = fakeBaziR(); near.input.hour = 18; near.input.minute = 0; /* 立春后约 2 小时 */
+    var a = BN(near);
+    if (a.indexOf('临界提醒') < 0 || a.indexOf('立春') < 0 || a.indexOf('约 2 小时') < 0) return '临界内应提醒 ' + a;
+    var far = fakeBaziR(); far.input.day = 10; far.input.hour = 12; /* 距立春 6 天 */
+    var b = BN(far);
+    if (b.indexOf('临界提醒') >= 0) return '临界外不应提醒 ' + b;
+    var nextNear = fakeBaziR(); /* 距下一个节气惊蛰约 22 小时 */
+    nextNear.input.month = 3; nextNear.input.day = 4; nextNear.input.hour = 12;
+    nextNear.pillars = { jieqi: { name: '雨水', date: '2024-02-19T08:00:00.000Z' }, nextJieqi: { name: '惊蛰', date: '2024-03-05T02:23:00.000Z' } };
+    var c = BN(nextNear);
+    if (c.indexOf('临界提醒') < 0 || c.indexOf('惊蛰') < 0) return '近下一节气应提醒 ' + c;
+    return true;
+  });
+  t('计算说明：真太阳时开/关文案', function () {
+    var r1 = fakeBaziR(); r1.input.trueSolar = true; r1.input.longitude = 121;
+    var a = BN(r1);
+    var b = BN(fakeBaziR());
+    if (a.indexOf('已用真太阳时（经度 121°）') < 0) return '开应写已用真太阳时 ' + a;
+    if (b.indexOf('未用真太阳时') < 0) return '关应写未用 ' + b;
+    return true;
+  });
+  t('计算说明：缺失节气时省略节气与临界行', function () {
+    var r = fakeBaziR();
+    r.pillars = { jieqi: { name: null, date: null }, nextJieqi: null };
+    var h = BN(r);
+    if (h.indexOf('当前节气') >= 0) return '无节气不应写节气行 ' + h;
+    if (h.indexOf('临界提醒') >= 0) return '无节气不应写临界行 ' + h;
+    if (h.indexOf('神煞仅供参考') < 0) return '神煞行不应省略 ' + h;
+    return true;
+  });
+  t('计算说明：真实排盘含 nextJieqi 且晚于当前节气', function () {
+    var r = window.BaziShensha.calculate({ year: 2024, month: 2, day: 10, hour: 12, timezone: 8 });
+    if (!r.pillars.nextJieqi || !r.pillars.nextJieqi.date) return 'nextJieqi 缺失';
+    if (new Date(r.pillars.nextJieqi.date).getTime() <= new Date(r.pillars.jieqi.date).getTime()) return 'nextJieqi 应晚于当前节气';
+    var h = BN(r);
+    if (h.indexOf('立春') < 0 || h.indexOf('内置节气表') < 0) return '说明应含节气名与来源 ' + h;
+    return true;
   });
 
   /* ────────── 错误边界 ────────── */

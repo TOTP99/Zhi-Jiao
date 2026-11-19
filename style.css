@@ -1,4 +1,4 @@
-/* 御猫灵局 · 统一样式（v2.16 合并版）
+/* 御猫灵局 · 统一样式（v2.18 合并版）
    单一 :root token 集；每个选择器在同一上下文中只有一条规则；
    base + v3 + v2.12 三层已就地合并（以后只改这里，不再追加覆盖层）。 */
 /* ════════════════════════════════════════════════════════════
@@ -150,6 +150,10 @@ input, textarea{font-family:inherit}
 .ob-optional{color:var(--faint);font-size:var(--fs-xs);letter-spacing:1px}
 .bazi-row-tight{margin-bottom:12px}
 .bazi-error{font-size:var(--fs-xs);color:var(--cinnabar);min-height:18px;text-align:center;margin:6px 0}
+.bazi-calc-note{margin:10px 0;font-size:var(--fs-sm);color:var(--cream-dim);line-height:1.9}
+.bazi-calc-note summary{cursor:pointer;color:var(--gold-soft);font-size:var(--fs-sm);letter-spacing:1px}
+.bazi-calc-note ul{margin:6px 0 0;padding-left:18px}
+.bazi-calc-note li{margin-bottom:2px}
 #historyList{overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1 1 auto;min-height:0}
 .history-item{font-size:var(--fs-sm);color:var(--cream-dim);padding:11px 2px;border-bottom:1px solid var(--line-soft);display:flex;justify-content:space-between;gap:12px;line-height:1.7}
 .history-item:last-child{border-bottom:none}
@@ -518,6 +522,12 @@ input[type=range].yslider::-moz-range-thumb{width:20px;height:20px;border-radius
 .palm-guide[hidden]{display:none}
 .palm-guide svg{display:block;width:100%;max-width:220px;height:auto;margin:0 auto 6px}
 .palm-guide p{font-size:var(--fs-xs);color:var(--muted);line-height:1.7}
+.palm-guide-card{margin:10px 0 2px;padding:12px 14px;background:var(--card);border:1px solid var(--line);border-radius:var(--r-md)}
+.palm-guide-card[hidden]{display:none}
+.palm-guide-card strong{display:block;font-size:var(--fs-sm);color:var(--gold-bright);letter-spacing:1px;margin-bottom:8px}
+.palm-guide-card ul{margin:0 0 10px;padding-left:18px;font-size:var(--fs-sm);line-height:1.9;color:var(--cream-dim)}
+.palm-guide-card-actions{display:flex;gap:8px;flex-wrap:wrap}
+.palm-guide-card-actions .btn-gold,.palm-guide-card-actions .btn-ghost{flex:1 1 auto;min-width:72px}
 .palm-hand-row{margin:14px 0 12px}
 .palm-hand-row .seg button{min-height:var(--tap);font-size:var(--fs-sm)}
 .palm-hand-row .seg button.on{color:var(--gold-bright);font-weight:600;background:rgba(var(--gold-rgb),.14);border-color:var(--gold)}
