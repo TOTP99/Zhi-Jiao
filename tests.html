@@ -26,6 +26,8 @@
 <script src="js/15-ziwei.js"></script>
 <script src="js/16-sound.js"></script>
 <script src="js/17-palm.js"></script>
+<script src="js/17a-palm-rectify.js"></script>
+<script src="js/17b-palm-insight.js"></script>
 <script>
 (function () {
   var out = document.getElementById('out'), pass = 0, fail = 0;
@@ -41,6 +43,32 @@
     var li = document.createElement('li'); li.className = ok ? 'ok' : 'bad';
     li.textContent = (ok ? '✓ ' : '✗ ') + name + (msg ? ' —— ' + msg : '');
     out.appendChild(li);
+  }
+  /* v2.16：异步用例（摆正回退）。汇总在全部异步用例落定后才写，避免提前读数。 */
+  var pendingAsync = 0;
+  function finish() {
+    var s = document.getElementById('sum');
+    s.className = fail ? 'bad' : 'ok';
+    s.textContent = fail ? ('有 ' + fail + ' 项失败 / 共 ' + (pass + fail) + ' 项') : ('全部通过：' + pass + ' / ' + pass);
+    document.title = (fail ? '✗ ' : '✓ ') + s.textContent;
+  }
+  function tAsync(name, fn) {
+    pendingAsync++;
+    var li = document.createElement('li');
+    li.textContent = '… ' + name;
+    out.appendChild(li);
+    Promise.resolve().then(fn).then(function (r) {
+      var ok = (r === undefined || r === true), msg = ok ? '' : String(r);
+      li.className = ok ? 'ok' : 'bad';
+      li.textContent = (ok ? '✓ ' : '✗ ') + name + (msg ? ' —— ' + msg : '');
+      ok ? pass++ : fail++;
+      if (--pendingAsync === 0) finish();
+    }).catch(function (e) {
+      li.className = 'bad';
+      li.textContent = '✗ ' + name + ' —— ' + (e && e.message || String(e));
+      fail++;
+      if (--pendingAsync === 0) finish();
+    });
   }
   function eq(a, b) { return JSON.stringify(a) === JSON.stringify(b) || ('期望 ' + JSON.stringify(b) + ' 实得 ' + JSON.stringify(a)); }
   function has(obj, keys) {
@@ -551,6 +579,122 @@
     return eq([PM.confOf({ meanR: 0.7, cont: 0.9 }), PM.confOf({ meanR: 0.5, cont: 0.75 }), PM.confOf({ meanR: 0.3, cont: 0.5 })], [3, 2, 1]);
   });
 
+  /* ────────── v2.16 摆正 + 自动解读 ────────── */
+  section('v2.16 摆正 + 自动解读');
+  var PR = window.YumiaoPalmRectify, PI = window.YumiaoPalmInsight;
+  t('摆正模块已加载', function () { return !!PR && typeof PR.rectify === 'function' && typeof PR.init === 'function'; });
+  t('解读模块已加载', function () { return !!PI && typeof PI.buildAutoInsight === 'function'; });
+  t('仿射求解：缩放平移映射正确，共线返回 null', function () {
+    var m = PR.solveAffine([[0, 0], [10, 0], [0, 10]], [[0, 0], [20, 0], [0, 20]]);
+    if (!m) return '无解';
+    var px = m[0] * 5 + m[2] * 5 + m[4], py = m[1] * 5 + m[3] * 5 + m[5];
+    if (Math.abs(px - 10) > 1e-6 || Math.abs(py - 10) > 1e-6) return '映射不对 ' + px + ',' + py;
+    if (PR.solveAffine([[0, 0], [1, 1], [2, 2]], [[0, 0], [1, 1], [2, 2]]) !== null) return '共线应返回 null';
+    return true;
+  });
+  t('关键点校验：张开居中正向通过，并拢/偏心/侧向不通过，拇指方向判定', function () {
+    function lm(o) {
+      var base = [];
+      for (var i = 0; i < 21; i++) base.push({ x: 0.5, y: 0.5 });
+      for (var k in o) base[k] = o[k];
+      return base;
+    }
+    var open = lm({ 0: { x: 0.5, y: 0.9 }, 4: { x: 0.3, y: 0.65 }, 5: { x: 0.38, y: 0.55 }, 8: { x: 0.32, y: 0.25 }, 9: { x: 0.5, y: 0.55 }, 12: { x: 0.5, y: 0.2 }, 17: { x: 0.62, y: 0.55 }, 20: { x: 0.68, y: 0.3 } });
+    if (!PR.validateLandmarks(open).ok) return '张开正位应通过';
+    if (PR.thumbSide(open) !== 'L') return '拇指在左应判左手';
+    var openR = lm({ 0: { x: 0.5, y: 0.9 }, 4: { x: 0.7, y: 0.65 }, 5: { x: 0.62, y: 0.55 }, 8: { x: 0.68, y: 0.25 }, 9: { x: 0.5, y: 0.55 }, 12: { x: 0.5, y: 0.2 }, 17: { x: 0.38, y: 0.55 }, 20: { x: 0.32, y: 0.3 } });
+    if (PR.thumbSide(openR) !== 'R') return '拇指在右应判右手';
+    var closed = lm({ 0: { x: 0.5, y: 0.9 }, 4: { x: 0.45, y: 0.7 }, 5: { x: 0.38, y: 0.55 }, 8: { x: 0.4, y: 0.45 }, 9: { x: 0.5, y: 0.55 }, 12: { x: 0.5, y: 0.5 }, 17: { x: 0.62, y: 0.55 }, 20: { x: 0.6, y: 0.5 } });
+    if (PR.validateLandmarks(closed).reason !== 'closed') return '并拢应判 closed';
+    var off = lm({ 0: { x: 0.02, y: 0.9 }, 4: { x: -0.18, y: 0.65 }, 5: { x: -0.1, y: 0.55 }, 8: { x: -0.16, y: 0.25 }, 9: { x: 0.02, y: 0.55 }, 12: { x: 0.02, y: 0.2 }, 17: { x: 0.14, y: 0.55 }, 20: { x: 0.2, y: 0.3 } });
+    if (PR.validateLandmarks(off).reason !== 'offcenter') return '偏心应判 offcenter';
+    var side = lm({ 0: { x: 0.3, y: 0.5 }, 4: { x: 0.35, y: 0.3 }, 5: { x: 0.5, y: 0.35 }, 8: { x: 0.55, y: 0.3 }, 9: { x: 0.6, y: 0.5 }, 12: { x: 0.85, y: 0.5 }, 17: { x: 0.5, y: 0.65 }, 20: { x: 0.55, y: 0.7 } });
+    if (PR.validateLandmarks(side).reason !== 'notupright') return '侧向应判 notupright';
+    return true;
+  });
+  t('解读：四线评语按长短深浅连续分档', function () {
+    var lines = {
+      life: { found: true, conf: 3, lenRel: 0.9, meanR: 0.7, cont: 0.95, sinu: 1.08, bulge: 0.05, chordDeg: 10 },
+      heart: { found: true, conf: 2, lenRel: 0.4, meanR: 0.5, cont: 0.8, sinu: 1.2, bulge: 0.12, chordDeg: -150 },
+      head: { found: true, conf: 3, lenRel: 0.8, meanR: 0.65, cont: 0.9, sinu: 1.03, bulge: 0.04, chordDeg: 35 },
+      fate: { found: false }
+    };
+    var r = PI.buildAutoInsight(lines, null, null);
+    if (!r) return '无解读';
+    if (r.lines.life.label.indexOf('深长连贯') < 0) return '生命线分档不对 ' + r.lines.life.label;
+    if (r.lines.heart.label.indexOf('短') < 0) return '感情线分档不对 ' + r.lines.heart.label;
+    if (r.lines.head.sentence.indexOf('下弯') < 0) return '智慧线走向不对';
+    if (r.lines.fate !== null) return '未找到的事业线不应评级';
+    return /undefined|NaN/.test(r.html + r.text) ? '含 undefined/NaN' : true;
+  });
+  t('解读：模糊或未找到的线不评级，空输入返回 null', function () {
+    var weak = { found: true, conf: 1, lenRel: 0.7, meanR: 0.3, cont: 0.5, sinu: 1.1, bulge: 0.05, chordDeg: 10 };
+    if (PI.rateLine('life', weak) !== null) return '模糊线应返回 null';
+    if (PI.rateLine('life', { found: false }) !== null) return '未找到应返回 null';
+    if (PI.buildAutoInsight({}, null, null) !== null) return '空输入应返回 null';
+    return true;
+  });
+  t('解读：丘位按密度排序', function () {
+    var mounts = { venus: 0.8, jupiter: 0.6, saturn: 0.1, sun: 0.5, mercury: 0.05, luna: 0.02, mars: 0.3 };
+    var ranked = PI.rankMounts(mounts);
+    if (ranked[0].id !== 'venus' || ranked[1].id !== 'jupiter' || ranked[ranked.length - 1].id !== 'luna') return '排序不对 ' + ranked.map(function (m) { return m.id; }).join(',');
+    var r = PI.buildAutoInsight({}, null, mounts);
+    if (!r || r.text.indexOf('金星丘') < 0 || r.text.indexOf('月丘') < 0) return '丘位文本缺失';
+    return true;
+  });
+  t('丘位密度：指定区纹理密则密度高', function () {
+    var w = 100, h = 100, R = new Float32Array(w * h), mask = new Uint8Array(w * h), i, x, y;
+    for (i = 0; i < w * h; i++) mask[i] = 1;
+    for (y = 0; y <= 28; y++) for (x = 5; x <= 30; x++) R[y * w + x] = 0.9;
+    var F = { xL: 0, Wp: 100, y0: 0, box: { x0: 0, x1: 99, y0: 0, y1: 99 } };
+    var m = PM.measureMounts(R, w, h, F, mask);
+    if (!(m.jupiter > 0.8)) return '木星丘密度应高 ' + m.jupiter;
+    if (!(m.venus < 0.2)) return '金星丘密度应低 ' + m.venus;
+    return true;
+  });
+  t('特殊纹：头心线之间有纵贯横纹 → 神秘十字；无则不报', function () {
+    var w = 100, h = 100, x, y;
+    function blankR() { return new Float32Array(w * h); }
+    var F = { xL: 10, Wp: 80, y0: 20, box: { x0: 10, x1: 90, y0: 0, y1: 99 } };
+    var heart = { found: true, pts: [] }, head = { found: true, pts: [] };
+    for (x = 10; x <= 90; x++) { heart.pts.push({ x: x, y: 30 }); head.pts.push({ x: x, y: 60 }); }
+    var R0 = blankR();
+    if (PI.detectMarkings({ heart: heart, head: head }, F, { R: R0, w: w, h: h }).length !== 0) return '无纹时不应报特殊纹';
+    var R1 = blankR();
+    for (y = 30; y <= 60; y++) R1[y * w + 50] = 0.9;
+    var mk = PI.detectMarkings({ heart: heart, head: head }, F, { R: R1, w: w, h: h });
+    if (!mk.some(function (m) { return m.id === 'cross'; })) return '竖纹纵贯应报神秘十字';
+    return true;
+  });
+  t('特殊纹：食指根部有横向弧纹 → 所罗门环；无则不报', function () {
+    var w = 100, h = 100, x;
+    function blankR() { return new Float32Array(w * h); }
+    var F = { xL: 10, Wp: 80, y0: 20, box: { x0: 10, x1: 90, y0: 0, y1: 99 } };
+    var heart = { found: true, pts: [] };
+    for (x = 10; x <= 90; x++) heart.pts.push({ x: x, y: 30 });
+    var R0 = blankR();
+    if (PI.detectMarkings({ heart: heart }, F, { R: R0, w: w, h: h }).length !== 0) return '无纹时不应报特殊纹';
+    var R1 = blankR();
+    for (x = 15; x <= 35; x++) R1[15 * w + x] = 0.9;
+    var mk = PI.detectMarkings({ heart: heart }, F, { R: R1, w: w, h: h });
+    if (!mk.some(function (m) { return m.id === 'solomon'; })) return '弧纹应报所罗门环';
+    return true;
+  });
+  t('掌形：只报实测比值，不套元素标签', function () {
+    var F = { Wp: 80, y0: 30, box: { x0: 10, x1: 90, y0: 0, y1: 130 } };
+    var s = PI.handShape(F);
+    if (!s || s.shape !== '偏长') return '掌形应为偏长 ' + JSON.stringify(s);
+    if (/土形|金形|水形|火形|木形|元素/.test(s.text)) return '不应套元素标签';
+    var r = PI.buildAutoInsight({}, F, null);
+    if (!r || r.text.indexOf('掌形偏长') < 0) return '解读应含掌形';
+    return true;
+  });
+  tAsync('摆正回退：模型缺失时 rectify 返回 null，不抛错', async function () {
+    var d = new Uint8ClampedArray(4 * 4 * 4);
+    var r = await PR.rectify({ data: d, width: 4, height: 4 }, { timeoutMs: 10000 });
+    return r === null || '应返回 null，实得 ' + JSON.stringify(r);
+  });
+
   /* ────────── 错误边界 ────────── */
   section('错误边界');
   t('错误边界已安装', function () { return window.__yumiaoGuardInstalled === true; });
@@ -558,9 +702,6 @@
     return typeof window.onerror === 'function' && window.onerror('测试错误', '', 0, 0, new Error('x')) === true;
   });
 
-  var s = document.getElementById('sum');
-  s.className = fail ? 'bad' : 'ok';
-  s.textContent = fail ? ('有 ' + fail + ' 项失败 / 共 ' + (pass + fail) + ' 项') : ('全部通过：' + pass + ' / ' + pass);
-  document.title = (fail ? '✗ ' : '✓ ') + s.textContent;
+  if (pendingAsync === 0) finish();
 })();
 </script></body></html>
