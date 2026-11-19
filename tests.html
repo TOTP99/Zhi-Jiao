@@ -14,6 +14,8 @@
 <script src="js/00-error-guard.js"></script>
 <script src="js/00a-lunar.js"></script>
 <script src="js/00b-core.js"></script>
+<script src="js/00c-version.js"></script>
+<script src="js/24-backup.js"></script>
 <script src="js/11a-chenggu-verses.js"></script>
 <script src="js/11b-chenggu-modern.js"></script>
 <script src="js/11-chenggu.js"></script>
@@ -29,6 +31,11 @@
 <script src="js/17-palm.js"></script>
 <script src="js/17a-palm-rectify.js"></script>
 <script src="js/17b-palm-insight.js"></script>
+<script src="js/18-yijing-data-1.js"></script>
+<script src="js/19-yijing-data-2.js"></script>
+<script src="js/20-yijing-data-3.js"></script>
+<script src="js/21-yijing-data-4.js"></script>
+<script src="js/22-yijing-core.js"></script>
 <script>
 (function () {
   var out = document.getElementById('out'), pass = 0, fail = 0;
@@ -443,6 +450,41 @@
     var c = ZWC({ year: 1990, month: 5, day: 20, hour: 14, gender: '男' });
     return Object.keys(c.majorStars).length === 14 && c.palaces.length === 12 && c.palaces.every(function (p) { return p.ganzhi.length === 2; }) || '星/宫缺失';
   });
+  /* v2.20：紫微计算说明 */
+  function zwFakeC(o) {
+    var base = { input: { year: 2023, month: 4, day: 10 }, lunar: { year: 2023, month: 2, day: 20, isLeap: true }, yearGanZhi: '癸卯', hourZhi: '午', mingGanzhi: '乙巳', shenBranch: '申', ju: { num: 3, name: '木三局' }, ziweiBranch: '午', daxian: [{ from: 3, to: 12 }] };
+    for (var k in o) base[k] = o[k];
+    return base;
+  }
+  t('紫微计算说明：闰月出半月制（闰二月二十→按3月起盘）', function () {
+    var h = window.YumiaoZiweiCalcNote(zwFakeC({}));
+    return h.indexOf('农历 2023年闰2月20日（公历 2023-4-10 换算）') >= 0 && h.indexOf('闰月按半月制') >= 0 && h.indexOf('按 3 月起盘') >= 0 || h;
+  });
+  t('紫微计算说明：非闰月不出半月制', function () {
+    var h = window.YumiaoZiweiCalcNote(zwFakeC({ lunar: { year: 2023, month: 2, day: 10, isLeap: false } }));
+    return h.indexOf('闰月按半月制') < 0 && h.indexOf('农历 2023年2月10日') >= 0 || h;
+  });
+  t('紫微计算说明：夏令时已回拨 + 已填时辰', function () {
+    var h = window.YumiaoZiweiCalcNote(zwFakeC({ _calcMeta: { dstAdjusted: true, hourDefaulted: false } }));
+    return h.indexOf('已回拨到标准时') >= 0 && h.indexOf('出生时辰 午时（以档案为准）') >= 0 || h;
+  });
+  t('紫微计算说明：未做夏令时回拨', function () {
+    var h = window.YumiaoZiweiCalcNote(zwFakeC({ _calcMeta: { dstAdjusted: false, hourDefaulted: false } }));
+    return h.indexOf('未做夏令时回拨') >= 0 || h;
+  });
+  t('紫微计算说明：出生时间未填按午时', function () {
+    var h = window.YumiaoZiweiCalcNote(zwFakeC({ _calcMeta: { dstAdjusted: false, hourDefaulted: true } }));
+    return h.indexOf('出生时间未填，按午时（12:00）计算') >= 0 || h;
+  });
+  t('紫微计算说明：无 _calcMeta 时夏令时与出生时间两条省略', function () {
+    var h = window.YumiaoZiweiCalcNote(zwFakeC({}));
+    return h.indexOf('夏令时') < 0 && h.indexOf('出生时间') < 0 && h.indexOf('出生时辰') < 0 || h;
+  });
+  t('紫微计算说明：真实 chart() 的命宫/局/紫微星/大限与说明一致', function () {
+    var c = ZWC({ year: 1990, month: 5, day: 17, hour: 12, gender: '女' });
+    var h = window.YumiaoZiweiCalcNote(c);
+    return h.indexOf('命宫 ' + c.mingGanzhi) >= 0 && h.indexOf(c.ju.name) >= 0 && h.indexOf('紫微星在 ' + c.ziweiBranch + '宫') >= 0 && h.indexOf('大限自 ' + c.daxian[0].from + ' 岁起运') >= 0 || h;
+  });
   t('大限：木三局3岁起运，首限3–12岁', function () {
     var c = ZWC({ year: 2000, month: 8, day: 16, hour: 3, gender: '女' });
     return eq([c.daxian[0].from, c.daxian[0].to], [3, 12]);
@@ -450,6 +492,60 @@
   t('闰月：2023-04-10（闰二月二十）排盘正常', function () {
     var c = ZWC({ year: 2023, month: 4, day: 10, hour: 15, gender: '女' });
     return c.lunar.isLeap === true && c.lunar.month === 2 || JSON.stringify(c.lunar);
+  });
+
+  /* ────────── 紫微补缺口（v3.0） ────────── */
+  section('紫微十二神与庙旺（v3.0）');
+  t('三组十二神各 12 星、落点各占 12 个不同地支', function () {
+    var c = ZWC({ year: 2000, month: 8, day: 16, hour: 3, gender: '女' });
+    return ['boshi', 'jiangqian', 'suiqian'].every(function (k) {
+      var v = Object.keys(c.gods[k]).map(function (n) { return c.gods[k][n]; });
+      return v.length === 12 && new Set(v).size === 12;
+    }) || '数量或落点重复';
+  });
+  t('博士起于禄存', function () {
+    var c = ZWC({ year: 2000, month: 8, day: 16, hour: 3, gender: '女' });
+    var lu = c.auxStars['禄存'];
+    return c.gods.boshi['博士'] === lu || '博士未落禄存';
+  });
+  t('博士方向：阳男顺、阳女逆', function () {
+    var m = ZWC({ year: 2000, month: 8, day: 16, hour: 3, gender: '男' }), f = ZWC({ year: 2000, month: 8, day: 16, hour: 3, gender: '女' });
+    var lu = m.auxStars['禄存'];
+    return (m.gods.boshi['力士'] === (lu + 1) % 12 && f.gods.boshi['力士'] === (lu + 11) % 12) || '方向不对';
+  });
+  t('将前十二神：辰年（申子辰）将星在子，华盖在辰、咸池在酉，与辅星华盖咸池一致', function () {
+    var c = ZWC({ year: 2000, month: 8, day: 16, hour: 3, gender: '女' }); /* 庚辰 */
+    return (c.gods.jiangqian['将星'] === 0 && c.gods.jiangqian['华盖'] === c.auxStars['华盖'] && c.gods.jiangqian['咸池'] === c.auxStars['咸池']) || JSON.stringify(c.gods.jiangqian);
+  });
+  t('岁前十二星：岁建落年支（辰=4），病符在卯', function () {
+    var c = ZWC({ year: 2000, month: 8, day: 16, hour: 3, gender: '女' });
+    return (c.gods.suiqian['岁建'] === 4 && c.gods.suiqian['病符'] === 3) || JSON.stringify(c.gods.suiqian);
+  });
+  t('庙旺表：14 星 × 12 支齐全，仅含 庙旺得利平不陷', function () {
+    var B = window.ZiweiTables.BRIGHT, ks = Object.keys(B);
+    return (ks.length === 14 && ks.every(function (k) { return /^[庙旺得利平不陷]{12}$/.test(B[k]); })) || '表不完整';
+  });
+  t('庙旺取值：紫微午庙、天机丑陷、太阳卯庙、太阴亥庙', function () {
+    var c = ZWC({ year: 2000, month: 8, day: 16, hour: 3, gender: '女' });
+    return eq([c.brightness('紫微', '午'), c.brightness('天机', '丑'), c.brightness('太阳', '卯'), c.brightness('太阴', '亥')], ['庙', '陷', '庙', '庙']);
+  });
+  t('天罗地网：辰=天罗、戌=地网、其余无', function () {
+    var c = ZWC({ year: 2000, month: 8, day: 16, hour: 3, gender: '女' });
+    return eq([c.net('辰'), c.net('戌'), c.net('子')], ['天罗', '地网', '']);
+  });
+  t('八字天罗地网：有则必同见（戌亥/辰巳），无则不同见；扫 1980–2009 逐月', function () {
+    var hit = 0;
+    for (var y = 1980; y < 2010; y++) for (var m = 1; m <= 12; m++) {
+      var r = window.BaziShensha.calculate({ year: y, month: m, day: 15, hour: 10, timezone: 8 });
+      var br = ['year', 'month', 'day', 'hour'].map(function (k) { return r.pillars[k].branch; });
+      var has = function (x) { return br.indexOf(x) >= 0; };
+      var names = r.shensha.items.map(function (x) { return x.name; });
+      var wantLuo = has('戌') && has('亥'), wantWang = has('辰') && has('巳');
+      if ((names.indexOf('天罗') >= 0) !== wantLuo) return y + '-' + m + ' 天罗不符 ' + br.join('');
+      if ((names.indexOf('地网') >= 0) !== wantWang) return y + '-' + m + ' 地网不符 ' + br.join('');
+      if (wantLuo || wantWang) hit++;
+    }
+    return hit > 0 || '扫描范围内一例也没命中，测试无效';
   });
 
   /* ────────── 算法修正回归（v2.14） ────────── */
@@ -799,6 +895,106 @@
     if (new Date(r.pillars.nextJieqi.date).getTime() <= new Date(r.pillars.jieqi.date).getTime()) return 'nextJieqi 应晚于当前节气';
     var h = BN(r);
     if (h.indexOf('立春') < 0 || h.indexOf('内置节气表') < 0) return '说明应含节气名与来源 ' + h;
+    return true;
+  });
+
+  /* ────────── 版本号与档案备份（v3.0） ────────── */
+  section('版本号与档案备份');
+  t('版本号单一源头：YUMIAO_VERSION 为 x.y.z', function () { return /^\d+\.\d+\.\d+$/.test(window.YUMIAO_VERSION) || '版本号格式不对'; });
+  t('版本标签：v + 主.次', function () { return eq(window.yumiaoVersionLabel(), 'v' + window.YUMIAO_VERSION.split('.').slice(0, 2).join('.')); });
+  function memStore(init) {
+    var m = Object.assign({}, init || {});
+    return {
+      get length() { return Object.keys(m).length; },
+      key: function (i) { return Object.keys(m)[i] || null; },
+      getItem: function (k) { return k in m ? m[k] : null; },
+      setItem: function (k, v) { m[k] = String(v); },
+      removeItem: function (k) { delete m[k]; },
+      _m: m
+    };
+  }
+  t('备份：只含 yumiao_ 键', function () {
+    var st = memStore({ yumiao_shared_birth_v1: '{"year":1990}', other_key: 'x' });
+    var b = window.YumiaoBackup.build(st);
+    return eq(Object.keys(b.data), ['yumiao_shared_birth_v1']);
+  });
+  t('备份→解析→恢复 往返一致', function () {
+    var st = memStore({ yumiao_shared_birth_v1: '{"year":1990,"month":5,"day":6}', yumiao_history_v1: '[1,2]' });
+    var p = window.YumiaoBackup.parse(JSON.stringify(window.YumiaoBackup.build(st)));
+    if (!p.ok || p.count !== 2) return '解析失败 ' + JSON.stringify(p);
+    var st2 = memStore({ yumiao_old: 'stale', keep_me: 'ok' });
+    if (!window.YumiaoBackup.apply(st2, p)) return '恢复失败';
+    if (st2.getItem('yumiao_old') !== null) return '旧 yumiao_ 键应被清掉';
+    if (st2.getItem('keep_me') !== 'ok') return '非 yumiao_ 键不应被动';
+    return eq(st2.getItem('yumiao_history_v1'), '[1,2]');
+  });
+  t('解析：空 / 非 JSON / 他人文件 / 空数据 均拒绝且不抛错', function () {
+    var P = window.YumiaoBackup.parse;
+    return !P('').ok && !P('not json').ok && !P('{"app":"other","data":{}}').ok &&
+      !P('{"app":"yumiao","schema":1,"data":{}}').ok && !P(null).ok || '有一种非法输入被接受';
+  });
+  t('解析：忽略非 yumiao_ 键与非字符串值；生辰档案损坏则拒绝', function () {
+    var P = window.YumiaoBackup.parse;
+    var ok = P('{"app":"yumiao","schema":1,"data":{"yumiao_a":"1","evil":"2","yumiao_b":3}}');
+    if (!ok.ok || ok.count !== 1) return '应只留 yumiao_a ' + JSON.stringify(ok);
+    return !P('{"app":"yumiao","schema":1,"data":{"yumiao_shared_birth_v1":"{bad"}}').ok || '损坏生辰应拒绝';
+  });
+  t('解析：schema 不符拒绝', function () { return !window.YumiaoBackup.parse('{"app":"yumiao","schema":99,"data":{"yumiao_a":"1"}}').ok; });
+  /* ────────── 周易 ────────── */
+  section('周易');
+  t('周易：64 卦数据齐全', function () {
+    return Object.keys(window.YIJING_DATA || {}).length === 64 || ('卦数=' + Object.keys(window.YIJING_DATA || {}).length);
+  });
+  t('周易：castOneLine 返回合法爻', function () {
+    for (var i = 0; i < 50; i++) {
+      var L = window.YijingCore.castOneLine();
+      if ([6, 7, 8, 9].indexOf(L.v) < 0) return 'v 非法：' + L.v;
+      if (!L.coins || L.coins.length !== 3) return 'coins 非法：' + L.coins;
+      if (L.yang !== (L.v === 7 || L.v === 9)) return '阴阳与 v 不符：' + JSON.stringify(L);
+      if (L.moving !== (L.v === 6 || L.v === 9)) return '动静与 v 不符：' + JSON.stringify(L);
+    }
+    return true;
+  });
+  t('周易：linesToKey 按上爻→初爻拼 key', function () {
+    var k = window.YijingCore.linesToKey([
+      { yang: true }, { yang: false }, { yang: true }, { yang: false }, { yang: true }, { yang: false }
+    ]);
+    return k === '010101' || ('实得 ' + k);
+  });
+  t('周易：changedKey 只翻动爻', function () {
+    var k = window.YijingCore.changedKey([
+      { yang: true, moving: true }, { yang: false, moving: false }, { yang: true, moving: false },
+      { yang: false, moving: false }, { yang: true, moving: false }, { yang: false, moving: false }
+    ]);
+    return k === '010100' || ('实得 ' + k);
+  });
+  t('周易：getHex 乾坤', function () {
+    var q = window.YijingCore.getHex('111111'), k = window.YijingCore.getHex('000000');
+    if (!q || q.name !== '乾为' || q.id !== 1) return '乾不对：' + JSON.stringify(q);
+    if (!k || k.name !== '坤为' || k.id !== 2) return '坤不对：' + JSON.stringify(k);
+    return true;
+  });
+  t('周易：judge 全阳安静', function () {
+    var lines = [0, 1, 2, 3, 4, 5].map(function () { return { yang: true, moving: false }; });
+    var r = window.YijingCore.judge(lines);
+    if (!r || r.hex.name !== '乾为') return '卦不对：' + JSON.stringify(r && r.hex);
+    if (r.rule.indexOf('六爻安静') < 0) return '断法不对：' + r.rule;
+    if (!r.parts.length || r.parts[0].t !== '本卦卦辞') return '首段不对：' + JSON.stringify(r.parts);
+    return true;
+  });
+  t('周易：judge 一爻动出变卦', function () {
+    var lines = [0, 1, 2, 3, 4, 5].map(function (i) { return { yang: true, moving: i === 2 }; });
+    var r = window.YijingCore.judge(lines);
+    if (!r || r.rule.indexOf('一爻动') < 0) return '断法不对：' + (r && r.rule);
+    if (!eq(r.moving, [2])) return '动爻不对：' + JSON.stringify(r.moving);
+    if (!r.chex || r.chex.name !== '天泽') return '变卦不对：' + JSON.stringify(r.chex);
+    return true;
+  });
+  t('周易：judge 六爻全动乾用九', function () {
+    var lines = [0, 1, 2, 3, 4, 5].map(function () { return { yang: true, moving: true }; });
+    var r = window.YijingCore.judge(lines);
+    if (!r || r.rule.indexOf('用九') < 0) return '断法不对：' + (r && r.rule);
+    if (!r.parts.length || r.parts[0].t !== '用九') return '首段不对：' + JSON.stringify(r.parts);
     return true;
   });
 

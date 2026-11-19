@@ -92,6 +92,32 @@
         W.closeSheetByBtn(D.querySelector('#ziweiModal .sheet-close'));
         return !hasShow('ziweiModal') || '紫微未关闭';
       });
+      await t('紫微计算说明：#ziweiBody 里有 details.ziwei-calc-note', async function () {
+        var prev = W.localStorage.getItem('yumiao_shared_birth_v1');
+        W.localStorage.setItem('yumiao_shared_birth_v1', JSON.stringify({ year: 1990, month: 5, day: 17, hour: 10, sex: 'F', tzOffset: -5, tzName: 'America/Toronto', city: 'Toronto' }));
+        W.openZiwei();
+        await sleepMs(300);
+        var d = D.querySelector('#ziweiBody .mbti-report details.ziwei-calc-note');
+        var ok = !!(d && d.querySelectorAll('li').length >= 8) || '计算说明缺失、条数不足或不在报告片段内（记录下载带不走）';
+        W.closeSheetByBtn(D.querySelector('#ziweiModal .sheet-close'));
+        if (prev == null) W.localStorage.removeItem('yumiao_shared_birth_v1'); else W.localStorage.setItem('yumiao_shared_birth_v1', prev);
+        return ok;
+      });
+      await t('周易打开：内部挂载，无 iframe', async function () {
+        W.openYi();
+        var ok = false;
+        for (var i = 0; i < 30; i++) {
+          await sleepMs(200);
+          var m = D.getElementById('yiApp');
+          if (m && m.querySelector('.book-title')) { ok = true; break; }
+        }
+        var noFrame = !D.querySelector('#yiOverlay iframe');
+        var bar = !!D.querySelector('#yiOverlay .yi-bar .yi-back');
+        W.closeYi();
+        await sleepMs(300);
+        var closed = !D.getElementById('yiOverlay').classList.contains('show');
+        return (ok && noFrame && bar && closed) || '周易未渲染/仍有 iframe/未关闭';
+      });
       await t('八字打开即排（有档案时直接出结果）', async function () {
         W.localStorage.setItem('yumiao_shared_birth_v1', JSON.stringify({ year: 1990, month: 6, day: 15, hour: 12, sex: 'M', tzOffset: 8, city: 'Toronto' }));
         W.openBaziPanel();

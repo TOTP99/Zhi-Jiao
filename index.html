@@ -250,6 +250,16 @@
           <span class="f-text"><strong>记录下载</strong><span>全部测算报告 · PDF</span></span>
           <span class="f-go">›</span>
         </button>
+        <button type="button" class="feature-card" onclick="backupExport()">
+          <span class="f-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V5m0 0L8.5 8.5M12 5l3.5 3.5"/><path d="M5 19h14"/></svg></span>
+          <span class="f-text"><strong>备份档案</strong><span>生辰 · 记录 · 偏好 · 存为文件</span></span>
+          <span class="f-go">›</span>
+        </button>
+        <button type="button" class="feature-card" onclick="backupImportPick()">
+          <span class="f-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v10m0 0l-3.5-3.5M12 15l3.5-3.5"/><path d="M5 19h14"/></svg></span>
+          <span class="f-text"><strong>恢复档案</strong><span>从备份文件还原</span></span>
+          <span class="f-go">›</span>
+        </button>
         <button type="button" class="feature-card" onclick="toggleSound(this)">
           <span class="f-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4h4l5 4V6z"/><path d="M16 9a4 4 0 010 6M18.5 6.5a8 8 0 010 11"/></svg></span>
           <span class="f-text"><strong>仪式音效</strong><span id="soundState">已开启</span></span>
@@ -266,8 +276,9 @@
           <span class="f-go">›</span>
         </button>
       </div>
+      <input type="file" id="backupFile" accept=".json,application/json" hidden>
       <button type="button" id="recordBtn" class="hidden-anchor" onclick="toggleHistory()" aria-hidden="true" tabindex="-1"></button>
-      <p class="foot-note">御猫灵局 v2.19 · 数据仅存于本机</p>
+      <p class="foot-note">御猫灵局 <span data-app-version>v3.0</span> · 数据仅存于本机</p>
     </section>
   </main>
 
@@ -299,16 +310,15 @@
   </nav>
 </div>
 
-<!-- ══════════ 周易（外部页面浮层：返回键 / ESC / 手机返回键 均可退出） ══════════ -->
+<!-- ══════════ 周易（内部浮层：返回键 / ESC / 手机返回键 均可退出） ══════════ -->
 <div id="yiOverlay" role="dialog" aria-label="周易" aria-hidden="true">
   <div class="yi-bar">
     <button type="button" class="yi-back" onclick="closeYi()" aria-label="返回御猫灵局">‹ 返回</button>
     <strong class="yi-title">周易</strong>
-    <a class="yi-ext" id="yiExt" href="https://totp99.github.io/Yi/" target="_blank" rel="noopener">新窗口打开</a>
+    <span class="yi-sp" aria-hidden="true"></span>
   </div>
   <div class="yi-body">
-    <p class="yi-loading" id="yiLoading">周易载入中…<br><small>若长时间空白，请点右上角「新窗口打开」</small></p>
-    <iframe id="yiFrame" title="周易" referrerpolicy="no-referrer" allow="fullscreen"></iframe>
+    <div id="yiApp"></div>
   </div>
 </div>
 
@@ -525,7 +535,7 @@
   <div class="sheet-handle"></div>
   <div class="sheet-head"><h3>关于与声明</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
   <div class="sheet-scroll"><div class="disclaimer-body">
-    <p><strong>御猫灵局 v2.19</strong><br>传统掷筊问卜 · 八字排盘 · 星座运势 · 西方星盘 · MBTI 人格快测</p>
+    <p><strong>御猫灵局 <span data-app-version>v3.0</span></strong><br>传统掷筊问卜 · 八字排盘 · 星座运势 · 西方星盘 · MBTI 人格快测</p>
     <p><strong>隐私</strong><br>生辰档案、问卜记录等所有数据仅保存在本机浏览器，不上传任何服务器。</p>
     <p><strong>免责声明</strong><br>签文、排盘、运势等内容源自传统民俗与娱乐化演算，仅供娱乐与怡情，不构成医疗、法律、投资或人生决策建议。重要事项请咨询专业人士。</p>
   </div></div>
@@ -535,12 +545,14 @@
 
 <script src="js/00-error-guard.js"></script>
 <script src="js/00a-lunar.js"></script>
+<script src="js/00c-version.js"></script>
 <script src="js/00b-core.js"></script>
 <script defer src="js/01-jiao-core.js"></script>
 <script defer src="js/05-bazi-ui.js"></script>
 <script defer src="js/14-shengxiao.js"></script>
 <script defer src="js/15-ziwei.js"></script>
 <script defer src="js/16-sound.js"></script>
+<script defer src="js/24-backup.js"></script>
 <script>
 /* 懒加载引导：与原版一致，业务模块加载后覆盖同名 stub */
 (function () {

@@ -1,4 +1,4 @@
-/* 御猫灵局 · 统一样式（v2.19 合并版）
+/* 御猫灵局 · 统一样式（v2.21 合并版）
    单一 :root token 集；每个选择器在同一上下文中只有一条规则；
    base + v3 + v2.12 三层已就地合并（以后只改这里，不再追加覆盖层）。 */
 /* ════════════════════════════════════════════════════════════
@@ -150,10 +150,10 @@ input, textarea{font-family:inherit}
 .ob-optional{color:var(--faint);font-size:var(--fs-xs);letter-spacing:1px}
 .bazi-row-tight{margin-bottom:12px}
 .bazi-error{font-size:var(--fs-xs);color:var(--cinnabar);min-height:18px;text-align:center;margin:6px 0}
-.bazi-calc-note{margin:10px 0;font-size:var(--fs-sm);color:var(--cream-dim);line-height:1.9}
-.bazi-calc-note summary{cursor:pointer;color:var(--gold-soft);font-size:var(--fs-sm);letter-spacing:1px}
-.bazi-calc-note ul{margin:6px 0 0;padding-left:18px}
-.bazi-calc-note li{margin-bottom:2px}
+.bazi-calc-note,.ziwei-calc-note{margin:10px 0;font-size:var(--fs-sm);color:var(--cream-dim);line-height:1.9}
+.bazi-calc-note summary,.ziwei-calc-note summary{cursor:pointer;color:var(--gold-soft);font-size:var(--fs-sm);letter-spacing:1px}
+.bazi-calc-note ul,.ziwei-calc-note ul{margin:6px 0 0;padding-left:18px}
+.bazi-calc-note li,.ziwei-calc-note li{margin-bottom:2px}
 #historyList{overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1 1 auto;min-height:0}
 .history-item{font-size:var(--fs-sm);color:var(--cream-dim);padding:11px 2px;border-bottom:1px solid var(--line-soft);display:flex;justify-content:space-between;gap:12px;line-height:1.7}
 .history-item:last-child{border-bottom:none}
@@ -384,20 +384,13 @@ input[type=range].yslider::-moz-range-thumb{width:20px;height:20px;border-radius
 /* ══════════ 周易浮层 ══════════ */
 #yiOverlay{position:fixed;inset:0;z-index:95;display:none;flex-direction:column;background:var(--ink-950)}
 #yiOverlay.show{display:flex}
-.yi-bar{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:calc(8px + env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) 8px max(10px,env(safe-area-inset-left));background:linear-gradient(180deg,rgba(18,16,11,.97),rgba(11,9,6,.97));border-bottom:1px solid var(--line-soft)}
-/* ── 周易浮层顶栏 ── */
-.yi-back, .yi-ext{min-height:var(--tap);display:inline-flex;align-items:center;justify-content:center;min-width:84px;padding:8px 12px;font-size:var(--fs-sm);letter-spacing:1px;color:var(--gold-bright);border:1px solid var(--line);border-radius:999px;background:rgba(var(--gold-rgb),.08);text-align:center;text-decoration:none}
-/* ══════════ 周易浮层 ══════════ */
-.yi-back:active, .yi-ext:active{background:rgba(var(--gold-rgb),.2)}
-/* ── 周易浮层顶栏 ── */
-.yi-ext{font-size:var(--fs-xs);color:var(--gold-soft)}
+.yi-bar{flex:0 0 auto;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) 8px max(10px,env(safe-area-inset-left));background:linear-gradient(180deg,rgba(18,16,11,.97),rgba(11,9,6,.97));border-bottom:1px solid var(--line-soft)}
+.yi-back{justify-self:start;min-height:var(--tap);display:inline-flex;align-items:center;justify-content:center;min-width:84px;padding:8px 12px;font-size:var(--fs-sm);letter-spacing:1px;color:var(--gold-bright);border:1px solid var(--line);border-radius:999px;background:rgba(var(--gold-rgb),.08);text-align:center;text-decoration:none}
+.yi-back:active{background:rgba(var(--gold-rgb),.2)}
 .yi-title{font-family:var(--serif);font-size:var(--fs-md);letter-spacing:5px;text-indent:5px;color:var(--cream)}
-/* ══════════ 周易浮层 ══════════ */
-.yi-body{position:relative;flex:1 1 auto;min-height:0}
-.yi-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--muted);letter-spacing:2px;line-height:2}
-.yi-loading small{font-size:var(--fs-xs);letter-spacing:1px;color:var(--faint)}
-#yiFrame{position:absolute;inset:0;width:100%;height:100%;border:0;background:var(--ink-950)}
-#yiFrame.loaded{background:#fff}
+.yi-sp{justify-self:end;min-width:84px}
+.yi-body{position:relative;flex:1 1 auto;min-height:0;overflow:hidden}
+.yi-fail{padding:48px 24px;text-align:center;color:var(--muted);line-height:2;letter-spacing:1px}
 /* ═════ 解读页（MBTI / 八字 / 星座 / 星盘）：揭晓后整页让给报告，整张弹窗统一滚动 ═════ */
 #mbtiModal.is-reveal .mbti-intro, #mbtiModal.is-reveal .mbti-progress, #mbtiModal.is-reveal .mbti-quick-result, #mbtiModal.is-reveal .mbti-actions{display:none}
 #mbtiModal .mbti-reveal-actions{display:none}
@@ -483,6 +476,7 @@ input[type=range].yslider::-moz-range-thumb{width:20px;height:20px;border-radius
 .zw-major{color:var(--cinnabar);font-weight:700;font-size:var(--fs-sm)}
 .zw-minor{color:var(--cream-dim)}
 .zw-hua{display:inline-block;font-style:normal;font-size:9px;width:15px;height:15px;line-height:15px;text-align:center;border-radius:50%;background:var(--cinnabar);color:#fff;margin-left:2px;vertical-align:1px}
+.zw-br{font-style:normal;font-size:9px;color:var(--gold-soft);margin-left:1px;opacity:.85;vertical-align:1px}
 .zw-daxian{color:var(--gold-soft);font-size:10px;margin-top:2px}
 .zw-center{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:rgba(var(--gold-rgb),.08);border-color:var(--gold);font-size:var(--fs-xs);color:var(--cream-dim);line-height:1.9;padding:8px 4px}
 .zw-center-title{font-size:var(--fs-lg);letter-spacing:6px;color:var(--gold-bright);font-weight:700;margin-bottom:4px}
@@ -734,3 +728,177 @@ input:not([type=checkbox]):not([type=radio]), textarea, select{border-radius:11p
   #view-charts .nine .feature-card .f-icon svg{width:16px;height:16px}
   #view-charts .nine .feature-card .f-text strong{font-size:12px}
 }
+
+/* ══════════ 周易（内部，v2.21）：原独立程序样式，选择器全部限定在 #yiOverlay 内 ══════════ */
+/* 周易六爻 · 青灯古卷 */
+@font-face{
+  font-family:"ChongXiSeal";
+  src:url("fonts/chongxi-seal.woff2") format("woff2");
+  font-display:swap;
+}
+#yiOverlay *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+#yiOverlay{
+  --ink:#2b2118; --paper:#e8dcc0; --paper-d:#d8c8a4;
+  --gold:#8a6d3b; --gold-l:#b8945a; --cinnabar:#9e3a26;
+  --bronze:#6b4f2a; --night:#0d0a06;
+}
+#yiApp{
+  background:var(--night); color:var(--ink);
+  font-family:"Songti SC","Noto Serif SC",serif;
+  overflow:hidden;
+  /* 青灯氛围：左下暖光 */
+  background-image:radial-gradient(ellipse 60% 45% at 18% 88%, rgba(255,166,60,.10), transparent 70%);position:absolute;inset:0;display:flex;flex-direction:column}
+/* 卷轴主体 */
+#yiOverlay .scroll-wrap{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:28px 18px 90px;
+  scrollbar-width:thin;scrollbar-color:rgba(138,109,59,.5) transparent}
+#yiOverlay .scroll-wrap::-webkit-scrollbar{width:5px}
+#yiOverlay .scroll-wrap::-webkit-scrollbar-thumb{background:rgba(138,109,59,.45);border-radius:3px}
+#yiOverlay .book{
+  position:relative;max-width:380px;margin:0 auto;padding:24px 22px 22px;
+  background:
+    /* 岁月斑驳 */
+    radial-gradient(ellipse 30% 20% at 12% 8%, rgba(120,90,40,.14), transparent 70%),
+    radial-gradient(ellipse 25% 18% at 88% 92%, rgba(120,90,40,.12), transparent 70%),
+    radial-gradient(ellipse 40% 12% at 70% 30%, rgba(100,70,30,.06), transparent 70%),
+    linear-gradient(175deg,#ece0c2 0%,#e2d3ae 60%,#d6c49c 100%);
+  border-radius:4px;
+  box-shadow:0 12px 44px rgba(0,0,0,.6), inset 0 0 60px rgba(120,90,40,.12);
+  /* 残破边角：不规则裁切 */
+  clip-path:polygon(0 2%,3% 0,97% 1%,100% 4%,99% 96%,96% 100%,4% 99%,1% 95%);
+}
+/* 装订线 */
+#yiOverlay .book::before{content:"";position:absolute;top:0;bottom:0;left:22px;width:1px;
+  background:rgba(138,109,59,.35)}
+#yiOverlay .book::after{content:"";position:absolute;top:14px;bottom:14px;left:18px;width:7px;
+  border-left:1px dashed rgba(138,109,59,.4)}
+#yiOverlay .book-title{text-align:center;font-size:30px;letter-spacing:12px;color:var(--ink);
+  margin:6px 0 4px;text-indent:12px}
+#yiOverlay .book-title.sm{font-size:22px}
+#yiOverlay .book-sub{text-align:center;font-size:13px;letter-spacing:8px;color:var(--gold);margin-bottom:20px}
+#yiOverlay .book-desc{text-align:center;font-size:15px;line-height:2.2;color:#4a3a26;margin:18px 0 26px}
+#yiOverlay .book-foot{text-align:center;font-size:12px;letter-spacing:3px;color:var(--gold);margin-top:28px;
+  border-top:1px solid rgba(138,109,59,.3);padding-top:14px}
+/* 印章 */
+#yiOverlay .seal-big{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  width:84px;height:84px;margin:0 auto;font-family:"ChongXiSeal",serif;font-size:34px;
+  color:#f2e8d0;line-height:1.3;background:linear-gradient(145deg,#a83a26,#7e2418);
+  border-radius:5px;transform:rotate(-4deg);
+  box-shadow:0 0 0 2px rgba(140,40,25,.4),0 6px 16px rgba(0,0,0,.35),inset 0 0 16px rgba(0,0,0,.4)}
+#yiOverlay .seal-row{display:flex;justify-content:center;margin:2px 0}
+#yiOverlay .seal{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  width:52px;height:52px;font-family:"ChongXiSeal",serif;font-size:21px;
+  color:#f2e8d0;line-height:1.3;background:linear-gradient(145deg,#a83a26,#7e2418);
+  border-radius:4px;transform:rotate(-3deg);
+  box-shadow:0 0 0 2px rgba(140,40,25,.4),0 4px 12px rgba(0,0,0,.3),inset 0 0 12px rgba(0,0,0,.4)}
+/* 卦题 */
+#yiOverlay .hex-title{text-align:center;font-size:22px;letter-spacing:4px;margin:6px 0 2px}
+#yiOverlay .hex-qian{font-size:12px;color:var(--gold);letter-spacing:2px}
+/* 卦象 */
+#yiOverlay .yj-diagram{margin:8px 0;text-align:center}
+#yiOverlay .yj-dline{font-size:19px;letter-spacing:6px;line-height:1.75;color:var(--ink)}
+#yiOverlay .yj-dline.moving{color:var(--cinnabar)}
+#yiOverlay .yj-dline em{font-style:normal;font-size:11px;border:1px solid var(--cinnabar);
+  border-radius:3px;padding:1px 5px;margin-left:8px;vertical-align:3px;letter-spacing:0}
+#yiOverlay .rule{text-align:center;font-size:12px;color:var(--gold);margin:6px 0 12px;letter-spacing:2px}
+/* 章节 */
+#yiOverlay .sec{margin:0 0 12px}
+#yiOverlay .sec h4{font-size:13px;letter-spacing:4px;color:var(--gold);margin-bottom:6px;
+  border-bottom:1px solid rgba(138,109,59,.35);padding-bottom:4px}
+#yiOverlay .sec.fold h4{cursor:pointer;user-select:none;-webkit-user-select:none}
+#yiOverlay .sec.fold .fold-arrow{float:right;transition:transform .2s;font-size:11px}
+#yiOverlay .sec.fold .fold-body{display:none}
+#yiOverlay .sec.fold.open .fold-body{display:block}
+#yiOverlay .sec.fold.open .fold-arrow{transform:rotate(180deg)}
+#yiOverlay .classical{font-size:15px;line-height:1.8;letter-spacing:1px;
+  padding:8px 12px;background:rgba(138,109,59,.08);
+  border-left:2px solid var(--gold)}
+#yiOverlay .modern{font-size:14px;line-height:1.95;color:#4a3a26;
+  padding:10px 14px;background:rgba(255,255,255,.25);border-left:2px solid #a89878}
+#yiOverlay .info{font-size:14px;color:#4a3a26;line-height:1.8}
+/* 双按钮 */
+#yiOverlay .tab2{display:flex;gap:10px;margin:12px 0 4px}
+#yiOverlay .tab2 button{flex:1;padding:10px 0;font-size:14px;letter-spacing:3px;cursor:pointer;
+  font-family:inherit;color:var(--bronze);background:rgba(138,109,59,.1);
+  border:1px solid rgba(138,109,59,.5);border-radius:6px}
+#yiOverlay .tab2 button.on{color:#f2e8d0;background:linear-gradient(180deg,#7a5c30,#5e451f);
+  border-color:#7a5c30}
+#yiOverlay .expand{animation:fade .35s}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* 按钮 */
+#yiOverlay .btn-bronze{display:block;margin:14px auto 0;padding:11px 48px;font-size:16px;letter-spacing:8px;
+  text-indent:8px;font-family:inherit;cursor:pointer;color:#f2e8d0;
+  background:linear-gradient(180deg,#7a5c30,#54401e);border:1px solid #8a6d3b;border-radius:8px;
+  box-shadow:0 4px 14px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.15)}
+#yiOverlay .btn-bronze:disabled{opacity:.5}
+#yiOverlay .btn-bronze:active{transform:scale(.97)}
+#yiOverlay .btn-ghost{display:block;margin:14px auto 0;padding:10px 30px;font-size:14px;letter-spacing:4px;
+  font-family:inherit;cursor:pointer;color:var(--gold);background:transparent;
+  border:1px dashed rgba(138,109,59,.5);border-radius:6px}
+#yiOverlay .back{background:none;border:none;font-size:15px;color:var(--gold);cursor:pointer;
+  font-family:inherit;margin-bottom:6px;letter-spacing:2px}
+/* 输入 */
+#yiOverlay .qinput{display:block;width:100%;margin:14px 0 6px;padding:11px 14px;font-size:14px;
+  font-family:inherit;background:rgba(255,255,255,.35);border:1px solid rgba(138,109,59,.45);
+  border-radius:6px;color:var(--ink)}
+#yiOverlay .qinput::placeholder{color:#9a8a68}
+#yiOverlay .hint{text-align:center;font-size:13px;color:#7a6a4a;line-height:1.9;margin:10px 0 16px}
+#yiOverlay .cast-area{margin:8px 0}
+#yiOverlay .cast-line{display:flex;gap:10px;align-items:center;padding:8px 4px;font-size:14px;
+  border-bottom:1px solid rgba(138,109,59,.2);animation:fade .4s}
+#yiOverlay .cast-line.mv{color:var(--cinnabar);font-weight:700}
+#yiOverlay .cast-line b{margin-left:auto}
+#yiOverlay .err{text-align:center;color:var(--cinnabar)}
+/* ── 青灯 · 左下孤灯 ── */
+#yiOverlay .lamp{position:absolute;left:26px;bottom:26px;width:64px;height:92px;z-index:10;pointer-events:none}
+#yiOverlay .lamp-glow{position:absolute;left:50%;top:-30px;width:150px;height:150px;transform:translateX(-50%);
+  background:radial-gradient(circle,rgba(255,180,80,.28),rgba(255,150,50,.08) 55%,transparent 72%);
+  animation:breathe 3.2s ease-in-out infinite}
+@keyframes breathe{0%,100%{opacity:.75;transform:translateX(-50%) scale(1)}
+  50%{opacity:1;transform:translateX(-50%) scale(1.12)}}
+#yiOverlay .lamp-flame{position:absolute;left:50%;top:6px;width:16px;height:30px;transform:translateX(-50%);
+  transform-origin:50% 100%;animation:flick 1.6s ease-in-out infinite}
+#yiOverlay .lamp-flame i{display:block;width:100%;height:100%;
+  background:radial-gradient(ellipse 45% 62% at 50% 68%,#fff8e0 0%,#ffd76a 38%,#ff9a2e 68%,rgba(255,110,20,0) 78%);
+  border-radius:50% 50% 50% 50%/62% 62% 38% 38%}
+@keyframes flick{
+  0%,100%{transform:translateX(-50%) scale(1,1) rotate(-1.5deg)}
+  25%{transform:translateX(-52%) scale(.94,1.1) rotate(2deg)}
+  50%{transform:translateX(-48%) scale(1.06,.92) rotate(-2.5deg)}
+  75%{transform:translateX(-51%) scale(.96,1.06) rotate(1deg)}}
+/* 偶发窜高：7秒一次 */
+#yiOverlay .lamp-flame{animation:flick 1.6s ease-in-out infinite, flare 7s ease-in-out infinite}
+@keyframes flare{
+  0%,88%,100%{filter:brightness(1)}
+  91%{filter:brightness(1.35)}
+  93%{filter:brightness(1.5)}
+  95%{filter:brightness(1.2)}}
+#yiOverlay .lamp-flame i{animation:flareH 7s ease-in-out infinite;transform-origin:50% 100%}
+@keyframes flareH{
+  0%,88%,100%{transform:translateX(-50%) scaleY(1)}
+  92%{transform:translateX(-50%) scaleY(1.45)}
+  94%{transform:translateX(-50%) scaleY(1.6)}
+  96%{transform:translateX(-50%) scaleY(1.1)}}
+#yiOverlay .lamp-body{position:absolute;left:50%;bottom:26px;width:34px;height:20px;transform:translateX(-50%);
+  background:linear-gradient(180deg,#3d3226,#241c12);border-radius:46% 46% 40% 40%/90% 90% 30% 30%;
+  box-shadow:inset 0 3px 5px rgba(255,180,80,.25)}
+#yiOverlay .lamp-body::before{content:"";position:absolute;left:50%;top:-7px;width:4px;height:10px;
+  transform:translateX(-50%);background:#1a140d;border-radius:2px}
+#yiOverlay .lamp-base{position:absolute;left:50%;bottom:0;width:52px;height:28px;transform:translateX(-50%)}
+#yiOverlay .lamp-base::before{content:"";position:absolute;left:50%;bottom:8px;width:10px;height:20px;
+  transform:translateX(-50%);background:linear-gradient(180deg,#4a3b28,#2a2116)}
+#yiOverlay .lamp-base::after{content:"";position:absolute;left:50%;bottom:0;width:52px;height:10px;
+  transform:translateX(-50%);background:radial-gradient(ellipse,#54432c,#2e2417);
+  border-radius:50%}
+/* ── 淡淡烟气 ── */
+#yiOverlay .lamp-smoke{position:absolute;left:50%;top:-34px;width:20px;height:44px;
+  transform:translateX(-50%);pointer-events:none}
+#yiOverlay .lamp-smoke i{position:absolute;bottom:0;left:50%;width:7px;height:7px;border-radius:50%;
+  background:radial-gradient(circle,rgba(200,190,175,.32),transparent 70%);
+  filter:blur(1.5px);opacity:0;animation:smoke 5s ease-out infinite}
+#yiOverlay .lamp-smoke i:nth-child(1){animation-delay:0s}
+#yiOverlay .lamp-smoke i:nth-child(2){animation-delay:1.7s}
+#yiOverlay .lamp-smoke i:nth-child(3){animation-delay:3.4s}
+@keyframes smoke{
+  0%{transform:translate(-50%,0) scale(.6);opacity:0}
+  18%{opacity:.75}
+  100%{transform:translate(-42%,-42px) scale(2.1);opacity:0}}
