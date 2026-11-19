@@ -361,6 +361,29 @@
   }
   var CONF_LABEL = { 3: '清晰', 2: '一般', 1: '模糊' };
 
+  /* —— 丘位纹理密度（v2.16 解读层钩子）：各丘位区内 R>0.2 的占比。
+     区域按摆正后标准坐标划（u = (x-xL)/Wp，v = (y-y0)/Wp，拇指在左）；数值为纹理疏密，不是隆起程度。 */
+  var MOUNT_ZONES = {
+    venus: [0.00, 0.45, 0.30, 0.85], jupiter: [0.05, 0.30, 0.00, 0.28], saturn: [0.30, 0.55, 0.00, 0.28],
+    sun: [0.55, 0.78, 0.00, 0.28], mercury: [0.78, 1.00, 0.00, 0.28], luna: [0.72, 1.00, 0.45, 0.85],
+    mars: [0.38, 0.68, 0.30, 0.55]
+  };
+  function measureMounts(R, w, h, F, palmMask) {
+    var out = {}, Wp = F.Wp, id, z, x0, x1, y0, y1, x, y, tot, hit, ii;
+    for (id in MOUNT_ZONES) {
+      z = MOUNT_ZONES[id];
+      x0 = Math.max(0, Math.round(F.xL + z[0] * Wp)); x1 = Math.min(w - 1, Math.round(F.xL + z[1] * Wp));
+      y0 = Math.max(0, Math.round(F.y0 + z[2] * Wp)); y1 = Math.min(h - 1, Math.round(F.y0 + z[3] * Wp));
+      tot = 0; hit = 0;
+      for (y = y0; y <= y1; y++) for (x = x0; x <= x1; x++) {
+        ii = y * w + x;
+        if (palmMask[ii]) { tot++; if (R[ii] > 0.2) hit++; }
+      }
+      out[id] = tot >= 20 ? Math.round((hit / tot) * 100) / 100 : 0;
+    }
+    return out;
+  }
+
   /* —— 总流程（异步分段，便于界面显示进度） ——
      rgba: 缩放后的像素；opts.hand: 'L'|'R'（认不出拇指方向时的兜底：左手掌心朝镜头 = 拇指在左） */
   async function analyzeImage(rgba, w, h, opts) {
@@ -422,6 +445,7 @@
     res.sharp = p99;
     if (p99 < 7) { res.reason = 'lowcontrast'; return res; }
     for (i = 0; i < n; i++) R[i] = palmMask[i] ? clampN(R[i] / p99, 0, 1) : 0;
+    res.mounts = measureMounts(R, rw, rh, F, palmMask);   /* v2.16：丘位密度，供自动解读 */
     await tickAsync(); prog('追踪主线');
     var cost = new Float32Array(n);
     for (i = 0; i < n; i++) cost[i] = palmMask[i] ? 0.03 + Math.pow(1 - R[i], 3) : Infinity;
@@ -470,6 +494,14 @@
     if (side === 'R') Object.keys(lines).forEach(function (k) {
       if (lines[k].found) lines[k].pts = lines[k].pts.map(function (p) { return { x: rw - 1 - p.x, y: p.y }; });
     });
+    /* v2.16：把归一化响应图交给解读层做特殊纹检测；拇指在右时同步翻回，与线坐标同空间 */
+    if (side === 'R') {
+      var Rf = new Float32Array(n), yy, xx;
+      for (yy = 0; yy < rh; yy++) for (xx = 0; xx < rw; xx++) Rf[yy * rw + xx] = R[yy * rw + (rw - 1 - xx)];
+      res.ridge = { R: Rf, w: rw, h: rh };
+    } else {
+      res.ridge = { R: R, w: rw, h: rh };
+    }
     res.skinFrac = frac0;
     return res;
   }
@@ -673,7 +705,7 @@
     var b = (typeof readBirth === 'function') ? readBirth() : null; sex = b && b.sex || null;
     return {
       mode: 'fortune', hand: sex === 'F' ? '右' : '左', sex: sex,
-      ana: null, auto: {}, conf: {}, selF: {}, selD: {}, overlay: true, token: 0, lastText: ''
+      ana: null, auto: {}, conf: {}, selF: {}, selD: {}, overlay: true, token: 0, lastText: '', insight: null
     };
   }
 
@@ -722,6 +754,7 @@
     '<div class="seg palm-mode" id="palmMode" role="tablist" aria-label="解读方式">' +
     '<button type="button" data-v="fortune" class="on" role="tab">算命</button><button type="button" data-v="diag" role="tab">诊断</button></div>' +
     '<p class="palm-hint" id="palmHint"></p>' +
+    '<div class="palm-insight" id="palmInsight" hidden></div>' +
     '<div id="palmPickers"></div>' +
     '<button type="button" class="btn-gold btn-block" id="palmGo">生成解读</button>' +
     '<div class="mbti-report palm-report" id="palmReport" hidden></div>' +
@@ -766,6 +799,12 @@
     var b = $('palmBusy'); if (!b) return;
     b.hidden = !on; if (txt) $('palmBusyTxt').textContent = txt;
   }
+  /* v2.16：自动解读卡片（只在算命模式、有解读结果时显示） */
+  function renderInsight() {
+    var el = $('palmInsight'); if (!el) return;
+    if (ST.mode === 'fortune' && ST.insight && ST.insight.html) { el.innerHTML = ST.insight.html; el.hidden = false; }
+    else { el.hidden = true; el.innerHTML = ''; }
+  }
   function applyMode() {
     var fortune = ST.mode === 'fortune';
     document.querySelectorAll('#palmMode button').forEach(function (b) { var on = b.dataset.v === ST.mode; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
@@ -778,6 +817,7 @@
     $('palmOverlayBtn').classList.toggle('on', ST.overlay);
     hideReport();
     renderPickers();
+    renderInsight();
     drawCanvas();
   }
   function hideReport() {
@@ -871,15 +911,27 @@
     if (file.type && !/^image\//.test(file.type)) { setStatus('请选一张照片（JPG 或 PNG）', 'warn'); return; }
     if (file.size && file.size > 10 * 1024 * 1024) { setStatus('照片太大了（超过 10MB），请换一张小一点的', 'warn'); return; }
     var token = ++ST.token;
-    ST.ana = null; ST.auto = {}; ST.conf = {}; ST.selF = {}; ST.overlay = true;
+    ST.ana = null; ST.auto = {}; ST.conf = {}; ST.selF = {}; ST.overlay = true; ST.insight = null;
     /* selD 不清：掌诊是手动对照，与照片无关，换照片也保留 */
-    hideReport(); drawCanvas(); renderPickers(); setStatus('');
+    hideReport(); drawCanvas(); renderPickers(); renderInsight(); setStatus('');
     showBusy(true, '读取照片…');
-    var res = null;
+    var res = null, rectState = 'skipped';
     try {
       var im = await loadImageData(file);
       if (token !== ST.token) return;
-      res = await analyzeImage(im.data, im.width, im.height, {
+      /* v2.16：先摆正（MediaPipe），任何失败都回退原图，不影响识别 */
+      var useIm = im;
+      try {
+        var RC = (typeof window !== 'undefined') ? window.YumiaoPalmRectify : null;
+        if (RC && typeof RC.rectify === 'function') {
+          showBusy(true, '摆正手掌…');
+          var rc = await RC.rectify(im, { timeoutMs: 20000 });
+          if (token !== ST.token) return;
+          if (rc && rc.data) { useIm = { data: rc.data, width: rc.width, height: rc.height }; rectState = 'done'; }
+          else rectState = 'failed';
+        }
+      } catch (e) { rectState = 'failed'; }
+      res = await analyzeImage(useIm.data, useIm.width, useIm.height, {
         hand: ST.hand === '右' ? 'R' : 'L',
         onProgress: function (t) { if (token === ST.token) showBusy(true, t + '…'); }
       });
@@ -908,6 +960,15 @@
         ST.hand = res.handLabel;
         document.querySelectorAll('#palmHand button').forEach(function (b) { b.classList.toggle('on', b.dataset.v === ST.hand); });
       }
+      /* v2.16：自动解读（只在算命模式展示；诊断模式不展示） */
+      ST.insight = null;
+      try {
+        var IN = (typeof window !== 'undefined') ? window.YumiaoPalmInsight : null;
+        if (IN && typeof IN.buildAutoInsight === 'function') {
+          ST.insight = IN.buildAutoInsight(res.lines, res.frame, res.mounts, res.ridge);
+        }
+      } catch (e) { ST.insight = null; }
+      renderInsight();
       var msg = good.length ? '已识别' + good.join('、') + (weak.length ? '；' + weak.join('、') + '不够清晰，请自行选择' : '') + '。' : '纹路都不够清晰，请对照照片自行选择。';
       if (!res.thumbGuess) msg += '看起来是' + res.handLabel + '手，如不符请在下方切换。';
       var warns = [];
@@ -916,6 +977,8 @@
       if (res.notes.indexOf('fingersClosed') >= 0) warns.push('手指并拢，定位可能有偏差');
       if (res.sharp < 13) warns.push('照片偏暗或偏糊');
       if (warns.length) msg += '注意：' + warns.join('，') + '，请核对。';
+      if (rectState === 'done') msg += '已按标准位置摆正。';
+      else if (rectState === 'failed') msg += '未摆正，沿用原识别。';
       setStatus(msg, warns.length || !good.length ? 'warn' : 'ok');
     } else {
       setStatus(FAIL_TEXT[res.reason] || FAIL_TEXT.error, 'warn');
@@ -926,6 +989,11 @@
   function genReport() {
     var out = ST.mode === 'fortune' ? buildFortune(ST.selF, ST.hand, ST.sex) : buildDiag(ST.selD, ST.hand);
     if (!out) { if (typeof window.toast === 'function') window.toast(ST.mode === 'fortune' ? '请至少选择一条纹路' : '请至少选择一项观察'); return; }
+    /* v2.16：算命模式附上自动解读（手动点选的报告为主，自动解读在后） */
+    if (ST.mode === 'fortune' && ST.insight) {
+      out.text += '\n\n' + ST.insight.text;
+      out.html += ST.insight.html;
+    }
     ST.lastText = out.text;
     var r = $('palmReport'); r.innerHTML = out.html; r.hidden = false;
     $('palmResultActions').hidden = false; $('palmGo').hidden = true;
@@ -977,6 +1045,8 @@
     document.querySelectorAll('#palmHand button').forEach(function (b) { b.classList.toggle('on', b.dataset.v === ST.hand); });
     bind();
     setStatus('');
+    /* v2.16：提前开始加载摆正模型，用户拍照时多半已就绪；失败无声 */
+    try { if (window.YumiaoPalmRectify && window.YumiaoPalmRectify.init) window.YumiaoPalmRectify.init(); } catch (e) {}
     applyMode();
     if (typeof ModalUI !== 'undefined') ModalUI.open('palm');
   }
@@ -994,7 +1064,7 @@
     /* A 节纯函数（不碰 DOM），供 Node / tests.html 直接测试 */
     skinMask: skinMask, morph: morph, labelComps: labelComps, keepLargest: keepLargest, fillHoles: fillHoles,
     pcaTilt: pcaTilt, valleyResponse: valleyResponse, minPath: minPath, smoothPoints: smoothPoints,
-    palmFrame: palmFrame, measureLine: measureLine, confOf: confOf
+    palmFrame: palmFrame, measureLine: measureLine, confOf: confOf, measureMounts: measureMounts
   };
   if (typeof window !== 'undefined') {
     window.openPalmPanel = openPalmPanel;
