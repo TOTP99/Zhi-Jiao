@@ -142,6 +142,42 @@
     s['天伤'] = mod(mingBr + 5, 12);
     return s;
   }
+  /* ────────── 三组十二神 + 庙旺亮度 + 天罗地网（v3.0 补） ────────── */
+  /* 博士十二神：自禄存起，阳男阴女顺行、阴男阳女逆行 */
+  var BOSHI = ['博士','力士','青龙','小耗','将军','奏书','飞廉','喜神','病符','大耗','伏兵','官府'];
+  /* 将前十二神：自将星（寅午戌→午、申子辰→子、巳酉丑→酉、亥卯未→卯）起，顺行 */
+  var JIANGQIAN = ['将星','攀鞍','岁驿','息神','华盖','劫煞','灾煞','天煞','指背','咸池','月煞','亡神'];
+  /* 岁前十二星：自年支起，顺行 */
+  var SUIQIAN = ['岁建','晦气','丧门','贯索','官符','小耗','大耗','龙德','白虎','天德','吊客','病符'];
+  function twelveGods(lu, yearZhiIdx, isYangGender) {
+    var dir = isYangGender ? 1 : -1, bs = {}, jq = {}, sq = {};
+    var jStart = [0, 9, 6, 3][yearZhiIdx % 4];
+    for (var i = 0; i < 12; i++) {
+      bs[BOSHI[i]] = mod(lu + dir * i, 12);
+      jq[JIANGQIAN[i]] = mod(jStart + i, 12);
+      sq[SUIQIAN[i]] = mod(yearZhiIdx + i, 12);
+    }
+    return { boshi: bs, jiangqian: jq, suiqian: sq };
+  }
+  /* 十四主星庙旺利陷（子丑寅…亥；依《紫微斗数全书》〈命宫〉，各版少数格有出入，取通行排盘程序口径）
+     庙=庙 旺=旺 得=得地 利=利益 平=平和 不=不得地 陷=落陷 */
+  var BRIGHT = {
+    '紫微': '平庙旺旺得旺庙庙旺旺得旺', '天机': '庙陷得旺利平庙陷得旺利平',
+    '太阳': '陷不旺庙旺旺旺得得平不陷', '武曲': '旺庙得利庙平旺庙得利庙平',
+    '天同': '旺不利平平庙陷不旺平平庙', '廉贞': '平利庙平利陷平利庙平利陷',
+    '天府': '庙庙庙得庙得旺庙得旺庙得', '太阴': '庙庙旺陷陷陷不不利旺旺庙',
+    '贪狼': '旺庙平利庙陷旺庙平利庙陷', '巨门': '旺不庙庙陷旺旺不庙庙陷旺',
+    '天相': '庙庙庙陷得得庙得庙陷得得', '天梁': '庙旺庙庙庙陷庙旺陷得庙陷',
+    '七杀': '旺庙庙旺庙平旺庙庙旺庙平', '破军': '庙旺得陷旺平庙旺得陷旺平'
+  };
+  function brightness(star, branchIdx) {
+    var row = BRIGHT[star];
+    return row ? row.charAt(mod(branchIdx, 12)) : '';
+  }
+  /* 天罗地网：辰为天罗、戌为地网（固定宫位，命宫/他宫落此二支者另论） */
+  var TIANLUO = 4, DIWANG = 10;
+  function netOf(branchIdx) { return branchIdx === TIANLUO ? '天罗' : (branchIdx === DIWANG ? '地网' : ''); }
+
   var CHANGSHENG = ['长生','沐浴','冠带','临官','帝旺','衰','病','死','墓','绝','胎','养'];
   function changsheng(juNum, isYangGender) {
     var start = { 2: 8, 5: 8, 3: 11, 6: 2, 4: 5 }[juNum];
@@ -185,7 +221,10 @@
       ziweiBranch: ZHI[zw], palaces: palaces, majorStars: majors, auxStars: aux,
       sihua: sihuaMap, changsheng: changsheng(ju.num, isYangGender),
       daxian: daxian(ming, eff.yearGan, ju.num, isYangGender),
-      mingzhu: MINGZHU[ming], shenzhu: SHENZHU[ZHI.indexOf(yearZhi)]
+      mingzhu: MINGZHU[ming], shenzhu: SHENZHU[ZHI.indexOf(yearZhi)],
+      gods: twelveGods(aux['禄存'], ZHI.indexOf(yearZhi), isYangGender),
+      brightness: function (star, br) { return brightness(star, typeof br === 'string' ? ZHI.indexOf(br) : br); },
+      net: function (br) { return netOf(typeof br === 'string' ? ZHI.indexOf(br) : br); }
     };
   }
 
@@ -205,7 +244,8 @@
     Object.keys(c.majorStars).forEach(function (nm) {
       if (ZHI[c.majorStars[nm]] !== br) return;
       var mh = c.sihua[nm] ? '<i class="zw-hua">' + c.sihua[nm] + '</i>' : '';
-      out.push('<span class="zw-major">' + esc(nm) + '</span>' + mh);
+      var bl = brightness(nm, ZHI.indexOf(br));
+      out.push('<span class="zw-major">' + esc(nm) + '</span>' + (bl ? '<i class="zw-br">' + bl + '</i>' : '') + mh);
     });
     Object.keys(c.auxStars).forEach(function (nm) {
       if (ZHI[c.auxStars[nm]] !== br) return;
@@ -245,9 +285,32 @@
     var dxh = c.daxian.map(function (x) {
       return '<span class="zw-dx">' + esc(x.ganzhi) + x.from + '–' + x.to + '</span>';
     }).join('');
-    h += '<div class="mbti-sec zw-tap" onclick="openZwDaxian()" role="button" tabindex="0"><span class="mbti-sec-label">大限</span>' + dxh + '</div></div>';
+    h += '<div class="mbti-sec zw-tap" onclick="openZwDaxian()" role="button" tabindex="0"><span class="mbti-sec-label">大限</span>' + dxh + '</div>' + ziweiCalcNoteHTML(c) + '</div>';
     return h;
   }
+  /* v2.20（v3.0 重建）：紫微「计算说明」（纯函数，不碰 DOM；缺失数据时该条省略，不写假话） */
+  function ziweiCalcNoteHTML(c) {
+    if (!c || !c.lunar || !c.ju) return '';
+    var meta = c._calcMeta, items = [], inp = c.input || {}, lu = c.lunar;
+    items.push('农历 ' + lu.year + '年' + (lu.isLeap ? '闰' : '') + lu.month + '月' + lu.day + '日（公历 ' + inp.year + '-' + inp.month + '-' + inp.day + ' 换算）');
+    if (lu.isLeap) {
+      var em = effectiveMonth(lu, (c.yearGanZhi || ' ')[0]).month;
+      items.push('闰月按半月制：十五日及以前并入本月，十六日起并入下月；本盘按 ' + em + ' 月起盘（与称骨一致）');
+    }
+    if (c.yearGanZhi) items.push('年干支 ' + c.yearGanZhi + '，以农历正月初一换年，不以立春');
+    if (meta) {
+      items.push(meta.dstAdjusted ? '出生时当地实行夏令时，已回拨到标准时' : '未做夏令时回拨');
+      items.push(meta.hourDefaulted ? '出生时间未填，按午时（12:00）计算' : '出生时辰 ' + c.hourZhi + '时（以档案为准）');
+    }
+    items.push('命宫 ' + c.mingGanzhi + '，身宫在 ' + c.shenBranch + ' 宫');
+    items.push('五行局：' + c.ju.name);
+    items.push('紫微星在 ' + c.ziweiBranch + '宫');
+    if (c.daxian && c.daxian[0]) items.push('大限自 ' + c.daxian[0].from + ' 岁起运，每限十年');
+    if (c.yearGanZhi) items.push('四化按生年天干 ' + c.yearGanZhi[0] + ' 取');
+    items.push('星曜庙旺与十二神按通行口径，各流派略有出入，仅供参考');
+    return '<details class="ziwei-calc-note"><summary>计算说明</summary><ul>' + items.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></details>';
+  }
+  window.YumiaoZiweiCalcNote = ziweiCalcNoteHTML;
   function openZiwei() {
     if (typeof window.renderProfileBar === 'function') window.renderProfileBar('ziweiProfileBar');
     var body = document.getElementById('ziweiBody');
@@ -257,6 +320,8 @@
     } else {
       try {
         var c = chart({ year: b.year, month: b.month, day: b.day, hour: b.hour, gender: b.gender });
+        var raw = readBirth({ validate: true }), std = readBirth({ dst: true, validate: true });
+        c._calcMeta = { hourDefaulted: !!(raw && (raw.hour == null || raw.hour === '')), dstAdjusted: !!(std && std._dstAdjusted) };
         zwCurrent = c; // 供子弹窗取数
         body.innerHTML = renderChart(c);
         if (typeof saveReportHTML === 'function') {
@@ -377,6 +442,16 @@
         }).join('<br>') + '</div>';
       }
     }
+    if (zwCurrent) {
+      var pp = zwCurrent.palaces.filter(function (x) { return x.name === name; })[0], bi = ZHI.indexOf(pp.branch);
+      function godsAt(map) { return Object.keys(map).filter(function (k) { return map[k] === bi; }); }
+      var gl = [['博士十二神', godsAt(zwCurrent.gods.boshi)], ['将前十二神', godsAt(zwCurrent.gods.jiangqian)], ['岁前十二星', godsAt(zwCurrent.gods.suiqian)]];
+      h += '<div class="mt-8">' + gl.map(function (g) { return esc(g[0]) + '：<b>' + esc(g[1].join('、')) + '</b>'; }).join('<br>') + '</div>';
+      var cs = Object.keys(zwCurrent.changsheng).filter(function (k) { return zwCurrent.changsheng[k] === bi; })[0];
+      if (cs) h += '<div class="mt-6">长生十二神：<b>' + esc(cs) + '</b></div>';
+      var nt = netOf(bi);
+      if (nt) h += '<div class="mt-6">此宫为<b>' + nt + '</b>：' + (nt === '天罗' ? '辰为天罗' : '戌为地网') + '，主受牵绊，宜守不宜躁；星曜得力者可化解。</div>';
+    }
     h += zwBackBtn("openZwPalace('" + name + "')");
     zwPop(name + ' · 详解', h);
   }
@@ -466,4 +541,5 @@
   window.openZwDaxian2 = openZwDaxian2;
   window.closeZwPop = closeZwPop;
   window.ZiweiChart = chart; // 供 tests.html 调用
+  window.ZiweiTables = { BOSHI: BOSHI, JIANGQIAN: JIANGQIAN, SUIQIAN: SUIQIAN, BRIGHT: BRIGHT };
 })();

@@ -687,8 +687,10 @@
       const jieShen = { 0:6,1:6,2:8,3:8,4:10,5:10,6:0,7:0,8:2,9:2,10:4,11:4 };
       addShensha(list, "解神", "解厄", "按月支取解神", hitBranches(pillars, [jieShen[monthBranch]]), "传统上主缓解、转圜、化解。");
       addShensha(list, "咸池", "人缘", "桃花同源规则（年支/日支双查）", hitBranches(pillars, peachTargets), "传统神煞中通常与桃花同论。");
-      addShensha(list, "天罗", "杂曜", "常见法取辰", hitBranches(pillars, [4]), "流派差异较大。");
-      addShensha(list, "地网", "杂曜", "常见法取戌", hitBranches(pillars, [10]), "流派差异较大。");
+      // 天罗地网（v3.0 按主流口径复核）：戌亥同见为天罗，辰巳同见为地网；须两支同在四柱。传统另限「火命见戌亥、水土命见辰巳」，本程序不限命，仅作提示。
+      const hasBoth = (a, b) => hitBranches(pillars, [a]).length && hitBranches(pillars, [b]).length;
+      if (hasBoth(10, 11)) addShensha(list, "天罗", "杂曜", "戌亥同见", hitBranches(pillars, [10, 11]), "戌亥为天罗；传统以火命人见之为准，仅供参考。");
+      if (hasBoth(4, 5)) addShensha(list, "地网", "杂曜", "辰巳同见", hitBranches(pillars, [4, 5]), "辰巳为地网；传统以水土命人见之为准，仅供参考。");
       const byCategory = {};
       for (const item of list) {
         if (!byCategory[item.category]) byCategory[item.category] = [];

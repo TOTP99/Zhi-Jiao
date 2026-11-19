@@ -106,7 +106,6 @@
   window.YumiaoNav = YumiaoNav;
   /* 中央 popstate：回声跳过 → 关最顶层覆盖层 → 回上一 tab → 退出（默认） */
   window.addEventListener('popstate', function () {
-    if (yiUnwinding) return;
     if (navEchoCount > 0) { navEchoCount--; return; }
     var top = navTop();
     if (top) {
@@ -139,76 +138,99 @@
   }
   window.switchTab = switchTab;
 
-  /* ── 周易：外部页面全屏浮层 ──
-     退出方式：左上「返回」/ ESC / 手机返回键（pushState + popstate）/ 右上「新窗口打开」可另开。
-     关闭时清空 iframe，避免后台继续播放声音或占用内存。 */
-  var YI_URL = 'https://totp99.github.io/Yi/';
+  /* ── 周易：内部 JS 全屏浮层 ──
+     退出方式：左上「返回」/ ESC / 手机返回键（pushState + popstate）。
+     首次打开时按 data-1→data-4→core→ui 顺序懒加载（与掌纹懒加载同一写法）；
+     起卦完成经 __yumiaoYiResult 记入统一记录。 */
+  var YI_DEPS = ['js/18-yijing-data-1.js', 'js/19-yijing-data-2.js', 'js/20-yijing-data-3.js',
+    'js/21-yijing-data-4.js', 'js/22-yijing-core.js', 'js/23-yijing-ui.js'];
   var yiOpen = false;
-  function yiFrameEl() { return $('yiFrame'); }
+  var yiLoaded = false;  /* 六个周易脚本是否已注入 */
+  var yiLoading = null;  /* 进行中的加载 Promise（防重复点按重复加载） */
+  function yiLoad() {
+    if (yiLoaded) return Promise.resolve();
+    if (yiLoading) return yiLoading;
+    var load = (typeof window.__yumiaoLoad === 'function') ? window.__yumiaoLoad : null;
+    if (!load) {
+      /* 兜底：__yumiaoLoad 未就绪时自己按序注入 */
+      load = function (list) {
+        return list.reduce(function (p, src) {
+          return p.then(function () {
+            return new Promise(function (resolve, reject) {
+              var s = document.createElement('script');
+              s.src = src; s.async = false;
+              s.onload = resolve;
+              s.onerror = function () { reject(new Error('load fail: ' + src)); };
+              document.head.appendChild(s);
+            });
+          });
+        }, Promise.resolve());
+      };
+    }
+    yiLoading = load(YI_DEPS).then(function () { yiLoaded = true; yiLoading = null; })
+      .catch(function (e) { yiLoading = null; throw e; });
+    return yiLoading;
+  }
+  function yiShowError() {
+    var m = $('yiApp');
+    if (m) m.innerHTML = '<div class="yi-fail"><p>周易未能载入，请检查网络后重试。</p>' +
+      '<button type="button" class="btn-bronze" onclick="openYi()">重新载入</button></div>';
+  }
+  function yiTryLoad() {
+    yiLoad().then(function () {
+      if (window.YijingUI && typeof window.YijingUI.goHome === 'function') window.YijingUI.goHome();
+    }).catch(function () { yiShowError(); });
+  }
   window.openYi = function () {
-    var ov = $('yiOverlay'), fr = yiFrameEl();
-    if (!ov || !fr || yiOpen) return;
+    var ov = $('yiOverlay');
+    if (!ov) return;
+    if (yiOpen) { if (!yiLoaded) yiTryLoad(); return; }  /* 已打开时只处理重试 */
     yiOpen = true;
-    var ld = $('yiLoading');
-    if (ld) ld.style.display = '';
-    fr.classList.remove('loaded');
-    fr.onload = function () {
-      if (fr.getAttribute('src') !== YI_URL) return;
-      fr.classList.add('loaded');
-      if (ld) ld.style.display = 'none';
-    };
-    fr.src = YI_URL;
     ov.classList.add('show');
     ov.setAttribute('aria-hidden', 'false');
     lockScroll(true);
-    /* 周易查阅留痕：外部页面无法抓取结果，只记查阅时间，供记录下载 */
-    try {
-      if (typeof appendQueryRecord === 'function') {
-        var d = new Date();
-        appendQueryRecord('周易占卜', '<p class="c-dim">于 ' + d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
-          ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ' 打开周易起卦（外部页面，结果请在周易页内查看）。</p>');
-      }
-    } catch (e) { console.warn('[yumiao] yi record', e); }
     navPush({ kind: 'yi', id: 'yiOverlay' });
     navPushState({ yumiaoYi: 1 });
     try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) { console.warn('[yumiao] 10', e); }
+    yiTryLoad();
   };
-  /* 销毁旧 iframe、换上空白新 iframe（停声音、释放内存） */
-  function resetYiFrame() {
-    var fr = yiFrameEl();
-    if (!fr) return;
-    fr.onload = null;
-    var nf = fr.cloneNode(false);
-    nf.removeAttribute('src'); nf.classList.remove('loaded');
-    if (fr.parentNode) fr.parentNode.replaceChild(nf, fr);
-  }
-  var yiUnwinding = false;   /* 正在退回周易入栈前的 history：期间 popstate 不再重复处理 */
-  /* 收起浮层；keepFrame=true 时先不销毁 iframe（等 history 退干净再销毁） */
-  function hideYi(keepFrame) {
+  /* 收起浮层 */
+  function hideYi() {
     var ov = $('yiOverlay');
     if (!yiOpen) return;
     yiOpen = false;
     navRemove('yiOverlay');
     if (ov) { ov.classList.remove('show'); ov.setAttribute('aria-hidden', 'true'); }
-    if (!keepFrame) resetYiFrame();
     lockScroll(false);
-  }
-  /* 周易页内每次跳转都会在整个页面的 history 里多一条；返回时必须连同这些条目一起退掉，
-     直到回到御猫灵局自己的那条 state 之前，否则会退回周易内部（或空白页）、浮层关不掉 */
-  function unwindYiHistory(left) {
-    var st = null;
-    try { st = window.history.state; } catch (e) { console.warn('[yumiao] 10', e); }
-    if (!(st && st.yumiaoYi) || left <= 0) { yiUnwinding = false; resetYiFrame(); return; }
-    try { window.history.back(); } catch (e) { console.warn('[yumiao] yi back', e); yiUnwinding = false; resetYiFrame(); return; }
-    setTimeout(function () { unwindYiHistory(left - 1); }, 90);
   }
   window.closeYi = function () {
     if (!yiOpen) return;
     var st = null;
     try { st = window.history.state; } catch (e) { console.warn('[yumiao] 10', e); }
-    hideYi(true);   /* 先关浮层（立即生效，不依赖 history） */
-    if (st && st.yumiaoYi) { yiUnwinding = true; unwindYiHistory(20); }
-    else resetYiFrame();
+    hideYi();   /* 先关浮层（立即生效，不依赖 history） */
+    if (st && st.yumiaoYi) {
+      navEchoCount++;  /* 主动 back() 的 popstate 回声，照 noteClosed 的规矩认领一次 */
+      try { window.history.back(); } catch (e) { console.warn('[yumiao] yi back', e); }
+    }
+  };
+  function yiEsc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  /* 起卦完成时周易 ui.js 回调：把结果记入统一记录（以前外部页抓不到结果，只能记打开时间） */
+  window.__yumiaoYiResult = function (r, lines, question) {
+    try {
+      if (typeof appendQueryRecord !== 'function' || !r || !r.hex) return;
+      var C = window.YijingCore;
+      var mv = (r.moving || []).map(function (i) { return (C && C.YAO_NAMES) ? C.YAO_NAMES[i] : ''; }).join('、');
+      var h = '<p>周易六爻 · ' + yiEsc(r.hex.fullName || r.hex.name) + ' ' + yiEsc(r.hex.qian || '') + '</p>' +
+        (question ? '<p>所问：' + yiEsc(question) + '</p>' : '') +
+        '<p>断法：' + yiEsc(r.rule || '') + '</p>' +
+        (mv ? '<p>动爻：' + yiEsc(mv) + '</p>' : '<p>六爻安静，无动爻</p>') +
+        (r.chex ? '<p>变卦：' + yiEsc(r.chex.fullName || r.chex.name) + '</p>' : '');
+      appendQueryRecord('周易占卜', h);
+    } catch (e) { console.warn('[yumiao] yi result record', e); }
   };
 
   /* ── 音效开关（包裹 01 的播放函数） ── */
@@ -819,7 +841,7 @@
     });
     renderProfile();
     initOnboard();
-    /* 开屏：6 秒金色进度条，一秒一格 */
+    /* 开屏：3 秒金色进度条，六格、每格 0.5 秒；走满即淡出（不设点按跳过） */
     (function(){
       var sp = $('splash');
       if (!sp) return;
@@ -829,12 +851,10 @@
         if (i < bars.length) { bars[i].classList.add('on'); i++; }
         if (i >= bars.length) {
           clearInterval(timer);
-          setTimeout(function(){
-            sp.classList.add('gone');
-            setTimeout(function(){ if (sp) sp.remove(); }, 800);
-          }, 600);
+          sp.classList.add('gone');
+          setTimeout(function(){ if (sp) sp.remove(); }, 800);
         }
-      }, 1000);
+      }, 500);
     })();
     /* 中央 ESC：先关最顶层覆盖层（圆盘旋转中会被拒绝），再关 108 问菜单；各模块的分散 ESC 已并入此处 */
     document.addEventListener('keydown', function (e) {
