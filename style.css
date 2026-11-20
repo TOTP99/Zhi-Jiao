@@ -908,3 +908,41 @@ input:not([type=checkbox]):not([type=radio]), textarea, select{border-radius:11p
   0%{transform:translate(-50%,0) scale(.6);opacity:0}
   18%{opacity:.75}
   100%{transform:translate(-42%,-42px) scale(2.1);opacity:0}}
+
+/* ══════════ v3.0 界面补丁 ══════════ */
+/* A5 引导页：卡片限高，表单区独立滚动，按钮栏常驻（横屏/竖屏矮屏都不再把「开始使用」挤出屏幕） */
+.ob-card{display:flex;flex-direction:column;max-height:100%;min-height:0}
+.ob-profile{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.ob-actions{flex:0 0 auto}
+@media (orientation:landscape) and (max-height:600px){
+  #onboard{align-items:stretch;padding-top:max(8px,env(safe-area-inset-top));padding-bottom:max(8px,env(safe-area-inset-bottom))}
+  .ob-card{margin:0 auto}
+}
+/* B1/S4 横屏半行截断：滚动区底缘渐隐，切到一半的行不再生硬露出 */
+@media (orientation:landscape) and (max-height:600px){
+  .sheet:not(#mbtiModal)>.sheet-scroll, #mbtiModal .sheet-scroll{
+    padding-bottom:calc(28px + env(safe-area-inset-bottom));
+    -webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 24px),transparent);
+    mask-image:linear-gradient(to bottom,#000 calc(100% - 24px),transparent)}
+}
+/* A7 塔罗横屏：牌背网格 11 列两行见全，牌面按屏高限宽并排 */
+@media (orientation:landscape) and (max-height:600px){
+  .tarot-grid{grid-template-columns:repeat(11,1fr);gap:6px;margin:8px 0}
+  .tarot-back{min-height:0;border-radius:6px}
+  .mbti-report.tarot-cards{flex-direction:row;flex-wrap:wrap;align-items:stretch}
+  .mbti-report.tarot-cards .tarot-card{flex:1 1 220px;min-width:0}
+  .tarot-card-img{width:min(120px,28dvh)}
+}
+/* 横屏八字表单：左档案条、右选项+主按钮，一屏见全，开始排盘不被折叠线挤出 */
+@media (orientation:landscape) and (max-height:600px){
+  #baziForm{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 18px;align-items:start}
+  #baziForm>.mbti-intro{grid-column:1/-1}
+  #baziForm>.profile-bar{grid-column:1;grid-row:2/5;margin-bottom:0}
+  #baziForm>.bazi-checkbox{grid-column:2;grid-row:2}
+  #baziForm>.bazi-error{grid-column:2;grid-row:3}
+  #baziForm>#baziSubmitBtn{grid-column:2;grid-row:4}
+}
+/* B7/A3 星盘：辅助小字 11px → 12px（含图表说明、图例、报告小标） */
+#westernModal{--fs-xs:12px}
+/* B8 请示记录底部关闭键 */
+#historyModal>.btn-ghost{margin:6px 0 calc(10px + env(safe-area-inset-bottom));width:100%;min-height:44px;flex:1 1 100%}
