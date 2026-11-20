@@ -98,6 +98,26 @@
   t('农历单源化：2070 二月初一（旧 11 表错成正月三十）', function () { var r = L(2070, 3, 12); return eq([r.year, r.month, r.day, r.isLeap], [2070, 2, 1, false]); });
   t('2000-01-01 = 1999 年十一月廿五', function () { var r = L(2000, 1, 1); return eq([r.year, r.month, r.day], [1999, 11, 25]); });
   t('超出 1900–2100 返回 null 而不是抛错', function () { return eq([L(1899, 1, 1), L(2101, 1, 1)], [null, null]); });
+  t('不存在的公历日期返回 null：2024-02-31 / 2023-02-29 / 4-31 / 13 月 / 0 月 / 0 日', function () {
+    return eq([L(2024, 2, 31), L(2023, 2, 29), L(2024, 4, 31), L(2024, 13, 1), L(2024, 0, 1), L(2024, 1, 0)], [null, null, null, null, null, null]);
+  });
+  t('非整数 / 非数字 / 空值返回 null 而不抛错', function () {
+    return eq([L(2024, 2.5, 1), L(NaN, 1, 1), L(undefined, 1, 1), L(null, 1, 1), L('abc', 1, 1)], [null, null, null, null, null]);
+  });
+  t('闰日：2024-02-29 合法；2023/1900/2100-02-29 非法', function () {
+    var r = L(2024, 2, 29);
+    return eq([r && r.month, r && r.day, L(2023, 2, 29), L(1900, 2, 29), L(2100, 2, 29)], [1, 20, null, null, null]);
+  });
+  t('范围边界：1900-01-31 正月初一；1900-01-30 与 2101 为 null；2100-12-31 有结果', function () {
+    var a = L(1900, 1, 31), z = L(2100, 12, 31);
+    return eq([a && [a.year, a.month, a.day], L(1900, 1, 30), L(2101, 1, 1), !!z], [[1900, 1, 1], null, null, true]);
+  });
+  t('闰月边界：2023 闰二月廿九(04-19)后一天为三月初一；2020 闰四月廿九(06-20)后一天为五月初一', function () {
+    var a = L(2023, 4, 19), b = L(2023, 4, 20), c = L(2020, 6, 20), d = L(2020, 6, 21);
+    return eq([[a.month, a.day, a.isLeap], [b.month, b.day, b.isLeap], [c.month, c.day, c.isLeap], [d.month, d.day, d.isLeap]],
+      [[2, 29, true], [3, 1, false], [4, 29, true], [5, 1, false]]);
+  });
+  t('字符串数字照常换算（档案里存的可能是字符串）', function () { var r = L('2024', '2', '10'); return eq([r.year, r.month, r.day], [2024, 1, 1]); });
   t('1900–2100 每月 1–28 日换算都落在合法范围（1900 年春节前除外）', function () {
     var bad = 0;
     for (var y = 1900; y <= 2100; y++) for (var m = 1; m <= 12; m++) for (var d = 1; d <= 28; d++) {
@@ -143,6 +163,82 @@
     var threw = false;
     try { window.BaziShensha.calculate({ year: 1990, month: 5, day: 17 }); } catch (e) { threw = true; }
     return threw || '未抛错';
+  });
+  /* ── 严格入参校验：Date.UTC 会把非法日期静默进位，必须在入口拒绝 ── */
+  function bz(o) { var base = { year: 1990, month: 5, day: 17, hour: 10, minute: 0, timezone: 8 }; for (var k in o) base[k] = o[k]; return window.BaziShensha.calculate(base); }
+  function rejects(o) { try { bz(o); return false; } catch (e) { return !!e.isInputError; } }
+  t('非法日期拒绝：2024-02-31 / 2023-02-29 / 04-31 / 06-31 / 13 月 / 0 月 / 0 日 / 32 日', function () {
+    var cases = [{ year: 2024, month: 2, day: 31 }, { year: 2023, month: 2, day: 29 }, { year: 2024, month: 4, day: 31 }, { year: 2024, month: 6, day: 31 },
+      { month: 13 }, { month: 0 }, { day: 0 }, { day: 32 }];
+    var bad = cases.filter(function (c) { return !rejects(c); });
+    return bad.length === 0 || ('被接受：' + JSON.stringify(bad));
+  });
+  t('非法时间拒绝：小时 24 / -1、分钟 60 / -1、秒 60', function () {
+    var bad = [{ hour: 24 }, { hour: -1 }, { minute: 60 }, { minute: -1 }, { second: 60 }].filter(function (c) { return !rejects(c); });
+    return bad.length === 0 || ('被接受：' + JSON.stringify(bad));
+  });
+  t('非法时区 / 经度拒绝：+25、-13、+14.5；经度 ±181', function () {
+    var bad = [{ timezone: 25 }, { timezone: -13 }, { timezone: 14.5 }, { longitude: 181 }, { longitude: -181 }, { longitude: NaN }].filter(function (c) { return !rejects(c); });
+    return bad.length === 0 || ('被接受：' + JSON.stringify(bad));
+  });
+  t('非法类型拒绝：空串 / 小数 / 字母 / 布尔 / NaN / 数组', function () {
+    var bad = [{ year: '' }, { month: 5.5 }, { day: 'abc' }, { year: true }, { hour: NaN }, { month: [5] }, { year: 1799 }, { year: 2201 }].filter(function (c) { return !rejects(c); });
+    return bad.length === 0 || ('被接受：' + JSON.stringify(bad));
+  });
+  t('合法边界仍可排：2024-02-29、23:59、时区 -12 / +14、经度 ±180、1800 / 2200 年、字符串数字', function () {
+    var ok = [{ year: 2024, month: 2, day: 29 }, { hour: 23, minute: 59 }, { hour: 0, minute: 0 }, { timezone: -12 }, { timezone: 14 },
+      { trueSolar: true, longitude: 180 }, { trueSolar: true, longitude: -180 }, { year: 1800 }, { year: 2200 }, { year: '1990', month: '5', day: '17', hour: '10' }];
+    var bad = ok.filter(function (c) { try { return !bz(c).bazi; } catch (e) { return true; } });
+    return bad.length === 0 || ('被拒绝：' + JSON.stringify(bad));
+  });
+  t('非法输入不会产出命盘（抛错而非返回八字）', function () {
+    try { var r = bz({ year: 2024, month: 2, day: 31 }); return '竟然返回了 ' + r.bazi; } catch (e) { return e.isInputError && /没有 31 日/.test(e.message) || e.message; }
+  });
+  /* ── 节气：内置表 vs 公式交叉核对（表外年份回退公式，误差上限据此标定） ── */
+  t('节气表覆盖 1899–2101，每年 12 项且逐项递增', function () {
+    var D = window.BaziShensha._debug, prev = -Infinity;
+    if (D.JIEQI_TABLE_START_YEAR !== 1899 || D.JIEQI_TABLE_END_YEAR !== 2101) return '覆盖范围 ' + D.JIEQI_TABLE_START_YEAR + '–' + D.JIEQI_TABLE_END_YEAR;
+    for (var y = 1899; y <= 2101; y++) for (var i = 0; i < 12; i++) {
+      var t0 = D.jieqiFromTable(y, i).getTime();
+      if (!(t0 > prev)) return y + ' 年第 ' + i + ' 节不递增';
+      prev = t0;
+    }
+  });
+  t('节气公式 vs 内置表：全部 2436 项偏差在 ±16 分钟内（实测 -14～+8）；含 1899 / 2101 边界年', function () {
+    var D = window.BaziShensha._debug, worst = 0, at = '';
+    for (var y = 1899; y <= 2101; y++) for (var i = 0; i < 12; i++) {
+      var f = D.findSolarTerm(y + (i === 11 ? 1 : 0), D.JIEQI_LONGITUDES[i], i === 11 ? 1 : i + 2);
+      var dev = (f.getTime() - D.jieqiFromTable(y, i).getTime()) / 60000;
+      if (Math.abs(dev) > worst) { worst = Math.abs(dev); at = y + '/' + i; }
+    }
+    return worst <= 16 || ('最大偏差 ' + worst.toFixed(1) + ' 分钟 @' + at);
+  });
+  function yearText(y) { var c = window.BaziShensha.constants; return c.stems[((y - 4) % 10 + 10) % 10] + c.branches[((y - 4) % 12 + 12) % 12]; }
+  function pillarsAtUTC(ms) { // 以 UTC 时刻排盘（timezone 0）
+    var d = new Date(ms);
+    return window.BaziShensha.calculate({ year: d.getUTCFullYear(), month: d.getUTCMonth() + 1, day: d.getUTCDate(), hour: d.getUTCHours(), minute: d.getUTCMinutes(), timezone: 0 });
+  }
+  t('立春临界（内置表）：1899 / 1900 / 2000 / 2100 / 2101 立春前 2 分钟归上年、后 2 分钟归本年', function () {
+    var D = window.BaziShensha._debug, bad = [];
+    [1899, 1900, 2000, 2100, 2101].forEach(function (y) {
+      var lc = D.jieqiFromTable(y, 0).getTime();
+      var before = pillarsAtUTC(lc - 2 * 60000).pillars.year.text, after = pillarsAtUTC(lc + 2 * 60000).pillars.year.text;
+      if (before !== yearText(y - 1) || after !== yearText(y)) bad.push(y + ':' + before + '/' + after);
+    });
+    return bad.length === 0 || bad.join(' ');
+  });
+  t('表外年份（1898 / 2102）可排盘；立春前后 1 天仍归对年，且标记节气来源为公式', function () {
+    var D = window.BaziShensha._debug, bad = [];
+    [1898, 2102].forEach(function (y) {
+      var lc = D.findSolarTerm(y, 315, 2).getTime();
+      var b = pillarsAtUTC(lc - 86400000), a = pillarsAtUTC(lc + 86400000);
+      if (b.pillars.year.text !== yearText(y - 1) || a.pillars.year.text !== yearText(y)) bad.push(y);
+      if (a.jieqiSource !== 'formula') bad.push(y + ' source=' + a.jieqiSource);
+    });
+    return bad.length === 0 || bad.join(' ');
+  });
+  t('节气来源标记：1900–2100 为 table，其余为 formula', function () {
+    return eq([bz({ year: 1900 }).jieqiSource, bz({ year: 2100 }).jieqiSource, bz({ year: 1899 }).jieqiSource, bz({ year: 2101 }).jieqiSource], ['table', 'table', 'formula', 'formula']);
   });
   t('1990-05-17 10:00 tz+8 返回完整四柱结构', function () {
     var r = window.BaziShensha.calculate({ year: 1990, month: 5, day: 17, hour: 10, timezone: 8 });
@@ -492,6 +588,59 @@
   t('闰月：2023-04-10（闰二月二十）排盘正常', function () {
     var c = ZWC({ year: 2023, month: 4, day: 10, hour: 15, gender: '女' });
     return c.lunar.isLeap === true && c.lunar.month === 2 || JSON.stringify(c.lunar);
+  });
+
+  /* ── 紫微入参校验 ── */
+  function zwRejects(o) { var b = { year: 2000, month: 8, day: 16, hour: 3, gender: '女' }; for (var k in o) b[k] = o[k]; try { ZWC(b); return false; } catch (e) { return !!e.isInputError; } }
+  t('小时非法拒绝：24 / -1 / 12.5 / NaN / 字符串 / null', function () {
+    var bad = [{ hour: 24 }, { hour: -1 }, { hour: 12.5 }, { hour: NaN }, { hour: '3' }, { hour: null }, { hour: 25 }].filter(function (o) { return !zwRejects(o); });
+    return bad.length === 0 || ('被接受：' + JSON.stringify(bad));
+  });
+  t('小时 0–23 全部可排盘；23 时为亥时后的子时（0 时与 23 时同为子）', function () {
+    for (var h = 0; h <= 23; h++) { try { ZWC({ year: 2000, month: 8, day: 16, hour: h, gender: '女' }); } catch (e) { return h + ' 时被拒：' + e.message; } }
+    return eq([ZWC({ year: 2000, month: 8, day: 16, hour: 0, gender: '女' }).hourZhi, ZWC({ year: 2000, month: 8, day: 16, hour: 23, gender: '女' }).hourZhi], ['子', '子']);
+  });
+  t('性别非法拒绝：M / F / 空 / undefined / 其他 / 数字', function () {
+    var bad = ['M', 'F', '', undefined, '男性', '其他', 1].filter(function (g) { return !zwRejects({ gender: g }); });
+    return bad.length === 0 || ('被接受：' + JSON.stringify(bad));
+  });
+  t('日期非法拒绝：2-31 / 13 月 / 1899 / 2101；缺农历模块给明确错误', function () {
+    var bad = [{ month: 2, day: 31 }, { month: 13 }, { year: 1899 }, { year: 2101 }, { month: 0 }].filter(function (o) { return !zwRejects(o); });
+    if (bad.length) return '被接受：' + JSON.stringify(bad);
+    var keep = window.YumiaoLunar; window.YumiaoLunar = undefined;
+    try { ZWC({ year: 2000, month: 8, day: 16, hour: 3, gender: '女' }); return '应抛错'; }
+    catch (e) { return /农历换算模块未加载/.test(e.message) || e.message; }
+    finally { window.YumiaoLunar = keep; }
+  });
+  t('性别决定大限方向：阳年男顺行、阳年女逆行；阴年反之', function () {
+    function dir(o) { var c = ZWC(o); return ((c.daxian[1].branch - c.daxian[0].branch) % 12 + 12) % 12; }
+    var yangM = dir({ year: 2000, month: 8, day: 16, hour: 3, gender: '男' }), yangF = dir({ year: 2000, month: 8, day: 16, hour: 3, gender: '女' });
+    var yinM = dir({ year: 2001, month: 8, day: 16, hour: 3, gender: '男' }), yinF = dir({ year: 2001, month: 8, day: 16, hour: 3, gender: '女' });
+    return eq([yangM, yangF, yinM, yinF], [1, 11, 11, 1]);
+  });
+  /* ── 闰月半月制：闰 X 月 1–15 日按本月、16 日起按下月起盘（1900–2100 无闰正月与闰十二月，闰二月至闰十一月逐月核对） ── */
+  var ZWI = '子丑寅卯辰巳午未申酉戌亥';
+  t('闰月半月制逐月核对：闰二～闰十一月，初十 / 十五 / 十六 / 二十 的命宫与独立公式一致', function () {
+    var leapCases = { 2: [[1909, 3, 31], [1909, 4, 5], [1909, 4, 6], [1909, 4, 10]], 3: [[1936, 4, 30], [1936, 5, 5], [1936, 5, 6], [1936, 5, 10]],
+      4: [[1906, 6, 1], [1906, 6, 6], [1906, 6, 7], [1906, 6, 11]], 5: [[1903, 7, 4], [1903, 7, 9], [1903, 7, 10], [1903, 7, 14]],
+      6: [[1911, 8, 4], [1911, 8, 9], [1911, 8, 10], [1911, 8, 14]], 7: [[1919, 9, 3], [1919, 9, 8], [1919, 9, 9], [1919, 9, 13]],
+      8: [[1900, 10, 3], [1900, 10, 8], [1900, 10, 9], [1900, 10, 13]], 9: [[2014, 11, 2], [2014, 11, 7], [2014, 11, 8], [2014, 11, 12]],
+      10: [[1984, 12, 2], [1984, 12, 7], [1984, 12, 8], [1984, 12, 12]], 11: [[2033, 12, 31], [2034, 1, 5], [2034, 1, 6], [2034, 1, 10]] };
+    var lunarDays = [10, 15, 16, 20], bad = [];
+    for (var m = 2; m <= 11; m++) {
+      leapCases[m].forEach(function (d, idx) {
+        var c = ZWC({ year: d[0], month: d[1], day: d[2], hour: 3, gender: '男' });
+        if (!(c.lunar.isLeap && c.lunar.month === m && c.lunar.day === lunarDays[idx])) { bad.push('换算 ' + d.join('-') + ' → ' + JSON.stringify(c.lunar)); return; }
+        var eMonth = m + (lunarDays[idx] > 15 ? 1 : 0);
+        var expectMing = ZWI[(((2 + (eMonth - 1) - 2) % 12) + 12) % 12]; // 寅时 idx=2
+        if (c.mingBranch !== expectMing) bad.push('闰' + m + '月' + lunarDays[idx] + '日 命宫 ' + c.mingBranch + ' 应为 ' + expectMing);
+      });
+    }
+    return bad.length === 0 || bad.join('；');
+  });
+  t('闰十一月十六日后按十二月起盘（年干不变，不跨年）', function () {
+    var a = ZWC({ year: 2034, month: 1, day: 5, hour: 3, gender: '男' }), b = ZWC({ year: 2034, month: 1, day: 6, hour: 3, gender: '男' });
+    return eq([a.yearGanZhi, b.yearGanZhi, a.mingBranch, b.mingBranch], ['癸丑', '癸丑', ZWI[(2 + 10 - 2) % 12], ZWI[(2 + 11 - 2) % 12]]);
   });
 
   /* ────────── 紫微补缺口（v3.0） ────────── */
@@ -940,6 +1089,35 @@
     return !P('{"app":"yumiao","schema":1,"data":{"yumiao_shared_birth_v1":"{bad"}}').ok || '损坏生辰应拒绝';
   });
   t('解析：schema 不符拒绝', function () { return !window.YumiaoBackup.parse('{"app":"yumiao","schema":99,"data":{"yumiao_a":"1"}}').ok; });
+  /* 异常注入：写到第 N 次时抛 QuotaExceededError */
+  function quotaStore(init, failAt) {
+    var st = memStore(init), n = 0, orig = st.setItem;
+    st.setItem = function (k, v) { if (++n === failAt) { var e = new Error('quota'); e.name = 'QuotaExceededError'; throw e; } orig.call(st, k, v); };
+    return st;
+  }
+  function parsedOf(obj) { return window.YumiaoBackup.parse(JSON.stringify({ app: 'yumiao', schema: 1, data: obj })); }
+  t('恢复中途写入失败：返回 false，旧数据完整回滚', function () {
+    var old = { yumiao_old: 'keep-me', yumiao_history_v1: '[9]', other: 'x' };
+    var st = quotaStore(old, 2);
+    var p = parsedOf({ yumiao_a: '1', yumiao_b: '2', yumiao_c: '3' });
+    if (window.YumiaoBackup.apply(st, p) !== false) return '应返回 false';
+    return eq([st.getItem('yumiao_old'), st.getItem('yumiao_history_v1'), st.getItem('other'), st.getItem('yumiao_a'), st.getItem('yumiao_b')], ['keep-me', '[9]', 'x', null, null]);
+  });
+  t('恢复第一次写入就失败：旧数据同样保留', function () {
+    var st = quotaStore({ yumiao_old: 'keep-me' }, 1);
+    if (window.YumiaoBackup.apply(st, parsedOf({ yumiao_a: '1' })) !== false) return '应返回 false';
+    return eq([st.getItem('yumiao_old'), st.getItem('yumiao_a')], ['keep-me', null]);
+  });
+  t('恢复失败且回滚也失败时不抛异常（只返回 false）', function () {
+    var st = memStore({ yumiao_old: 'v' });
+    st.setItem = function () { throw new Error('storage dead'); };
+    return window.YumiaoBackup.apply(st, parsedOf({ yumiao_a: '1' })) === false || '应返回 false';
+  });
+  t('恢复成功路径不受回滚逻辑影响（旧键清掉、新键写入）', function () {
+    var st = memStore({ yumiao_old: 'v', other: 'x' });
+    if (!window.YumiaoBackup.apply(st, parsedOf({ yumiao_a: '1' }))) return '应成功';
+    return eq([st.getItem('yumiao_old'), st.getItem('yumiao_a'), st.getItem('other')], [null, '1', 'x']);
+  });
   /* ────────── 周易 ────────── */
   section('周易');
   t('周易：64 卦数据齐全', function () {
