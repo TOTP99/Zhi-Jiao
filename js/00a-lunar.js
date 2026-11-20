@@ -2,7 +2,7 @@
    农历表以 15-ziwei.js 的 LUNAR_DATA 为准——已对照 Fung F. Lee / Ricky Yeung
    lunar 的 tables.h 与香港天文台 1955 年换算表验证；11-chenggu.js 旧表
    6 项有误（1917/1922/1955/1987/1998/2070），已废弃，勿再各自内嵌。
-   返回 { year, month, day, isLeap, yearGanZhi }；1900–2100 年外返回 null。
+   返回 { year, month, day, isLeap, yearGanZhi }；1900–2100 年外、不存在的公历日期（2-31、13 月等）返回 null。
    供 11-称骨 / 14-生肖 / 15-紫微 共用；tests.html 与 Node 可直接 require。 */
 (function () {
   var LUNAR_DATA = [
@@ -40,10 +40,20 @@
     return s + leapDays(y);
   }
   function yearGanZhi(y) { return GAN[mod(y - 4, 10)] + ZHI[mod(y - 4, 12)]; }
+  /* 公历日期是否真实存在（拒绝 2-31、13 月、小数、非数字；Date.UTC 会静默进位，故构造后回读比对） */
+  function validSolar(y, m, d) {
+    if (!isFinite(y) || !isFinite(m) || !isFinite(d)) return false;
+    if (Math.floor(y) !== y || Math.floor(m) !== m || Math.floor(d) !== d) return false;
+    if (y < 1900 || y > 2100 || m < 1 || m > 12 || d < 1 || d > 31) return false;
+    var t = new Date(Date.UTC(y, m - 1, d));
+    return t.getUTCFullYear() === y && t.getUTCMonth() === m - 1 && t.getUTCDate() === d;
+  }
   function solarToLunar(y, m, d) {
+    y = typeof y === 'string' ? Number(y) : y; m = typeof m === 'string' ? Number(m) : m; d = typeof d === 'string' ? Number(d) : d;
+    if (!validSolar(y, m, d)) return null;
     var base = Date.UTC(1900, 0, 31), target = Date.UTC(y, m - 1, d);
     var offset = Math.round((target - base) / 86400000);
-    if (offset < 0 || y < 1900 || y > 2100) return null;
+    if (offset < 0) return null;
     var yy = 1900, dm, isLeap = false;
     for (yy = 1900; yy <= 2100; yy++) {
       var yd = yearDays(yy);

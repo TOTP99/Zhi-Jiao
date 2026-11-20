@@ -110,7 +110,7 @@
     // 来源：lunar-javascript 1.7.8 的 getJieQiTable() 导出，2024 年 12 节与紫金山天文台公布时刻差均 <0.5 分钟，
     // 2023/2025 立春亦 <0.3 分钟；另与原公式交叉核对，黄经偏差 <0.02°。表内为 UTC 瞬时（自 2000-01-01T00:00Z 起的分钟数），
     // 行 = getJieQi(year) 的 year（1899–2101），列 = JIEQI_NAMES 顺序（立春…小寒；小寒为次年 1 月）。
-    // 表外年份回退到 findSolarTerm 公式计算（精度回落到偏早 2–8 分钟，行为与旧版一致）。
+    // 表外年份回退到 findSolarTerm 公式计算（2024 前后实测偏早 2–8 分钟；全表 1899–2101 逐项对比，公式与内置表差 -14～+8 分钟，故表外年份节气临界前后约 15 分钟内可能判错）。
     const JIEQI_TABLE_START_YEAR = 1899;
     const JIEQI_TABLE_EPOCH = Date.UTC(2000, 0, 1, 0, 0, 0);
     const JIEQI_TABLE = [
@@ -722,11 +722,38 @@
         note: "基础五行统计，不等同于完整旺衰、格局或用神判断。"
       };
     }
+    // 严格入参校验：Date.UTC 会把 2-31、13 月、24 时、时区 +25 之类静默进位成"另一个真实时刻"，
+    // 导致不存在的生日也排出一张正常命盘；这里在最前面一律拒绝（抛 isInputError 的错误，UI 可原样显示）。
+    const YEAR_MIN = 1800, YEAR_MAX = 2200;
+    function inputError(msg) { const e = new Error(msg); e.name = "BaziInputError"; e.isInputError = true; return e; }
+    function strictNum(v) { return (v === "" || v === null || typeof v === "boolean" || Array.isArray(v)) ? NaN : Number(v); }
+    function validateInput(input) {
+      const year = strictNum(input.year), month = strictNum(input.month), day = strictNum(input.day), hour = strictNum(input.hour);
+      const minute = input.minute == null || input.minute === "" ? 0 : strictNum(input.minute);
+      const second = input.second == null || input.second === "" ? 0 : strictNum(input.second);
+      const tz = input.timezone == null || input.timezone === "" ? 8 : strictNum(input.timezone);
+      if (!Number.isInteger(year) || year < YEAR_MIN || year > YEAR_MAX) throw inputError("出生年份应为 " + YEAR_MIN + "–" + YEAR_MAX + " 之间的整数");
+      if (!Number.isInteger(month) || month < 1 || month > 12) throw inputError("出生月份应为 1–12");
+      if (!Number.isInteger(day) || day < 1 || day > 31) throw inputError("出生日期应为 1–31");
+      const chk = new Date(Date.UTC(year, month - 1, day));
+      if (chk.getUTCFullYear() !== year || chk.getUTCMonth() !== month - 1 || chk.getUTCDate() !== day) {
+        throw inputError(year + " 年 " + month + " 月没有 " + day + " 日");
+      }
+      if (!Number.isInteger(hour) || hour < 0 || hour > 23) throw inputError("出生小时应为 0–23");
+      if (!Number.isInteger(minute) || minute < 0 || minute > 59) throw inputError("出生分钟应为 0–59");
+      if (!Number.isInteger(second) || second < 0 || second > 59) throw inputError("出生秒应为 0–59");
+      if (!Number.isFinite(tz) || tz < -12 || tz > 14) throw inputError("时区应为 -12 至 +14");
+      if (input.longitude != null && input.longitude !== "") {
+        const lon = strictNum(input.longitude);
+        if (!Number.isFinite(lon) || lon < -180 || lon > 180) throw inputError("经度应为 -180 至 180");
+      }
+    }
     function calculate(input) {
       if (!input) throw new Error("BaziShensha.calculate() 缺少参数");
       if (input.year == null || input.month == null || input.day == null || input.hour == null) {
         throw new Error("year、month、day、hour 为必填项");
       }
+      validateInput(input);
       const pillars = calculatePillars(input);
       const elements = calculateFiveElements(pillars);
       const tenGods = calculateTenGods(pillars);
@@ -742,6 +769,8 @@
           trueSolar: !!input.trueSolar,
           longitude: input.longitude != null ? Number(input.longitude) : null
         },
+        /* 节气来源：1900–2100 用内置表（分钟精度）；表外年份回退太阳黄经公式，与内置表对比实测偏差可达 ±14 分钟，临界时刻可能判错月/年柱 */
+        jieqiSource: (Number(input.year) >= 1900 && Number(input.year) <= 2100) ? "table" : "formula",
         pillars, bazi: pillars.text, dayMaster,
         fiveElements: elements, tenGods, relations, shensha,
         jieqi: pillars.jieqi
@@ -749,7 +778,9 @@
     }
     const API = {
       calculate,
-      constants: { stems: STEMS.slice(), branches: BRANCHES.slice(), elements: ELEMENTS.slice() }
+      constants: { stems: STEMS.slice(), branches: BRANCHES.slice(), elements: ELEMENTS.slice() },
+      /* 仅供 tests.html 交叉核对节气表与公式，业务代码勿用 */
+      _debug: { findSolarTerm, jieqiFromTable, JIEQI_LONGITUDES, JIEQI_TABLE_START_YEAR, JIEQI_TABLE_END_YEAR: JIEQI_TABLE_START_YEAR + JIEQI_TABLE.length - 1 }
     };
     if (typeof global !== "undefined") global.BaziShensha = API;
   })(typeof window !== "undefined" ? window : this);

@@ -41,7 +41,7 @@
     var h = (b.hour == null || b.hour === '') ? 12 : +b.hour;
     if (![y, m, d, h].every(isFinite)) return { error: '生辰档案不完整，请点「更换」重新录入。' };
     var lu = window.YumiaoLunar.solarToLunar(y, m, d);
-    if (!lu) return { error: '农历换算范围为 1900–2100 年，请检查生辰档案。' };
+    if (!lu) return { error: '生辰日期不存在或超出 1900–2100 年范围，请检查生辰档案。' };
     var gz = ganzhi(lu.year);
     var hi = Math.floor((h + 1) / 2) % 12;
     // 闰月半月制（与 15-ziwei.js effectiveMonth 同口径，原样复用）：闰月 1–15 日按本月，16 日后算下月。

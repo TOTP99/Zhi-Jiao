@@ -66,8 +66,8 @@
     let result;
     try {
       result = BaziShensha.calculate(parsed.input);
-    } catch (_) {
-      if (errEl) errEl.textContent = '排盘失败，请检查出生信息是否正确。';
+    } catch (e) {
+      if (errEl) errEl.textContent = (e && e.isInputError) ? ('生辰信息有误：' + e.message + '。请到「我的」更换档案。') : '排盘失败，请检查出生信息是否正确。';
       return;
     }
     baziResult = result;

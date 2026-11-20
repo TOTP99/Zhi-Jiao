@@ -193,9 +193,19 @@
     }
     return out;
   }
+  /* 入参校验：小时必须 0–23 的整数（取模会把 24 当子时）；性别只认「男 / 女」（其余值会被当阴性，改变大限顺逆与十二神）；
+     日期是否真实存在由 solarToLunar 把关；农历模块缺失时给出明确报错而不是 TypeError。 */
+  function inputError(msg) { var e = new Error(msg); e.name = 'ZiweiInputError'; e.isInputError = true; return e; }
+  function validateOpt(opt) {
+    if (!opt || typeof opt !== 'object') throw inputError('缺少排盘参数');
+    if (!window.YumiaoLunar || typeof window.YumiaoLunar.solarToLunar !== 'function') throw new Error('农历换算模块未加载（js/00a-lunar.js）');
+    if (typeof opt.hour !== 'number' || !isFinite(opt.hour) || Math.floor(opt.hour) !== opt.hour || opt.hour < 0 || opt.hour > 23) throw inputError('出生小时应为 0–23 的整数');
+    if (opt.gender !== '男' && opt.gender !== '女') throw inputError('性别应为「男」或「女」');
+  }
   function chart(opt) {
+    validateOpt(opt);
     var lunar = window.YumiaoLunar.solarToLunar(opt.year, opt.month, opt.day);
-    if (!lunar) throw new Error('日期超出范围（1900–2100）');
+    if (!lunar) throw inputError('日期不存在或超出范围（1900–2100）');
     var hourZhi = hourToDiZhi(opt.hour);
     var yearGan = lunar.yearGanZhi[0], yearZhi = lunar.yearGanZhi[1];
     var isYang = '甲丙戊庚壬'.indexOf(yearGan) >= 0;

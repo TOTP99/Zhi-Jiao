@@ -39,14 +39,33 @@
     }
     return { ok: true, data: clean, count: n };
   }
-  /* 写入：先清掉现有 yumiao_ 键再写，保证恢复后与备份一致；写失败返回 false */
+  /* 写入：先清掉现有 yumiao_ 键再写，保证恢复后与备份一致。
+     先给旧数据拍快照；中途任何写入异常（配额不足等）都回滚到快照，旧数据不丢；写失败返回 false。 */
+  function snapshot(st) {
+    var snap = {};
+    keysOf(st).forEach(function (k) { var v = st.getItem(k); if (typeof v === 'string') snap[k] = v; });
+    return snap;
+  }
+  function rollback(st, snap) {
+    try {
+      keysOf(st).forEach(function (k) { st.removeItem(k); });
+      for (var k in snap) st.setItem(k, snap[k]);
+      return true;
+    } catch (e) { console.warn('[yumiao] backup rollback failed', e); return false; }
+  }
   function apply(st, parsed) {
     if (!parsed || !parsed.ok) return false;
+    var snap;
+    try { snap = snapshot(st); } catch (e) { console.warn('[yumiao] backup snapshot', e); return false; }
     try {
       keysOf(st).forEach(function (k) { st.removeItem(k); });
       for (var k in parsed.data) st.setItem(k, parsed.data[k]);
       return true;
-    } catch (e) { console.warn('[yumiao] backup apply', e); return false; }
+    } catch (e) {
+      console.warn('[yumiao] backup apply', e);
+      rollback(st, snap);
+      return false;
+    }
   }
   window.YumiaoBackup = { build: build, parse: parse, apply: apply, KEY_PREFIX: PREFIX };
 
@@ -75,7 +94,7 @@
       rd.onload = function () {
         var p = window.YumiaoBackup.parse(String(rd.result || ''));
         if (!p.ok) { say(p.error); return; }
-        if (!window.YumiaoBackup.apply(localStorage, p)) { say('恢复失败，本机存储不可用'); return; }
+        if (!window.YumiaoBackup.apply(localStorage, p)) { say('恢复失败（本机存储不足或不可用），原有数据已保留'); return; }
         say('已恢复，页面即将刷新');
         setTimeout(function () { location.reload(); }, 900);
       };
