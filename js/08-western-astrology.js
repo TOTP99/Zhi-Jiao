@@ -587,6 +587,8 @@
   }
   var _fabPos = null, _fabDrag = null, _fabWasDragged = false;
   function westernFabEl(){ return document.getElementById('westernFab'); }
+  /* 悬浮钮的定位参照是星盘弹窗（弹窗带 transform，fixed 相对它而非视口） */
+  function fabHost(){ const m = document.getElementById('westernModal'); return m ? m.getBoundingClientRect() : { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight }; }
   function westernFabShow(){
     const fab = westernFabEl();
     if (!fab) return;
@@ -600,7 +602,7 @@
       fab.style.right = 'auto'; fab.style.bottom = 'auto';
     } else {
       fab.style.left = '50%'; fab.style.top = 'auto';
-      fab.style.right = 'auto'; fab.style.bottom = 'calc(90px + env(safe-area-inset-bottom))';
+      fab.style.right = 'auto'; fab.style.bottom = 'calc(18px + env(safe-area-inset-bottom))';
       fab.style.transform = 'translateX(-50%)';
     }
     westernFabBind();
@@ -619,8 +621,8 @@
     if (!fab || fab._fabBound) return;
     fab._fabBound = true;
     const start = function(x, y){
-      const r = fab.getBoundingClientRect();
-      _fabDrag = { sx: x, sy: y, ox: r.left, oy: r.top, moved: false };
+      const r = fab.getBoundingClientRect(), m = fabHost();
+      _fabDrag = { sx: x, sy: y, ox: r.left - m.left, oy: r.top - m.top, moved: false };
       fab.classList.add('dragging');
       fab.style.transform = 'none';
       fab.style.right = 'auto'; fab.style.bottom = 'auto';
@@ -630,10 +632,10 @@
       const dx = x - _fabDrag.sx, dy = y - _fabDrag.sy;
       if (Math.abs(dx) > 6 || Math.abs(dy) > 6) _fabDrag.moved = true;
       if (!_fabDrag.moved) return;
-      const r = fab.getBoundingClientRect();
+      const r = fab.getBoundingClientRect(), m = fabHost();
       let nx = _fabDrag.ox + dx, ny = _fabDrag.oy + dy;
-      nx = Math.max(0, Math.min(window.innerWidth - r.width, nx));
-      ny = Math.max(0, Math.min(window.innerHeight - r.height, ny));
+      nx = Math.max(0, Math.min(m.width - r.width, nx));
+      ny = Math.max(0, Math.min(m.height - r.height, ny));
       fab.style.left = nx + 'px';
       fab.style.top = ny + 'px';
     };
@@ -641,8 +643,8 @@
       if (!_fabDrag) return;
       if (_fabDrag.moved) {
         _fabWasDragged = true;
-        const r = fab.getBoundingClientRect();
-        _fabPos = { x: Math.round(r.left), y: Math.round(r.top) };
+        const r = fab.getBoundingClientRect(), m = fabHost();
+        _fabPos = { x: Math.round(r.left - m.left), y: Math.round(r.top - m.top) };
         try { localStorage.setItem(LS_WESTERN_FAB, JSON.stringify(_fabPos)); } catch (e) { console.warn('[yumiao] 08', e); }
         setTimeout(function(){ _fabWasDragged = false; }, 300);
       }

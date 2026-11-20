@@ -748,7 +748,6 @@
       res.show = { data: work, w: W, h: H };
       res.ridge = { R: R, w: W, h: H };
     }
-    if (window.__palmDebug) { window.__palmLastDbg = { sharp: res.sharpness, lines: JSON.parse(JSON.stringify(lines, function (k, v) { return k === 'pts' ? undefined : v; })), R: R, RM: RM, RT: RT, longM: longM, dom: dom2, w: W, h: H, L: L }; }
     return res;
   }
 
@@ -792,11 +791,10 @@
     if (engine === 'lm' && m.conf < 2) return { draw: true, greyDash: true };
     return { draw: true, greyDash: false };
   }
-  /* v2.19：引导状态单点收口——卡片、对照图、按钮三者同开同关；诊断模式下恒关 */
+  /* v3.0：引导并成一套（palmGuideSet 内含拍摄提示卡 + 对照图）；容器与按钮同开同关；诊断模式下恒关 */
   function renderGuide(show) {
     if (ST && ST.mode !== 'fortune') show = false;
-    var el = $('palmGuideCard'); if (el) el.hidden = !show;
-    var g = $('palmGuide'); if (g) g.hidden = !show;
+    var el = $('palmGuideSet'); if (el) el.hidden = !show;
     var b = $('palmGuideBtn'); if (b) b.classList.toggle('on', !!show);
   }
 
@@ -987,13 +985,6 @@
     '<div class="palm-busy" id="palmBusy" hidden><span class="palm-spin" aria-hidden="true"></span><span id="palmBusyTxt">分析中…</span></div>' +
     '</div>' +
     '<div class="palm-status" id="palmStatus" role="status" aria-live="polite"></div>' +
-    '<div class="palm-guide-card" id="palmGuideCard" hidden>' +
-    '<strong>拍不清楚？这样拍更容易识别</strong>' +
-    '<ul><li>手掌完全张开，拇指在画面内</li><li>光线均匀，避免强反光</li><li>手腕尽量拍入</li><li>推荐用后置摄像头，保持 20–30cm</li></ul>' +
-    '<div class="palm-guide-card-actions">' +
-    '<button type="button" class="btn-gold btn-sm" id="palmGuideRetake">重新拍一张</button>' +
-    '<button type="button" class="btn-ghost btn-sm" id="palmGuideManual">对照照片手动选择</button>' +
-    '</div></div>' +
     '<div class="palm-actions">' +
     '<button type="button" class="btn-gold btn-sm" id="palmShoot">拍照</button>' +
     '<button type="button" class="btn-ghost btn-sm" id="palmPick">相册</button>' +
@@ -1002,7 +993,15 @@
     '</div>' +
     '<input type="file" id="palmFileShoot" accept="image/*" capture="environment" hidden>' +
     '<input type="file" id="palmFilePick" accept="image/*" hidden>' +
-    '<div class="palm-guide" id="palmGuide" hidden>' +
+    '<div class="palm-guide-set" id="palmGuideSet" hidden>' +
+    '<div class="palm-guide-card" id="palmGuideCard">' +
+    '<strong>拍不清楚？这样拍更容易识别</strong>' +
+    '<ul><li>手掌完全张开，拇指在画面内</li><li>光线均匀，避免强反光</li><li>手腕尽量拍入</li><li>推荐用后置摄像头，保持 20–30cm</li></ul>' +
+    '<div class="palm-guide-card-actions">' +
+    '<button type="button" class="btn-gold btn-sm" id="palmGuideRetake">重新拍一张</button>' +
+    '<button type="button" class="btn-ghost btn-sm" id="palmGuideManual">对照照片手动选择</button>' +
+    '</div></div>' +
+    '<div class="palm-guide" id="palmGuide">' +
     '<svg viewBox="0 0 300 400" aria-label="手掌六条纹路位置对照" role="img">' +
     '<g fill="rgba(243,234,211,.05)" stroke="#8f8062" stroke-width="1.6">' +
     '<rect x="58" y="150" width="184" height="215" rx="42"/><rect x="72" y="52" width="34" height="112" rx="17"/>' +
@@ -1019,6 +1018,7 @@
     '<text x="40" y="330">生命线</text><text x="244" y="204">感情线</text><text x="244" y="262">智慧线</text>' +
     '<text x="150" y="392" text-anchor="middle">事业线</text><text x="174" y="150">太阳线</text><text x="256" y="176">婚姻线</text></g></svg>' +
     '<p>示意图：拇指在左，掌心朝向镜头。各人纹路位置略有差异，仅作对照。</p></div>' +
+    '</div>' +
     '</div>' +
     '<div class="palm-col">' +
     '<div class="form-row palm-hand-row"><label>所拍的手</label><div class="seg" id="palmHand">' +
@@ -1302,7 +1302,7 @@
     ['palmFileShoot', 'palmFilePick'].forEach(function (id) {
       $(id).onchange = function (e) { var f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) onFile(f); };
     });
-    $('palmGuideBtn').onclick = function () { renderGuide($('palmGuideCard').hidden); };
+    $('palmGuideBtn').onclick = function () { renderGuide($('palmGuideSet').hidden); };
     $('palmGuideRetake').onclick = function () { $('palmFileShoot').click(); };
     $('palmGuideManual').onclick = function () { renderGuide(false); };
     $('palmOverlayBtn').onclick = function () { ST.overlay = !ST.overlay; this.classList.toggle('on', ST.overlay); drawCanvas(); };
