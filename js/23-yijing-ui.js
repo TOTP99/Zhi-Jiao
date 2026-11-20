@@ -150,8 +150,20 @@
     if (AC && AC.state === 'suspended') AC.resume();
     return AC;
   }
+  // 总线：增益 ×2.8 + 压缩器防爆音，整体音量约为原先的 2.8 倍
+  var BUS = null;
+  function bus(ctx) {
+    if (BUS && BUS.ctx === ctx) return BUS.node;
+    var comp = ctx.createDynamicsCompressor();
+    try { comp.threshold.value = -10; comp.ratio.value = 6; comp.attack.value = 0.003; comp.release.value = 0.12; } catch (_) {}
+    var mg = ctx.createGain(); mg.gain.value = 2.8;
+    mg.connect(comp); comp.connect(ctx.destination);
+    BUS = { ctx: ctx, node: mg };
+    return mg;
+  }
   function coinClick(delay, vol) {
     var ctx = ac(); if (!ctx) return;
+    var dest = bus(ctx);
     var t = ctx.currentTime + delay;
     // 金属碰击：高频振荡 + 快速衰减
     [5230, 7450, 9320].forEach(function (f, i) {
@@ -160,7 +172,7 @@
       g.gain.setValueAtTime(0, t);
       g.gain.linearRampToValueAtTime(vol / (i + 1), t + 0.005);
       g.gain.exponentialRampToValueAtTime(0.001, t + 0.12 + Math.random() * 0.08);
-      o.connect(g); g.connect(ctx.destination);
+      o.connect(g); g.connect(dest);
       o.start(t); o.stop(t + 0.25);
     });
   }

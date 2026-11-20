@@ -912,6 +912,28 @@
       return;
     }
   }
+  // 按视口剩余空间收缩菜单高度（避开底部标签栏），短屏/横屏时不再伸出视口
+  function fitCasualMenu() {
+    const m = document.getElementById('casualMenu');
+    if (!m) return;
+    m.style.maxHeight = ''; m.style.top = ''; m.style.bottom = '';
+    const host = m.offsetParent || m.parentElement;
+    const hr = host.getBoundingClientRect();
+    const tb = document.getElementById('tabbar');
+    const limit = tb && tb.getBoundingClientRect().height ? Math.min(tb.getBoundingClientRect().top, window.innerHeight) : window.innerHeight;
+    const below = Math.floor(limit - (hr.bottom + 8) - 8);
+    const above = Math.floor(hr.top - 8 - 8);
+    if (below < 200 && above > below) {
+      m.style.top = 'auto'; m.style.bottom = 'calc(100% + 8px)';
+      m.style.maxHeight = Math.max(120, Math.min(300, above)) + 'px';
+    } else {
+      m.style.maxHeight = Math.max(120, Math.min(300, below)) + 'px';
+    }
+  }
+  window.addEventListener('resize', function () {
+    const m = document.getElementById('casualMenu');
+    if (m && m.classList.contains('show')) fitCasualMenu();
+  });
   function openCasualMenu() {
     clearTimeout(questionMenuHideTimer);
     menuPinned = true;
@@ -920,6 +942,7 @@
     if (!casual) return;
     if (!casualMenuRendered) renderCasualMenu();
     casual.classList.add('show');
+    fitCasualMenu();
     if (window.YumiaoNav) window.YumiaoNav.noteOpened('casualMenu', 'menu');
     bindOutsideClickOnce();
     // 滚动列表时保持钉住，避免误关

@@ -124,6 +124,7 @@
     const md = document.getElementById('fortuneModal');
     const res = document.getElementById('fortuneResult');
     const again = document.getElementById('fortuneAgain');
+    const fcopy = document.getElementById('fortuneCopy');
     if (typeof ModalUI !== 'undefined' && ModalUI.open) ModalUI.open('fortune');
     else {
       if (bd) bd.classList.add('show');
@@ -133,6 +134,7 @@
     }
     if (res) res.innerHTML = '<span class="c-goldsoft">禅猫就位 · 圆盘待命…</span>';
     if (again) { again.style.display = 'none'; again.disabled = false; }
+    if (fcopy) fcopy.style.display = 'none';
     setTimeout(function(){ spinFortuneWheel(); }, 280);
   }
   function closeFortuneWheel() {
@@ -152,9 +154,11 @@
     const wheel = document.getElementById('fortuneWheel');
     const res = document.getElementById('fortuneResult');
     const again = document.getElementById('fortuneAgain');
+    const fcopy = document.getElementById('fortuneCopy');
     if (!wheel || !res) return;
     fortuneSpinning = true;
     if (again) { again.style.display = 'none'; again.disabled = true; }
+    if (fcopy) fcopy.style.display = 'none';
     res.innerHTML = '<span class="c-goldsoft">圆盘旋转中…</span>';
     playFortuneSpinSound();
     const n = FORTUNE_SEGMENTS.length;
@@ -182,6 +186,7 @@
         '<div class="fr-catline">' + segData.cat + '</div>';
       if (typeof saveReportHTML === 'function') saveReportHTML('yumiao_report_fortune_v1', '命运圆盘', 'fortuneResult');
       if (again) { again.style.display = ''; again.disabled = false; }
+      if (fcopy) fcopy.style.display = '';
     }, 3000);
   }
   (function bindBoxLongPress(){
