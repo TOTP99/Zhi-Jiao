@@ -1176,6 +1176,80 @@
     return true;
   });
 
+  /* ── 周易：六种动爻数量断法（朱熹《易学启蒙》）+ 64 卦变卦映射 ── */
+  function yjLines(keyStr, movingIdx) { // keyStr 上爻→初爻，1 阳 0 阴；返回初爻→上爻 lines
+    return [0, 1, 2, 3, 4, 5].map(function (i) { return { yang: keyStr.charAt(5 - i) === '1', moving: movingIdx.indexOf(i) >= 0 }; });
+  }
+  var YJ = function () { return window.YijingCore; };
+  t('周易：二爻动 → 以上动爻为主、下动爻为辅（本卦爻辞）', function () {
+    var r = YJ().judge(yjLines('111111', [1, 4])), h = YJ().getHex('111111');
+    return eq([r.rule.indexOf('二爻动') === 0, r.parts.length, r.parts[0].classical, r.parts[1].classical], [true, 2, h.yaoCi[4], h.yaoCi[1]]);
+  });
+  t('周易：三爻动 → 本卦卦辞 + 变卦卦辞参断', function () {
+    var r = YJ().judge(yjLines('111111', [0, 2, 4])), h = YJ().getHex('111111'), c = YJ().getHex(YJ().changedKey(yjLines('111111', [0, 2, 4])));
+    return eq([r.rule.indexOf('三爻动') === 0, r.parts.map(function (p) { return p.classical; })], [true, [h.guaCi, c.guaCi]]);
+  });
+  t('周易：四爻动 → 取变卦两个不变爻爻辞，下爻为主（不再以变卦卦辞为主）', function () {
+    var L = yjLines('111111', [0, 1, 2, 3]), r = YJ().judge(L), c = YJ().getHex(YJ().changedKey(L));
+    if (r.rule.indexOf('四爻动') !== 0) return '断法：' + r.rule;
+    return eq([r.parts[0].classical, r.parts[1].classical, /为主/.test(r.parts[0].t), /为辅/.test(r.parts[1].t)], [c.yaoCi[4], c.yaoCi[5], true, true]);
+  });
+  t('周易：五爻动 → 取变卦唯一不变爻爻辞', function () {
+    var L = yjLines('000000', [0, 1, 2, 3, 5]), r = YJ().judge(L), c = YJ().getHex(YJ().changedKey(L));
+    if (r.rule.indexOf('五爻动') !== 0) return '断法：' + r.rule;
+    return eq([r.parts[0].classical, r.parts[0].t.indexOf('变卦不变爻') === 0], [c.yaoCi[4], true]);
+  });
+  t('周易：四/五爻动的不变爻位置对所有组合都正确（C(6,4)+C(6,5) 共 21 种 × 乾坤）', function () {
+    var bad = [];
+    ['111111', '000000'].forEach(function (key) {
+      for (var mask = 0; mask < 64; mask++) {
+        var mv = []; for (var i = 0; i < 6; i++) if (mask & (1 << i)) mv.push(i);
+        if (mv.length !== 4 && mv.length !== 5) continue;
+        var L = yjLines(key, mv), r = YJ().judge(L), c = YJ().getHex(YJ().changedKey(L));
+        var still = [0, 1, 2, 3, 4, 5].filter(function (i) { return mv.indexOf(i) < 0; });
+        var want = still.map(function (i) { return c.yaoCi[i]; });
+        var got = r.parts.slice(0, still.length).map(function (p) { return p.classical; });
+        if (JSON.stringify(want) !== JSON.stringify(got) || !got.every(Boolean)) bad.push(key + ':' + mv.join(''));
+      }
+    });
+    return bad.length === 0 || bad.slice(0, 5).join(' ');
+  });
+  t('周易：六爻全动 坤用六；其余卦以变卦卦辞断', function () {
+    var kun = YJ().judge(yjLines('000000', [0, 1, 2, 3, 4, 5])), h2 = YJ().getHex('000000');
+    var tun = YJ().judge(yjLines('010001', [0, 1, 2, 3, 4, 5])), c = YJ().getHex('101110');
+    return eq([kun.rule.indexOf('用六') >= 0, kun.parts[0].t, kun.parts[0].classical, tun.rule.indexOf('变卦卦辞') >= 0, tun.parts[0].classical], [true, '用六', h2.yaoCi[6], true, c.guaCi]);
+  });
+  t('周易：64 卦 × 63 种动爻组合，变卦必存在且只翻动爻；全动即按位取反', function () {
+    var keys = Object.keys(window.YIJING_DATA), bad = [];
+    keys.forEach(function (key) {
+      if (window.YIJING_DATA[key].key !== key) bad.push('key 字段 ' + key);
+      for (var mask = 1; mask < 64; mask++) {
+        var mv = []; for (var i = 0; i < 6; i++) if (mask & (1 << i)) mv.push(i);
+        var L = yjLines(key, mv), ck = YJ().changedKey(L), exp = '';
+        for (var j = 5; j >= 0; j--) exp += ((key.charAt(5 - j) === '1') !== (mv.indexOf(j) >= 0)) ? '1' : '0';
+        if (ck !== exp || !YJ().getHex(ck)) bad.push(key + '/' + mask);
+      }
+      var comp = key.split('').map(function (c) { return c === '1' ? '0' : '1'; }).join('');
+      if (YJ().changedKey(yjLines(key, [0, 1, 2, 3, 4, 5])) !== comp) bad.push('全动 ' + key);
+    });
+    return bad.length === 0 || bad.slice(0, 5).join(' ');
+  });
+  t('周易：judge 对 64 卦 × 0–6 动爻数都给出非空断辞', function () {
+    var bad = [];
+    Object.keys(window.YIJING_DATA).forEach(function (key) {
+      for (var n = 0; n <= 6; n++) {
+        var r = YJ().judge(yjLines(key, [0, 1, 2, 3, 4, 5].slice(0, n)));
+        if (!r || !r.parts.length || !r.parts.every(function (p) { return p.classical; })) bad.push(key + '/' + n);
+      }
+    });
+    return bad.length === 0 || bad.slice(0, 5).join(' ');
+  });
+  t('周易：印章字 toTrad 覆盖 64 卦名里所有有繁体的字（泽→澤 为→為 兑→兌 离→離 风→風）', function () {
+    var simp = '泽为兑离风', all = Object.keys(window.YIJING_DATA).map(function (k) { return YJ().toTrad(window.YIJING_DATA[k].name); }).join('');
+    var left = simp.split('').filter(function (c) { return all.indexOf(c) >= 0; });
+    return left.length === 0 || ('仍含简体：' + left.join(''));
+  });
+
   /* ────────── 错误边界 ────────── */
   section('错误边界');
   t('错误边界已安装', function () { return window.__yumiaoGuardInstalled === true; });

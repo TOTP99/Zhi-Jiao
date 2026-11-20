@@ -103,6 +103,52 @@
         if (prev == null) W.localStorage.removeItem('yumiao_shared_birth_v1'); else W.localStorage.setItem('yumiao_shared_birth_v1', prev);
         return ok;
       });
+      await t('掷筊：选 108 问后手动改输入框 → 清除预设分类，按新问题关键词判断', async function () {
+        var q = D.getElementById('question');
+        W.setPreferredCategory('job');
+        var before = W.resolveCategory('是否适合创业');
+        q.value = '今天适合出门吗'; q.dispatchEvent(new W.Event('input', { bubbles: true }));
+        var after = W.resolveCategory(q.value);
+        W.clearPreferredCategory();
+        return (before === 'job' && after !== 'job') || ('before=' + before + ' after=' + after);
+      });
+      await t('掷筊：选 108 问（填入文字）不会触发清除，分类保留到真正输入为止', async function () {
+        var q = D.getElementById('question'), item = null;
+        W.selectCasualQuestion(0);
+        var kept = W.resolveCategory(q.value);
+        W.clearPreferredCategory();
+        return !!kept || '108 问第 1 条未带分类';
+      });
+      await t('星盘：档案只有半截坐标（有纬度无经度 / 越界）也能出盘，不报「分析出错」', async function () {
+        var prev = W.localStorage.getItem('yumiao_shared_birth_v1'), bad = [];
+        var cases = [{ lat: 43.7, lng: null }, { lat: null, lng: -79.4 }, { lat: 200, lng: 10 }, { lat: 'x', lng: 'y' }];
+        for (var i = 0; i < cases.length; i++) {
+          var b = { year: 1990, month: 5, day: 17, hour: 10, minute: 0, sex: 'F', gender: '女', tzOffset: -5, tzName: 'America/Toronto', city: 'Toronto', lat: cases[i].lat, lng: cases[i].lng };
+          W.localStorage.setItem('yumiao_shared_birth_v1', JSON.stringify(b));
+          W.openWesternPanel(); await sleepMs(500);
+          W.submitWesternForm(); await sleepMs(900);
+          if (!D.querySelector('#westernModal .western-chart-viz svg')) bad.push(JSON.stringify(cases[i]));
+          W.closeSheetByBtn(D.querySelector('#westernModal .sheet-close')); await sleepMs(300);
+        }
+        if (prev == null) W.localStorage.removeItem('yumiao_shared_birth_v1'); else W.localStorage.setItem('yumiao_shared_birth_v1', prev);
+        return bad.length === 0 || ('未出盘：' + bad.join(' '));
+      });
+      await t('MBTI：未答完时「查看详细解读」禁用并写明还差几题；进度条同样提示', async function () {
+        W.openMbtiQuiz(); await sleepMs(500);
+        var b = D.getElementById('mbtiCastBtn'), pr = D.getElementById('mbtiProgress');
+        var r = b.disabled && /还差 \d+ 题/.test(b.textContent) && /还差 \d+ 题/.test(pr.textContent);
+        W.closeSheetByBtn(D.querySelector('#mbtiModal .sheet-close'));
+        return r || ('btn=' + b.textContent + ' disabled=' + b.disabled + ' progress=' + pr.textContent);
+      });
+      await t('「我的」改档案：不出现「跳过」，按钮为「取消」且点后关闭、不改档案', async function () {
+        var before = W.localStorage.getItem('yumiao_shared_birth_v1');
+        W.editProfile(); await sleepMs(300);
+        var sk = D.getElementById('obSkip'), ob = D.getElementById('onboard');
+        var label = sk.textContent;
+        sk.click(); await sleepMs(500);
+        var closed = !ob.classList.contains('show'), same = W.localStorage.getItem('yumiao_shared_birth_v1') === before;
+        return (label === '取消' && closed && same) || ('label=' + label + ' closed=' + closed + ' same=' + same);
+      });
       await t('周易打开：内部挂载，无 iframe', async function () {
         W.openYi();
         var ok = false;

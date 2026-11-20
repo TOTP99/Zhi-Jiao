@@ -946,3 +946,19 @@ input:not([type=checkbox]):not([type=radio]), textarea, select{border-radius:11p
 #westernModal{--fs-xs:12px}
 /* B8 请示记录底部关闭键 */
 #historyModal>.btn-ghost{margin:6px 0 calc(10px + env(safe-area-inset-bottom));width:100%;min-height:44px;flex:1 1 100%}
+/* B3 八字结果页也显示档案条（与紫微页一致），结果页用紧凑一行 */
+.profile-bar.pb-compact{padding:8px 12px;margin-bottom:10px}
+.profile-bar.pb-compact .pb-kicker{display:none}
+.profile-bar.pb-compact .pb-info{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 10px}
+.profile-bar.pb-compact .pb-text{font-size:var(--fs-sm)}
+.profile-bar.pb-compact .btn-sm{min-height:36px;padding:6px 12px}
+/* A3 星盘 caption 与图之间留足间距，caption 不被图压住 */
+.western-chart-viz .viz-caption{margin:6px 0 14px;line-height:1.5;position:relative;z-index:1}
+.western-chart-viz svg{display:block;margin:0 auto}
+/* B9 横屏底栏贴底：下内边距只取安全区（无安全区时 4px），不再叠加 */
+@media (orientation:landscape) and (max-height:600px){
+  :root{--tabbar-h:calc(56px + max(4px, env(safe-area-inset-bottom)))}
+  #tabbar{padding-bottom:max(4px, env(safe-area-inset-bottom))}
+}
+/* B7 星盘小字：12px 作为星盘报告定稿字号（辅助说明级，正文仍 14px）；如需提到 14px 只改此处 */
+#westernModal{--fs-xs:12px}
