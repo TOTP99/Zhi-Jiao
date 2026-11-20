@@ -424,6 +424,8 @@
     var dots = $('obDots');
     var next = $('obNext');
     var direct = $('obDirect');
+    var slidesBox = $('obSlides');
+    if (slidesBox) slidesBox.style.display = n >= slides.length ? 'none' : '';   /* 录入页不再保留介绍页那 300px 空位，否则表单被挤成一小条 */
     if (direct) direct.style.display = n >= slides.length ? 'none' : '';   /* 已在录入页，不再显示「直接录入生辰」 */
     if (n >= slides.length) {
       slides.forEach(function (s) { s.classList.remove('on'); });
