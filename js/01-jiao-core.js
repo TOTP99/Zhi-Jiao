@@ -1,7 +1,7 @@
 // ============================================================
-// 掷筊核心：瑞兽信息 / 音效 / 签文数据库 / 问卜菜单（v2.15：滚动锁 / 视口高度 / ModalUI / saveReportHTML / $ / readBirth / readStorageJSON 移入 js/00b-core.js）
-// 原始行号（拆分前单文件 script.js 中的位置）: 1-1244
-// ---- 神秘变体抽取器（全局）：同 salt 恒得同一变体 —— 同一命盘判词稳定，异命则各见其妙 ----
+// 掷筊核心：瑞兽信息 / 音效 / 签文数据库 / 问卜菜单
+// ============================================================
+  // ---- 神秘变体抽取器（全局）：同 salt 恒得同一变体 —— 同一命盘判词稳定，异命则各见其妙 ----
   function yumiaoHash(str) {
     let h = 2166136261 >>> 0;
     const s = String(str == null ? '' : str);
@@ -12,7 +12,6 @@
     if (!Array.isArray(pool) || pool.length === 0) return '';
     return pool[yumiaoHash(salt) % pool.length];
   }
-  // v2.15：弹层滚动锁 / 视口高度 / ModalRegistry / ModalUI 已移入 js/00b-core.js（加载顺序 00 → 00a → 00b → 01；调用方行为不变）。
   let selectedBeast = null;
   const beastInfo = {
     dragon: { name: '唤醒天龙', style: '突破与转机' },
@@ -603,8 +602,6 @@
     }
   }
   // 请示记录：持久化到本机，最多 8 条
-
-  /* v2.15：QUERY_LOG_KEY / QUERY_LOG_MAX 已移入 js/00b-core.js。 */
   // 报告存储键全集（13 键，与各模块 saveReportHTML 调用一致；05 的 PDF 老数据兜底共用此表）
   const REPORT_KEYS = [
     'yumiao_report_bazi_v1', 'yumiao_report_mbti_v1', 'yumiao_report_zodiac_v1',
@@ -614,7 +611,6 @@
     'yumiao_report_palm_fortune_v1', 'yumiao_report_palm_diag_v1'
   ];
   window.REPORT_KEYS = REPORT_KEYS;
-  /* v2.15：appendQueryRecord / saveReportHTML 已移入 js/00b-core.js。 */
   /* 复制纯文本（掌纹的复制模式，全报告共用）：剪贴板 API + textarea 兜底 */
   function copyText(t) {
     function done() { toast('已复制'); }
@@ -665,12 +661,10 @@
     }
   };
   window.YumiaoHook = YumiaoHook;
-  /* ── 小助手单点：pad 补零、yumiaoMod 正余数（$ 已移入 js/00b-core.js）── */
+  /* ── 小助手单点：pad 补零、yumiaoMod 正余数 ── */
   const LS_SOUND = 'yumiao_sound_v1'; /* 仪式音效开关：10 与 16 共用，此处单点 */
-  /* v2.15：$ 已移入 js/00b-core.js。 */
   const pad = n => String(n).padStart(2, '0');
   function yumiaoMod(n, m) { return ((n % m) + m) % m; }
-  /* v2.15：BIRTH_KEY / readBirth / readStorageJSON 已移入 js/00b-core.js。 */
   function loadProfileSummaries() {
     try {
       return readStorageJSON(PROFILE_SUMMARY_KEY, {});
@@ -735,13 +729,6 @@
     } catch (e) { console.warn('[yumiao] pickFallbackOracle', e); }
     return pickGuardianOracle(t, cat);
   }
-  function escapeHtml(s) {
-    if (s == null) return '';
-    return String(s).replace(/[&<>"']/g, c => ({
-      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-    }[c]));
-  }
-
   // ---- 问卜范例浮动菜单 ----
   // 输入栏默认 readonly：点击时不弹键盘，先出现菜单；
   // 仅选择「1 自定义问题」时才解除 readonly 并唤起键盘。

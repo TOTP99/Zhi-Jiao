@@ -11,11 +11,15 @@
   };
 
   function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
+    if (s == null) return '';
+    return (typeof escapeHtml === 'function') ? escapeHtml(String(s))
+      : String(s).replace(/[&<>"']/g, function (c) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
   }
-  function $(id) { return document.getElementById(id); }
+  function $(id) {
+    return (typeof window.$ === 'function') ? window.$(id) : document.getElementById(id);
+  }
 
   /* ---------- 卦象图 ---------- */
   function hexDiagram(lines) {

@@ -5,8 +5,10 @@
 (function () {
   'use strict';
 
-  // 本地小助手（消除对 01 全局 $ 的隐式依赖；与 01 同语义）
-  function $(id) { return document.getElementById(id); }
+  // 本地小助手：优先用全局单点，无则本地兜底
+  function $(id) {
+    return (typeof window.$ === 'function') ? window.$(id) : document.getElementById(id);
+  }
 
   /* ── 农历表 1900–2100：bit16=闰月大小，bit15..4=1~12月大小，低4位=闰哪个月 ── */
   /* 农历换算已抽到共享模块 js/00a-lunar.js（以 15 的表为准）；此处改调 window.YumiaoLunar.solarToLunar */
@@ -175,10 +177,10 @@
   };
 
   /* 档案更换后自动重算 */
-  var prev = window.refreshProfileBars;
-  window.refreshProfileBars = function () {
-    if (typeof prev === 'function') prev.apply(this, arguments);
-    var m = $('chengguModal');
-    if (m && m.classList.contains('show')) render();
-  };
+  if (typeof window.onProfileChange === 'function') {
+    window.onProfileChange(function () {
+      var m = $('chengguModal');
+      if (m && m.classList.contains('show')) render();
+    });
+  }
 })();

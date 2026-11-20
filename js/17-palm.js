@@ -8,8 +8,10 @@
 (function () {
   'use strict';
 
-  // 本地小助手（消除对 01 全局 $ 的隐式依赖；与 01 同语义）
-  function $(id) { return document.getElementById(id); }
+  // 本地小助手：优先用全局单点，无则本地兜底
+  function $(id) {
+    return (typeof window.$ === 'function') ? window.$(id) : document.getElementById(id);
+  }
 
   /* ════════════════════════════════════════════════════════════
      A. 图像核心（纯数组运算，不碰 DOM，可在 Node 里直接测试）

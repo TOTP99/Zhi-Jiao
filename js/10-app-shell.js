@@ -1,14 +1,18 @@
 /* ============================================================
-   御猫灵局 v2.0 · 应用外壳
+   御猫灵局 · 应用外壳
    底部导航 / 新手引导 / 每日一签 / 生辰档案 / 分享 / 设置
-   引擎逻辑（01–09）保持不动，本文件只做表现层编排。
    ============================================================ */
 (function () {
   'use strict';
 
-  // 本地小助手（消除对 01 全局 $/pad 的隐式依赖；与 01 同语义）
-  function $(id) { return document.getElementById(id); }
-  function pad(n) { return String(n).padStart(2, '0'); }
+  // 本地小助手：优先用全局单点，无则本地兜底
+  function $(id) {
+    return (typeof window.$ === 'function') ? window.$(id) : document.getElementById(id);
+  }
+  function pad(n) {
+    n = Math.floor(Number(n) || 0);
+    return (n < 10 ? '0' : '') + n;
+  }
 
   var LS_ONBOARDED = 'yumiao_onboarded_v1';
   var LS_DAILY = 'yumiao_daily_v1';
@@ -214,9 +218,11 @@
     }
   };
   function yiEsc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
+    if (s == null) return '';
+    return (typeof escapeHtml === 'function') ? escapeHtml(String(s))
+      : String(s).replace(/[&<>"']/g, function (c) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
   }
   /* 起卦完成时周易 ui.js 回调：把结果记入统一记录（以前外部页抓不到结果，只能记打开时间） */
   window.__yumiaoYiResult = function (r, lines, question) {
@@ -330,9 +336,18 @@
     shenyang: { tz: 8, lng: 123.4, lat: 41.8, tzName: 'Asia/Shanghai', label: '沈阳' },
     toronto: { tz: -5, lng: -79.4, lat: 43.7, tzName: 'America/Toronto', label: '多伦多' }
   };
+  /* 档案变更订阅：各模块用 onProfileChange(fn) 登记，不再包装/覆盖全局函数 */
+  var profileListeners = [];
+  window.onProfileChange = function (fn) {
+    if (typeof fn === 'function' && profileListeners.indexOf(fn) < 0) profileListeners.push(fn);
+  };
   function saveBirth(obj) {
     try { localStorage.setItem(BIRTH_KEY, JSON.stringify(obj)); } catch (e) { console.warn('[yumiao] 10', e); }
     renderProfile();
+    try { window.refreshProfileBars(); } catch (e) { console.warn('[yumiao] refreshProfileBars', e); }
+    profileListeners.slice().forEach(function (fn) {
+      try { fn(obj); } catch (e) { console.warn('[yumiao] onProfileChange', e); }
+    });
   }
   function birthLabel(b) {
     if (!b || !b.year) return '尚未录入';
@@ -384,11 +399,6 @@
       try { opts = JSON.parse(el.getAttribute('data-bar-opts') || '{}'); } catch (e) { console.warn('[yumiao] 10', e); }
       window.renderProfileBar(el, opts);
     });
-  };
-  var _origSaveBirth = saveBirth;
-  saveBirth = function (obj) {
-    _origSaveBirth(obj);
-    try { window.refreshProfileBars(); } catch (e) { console.warn('[yumiao] refreshProfileBars', e); }
   };
 
   /* ── 新手引导 ── */

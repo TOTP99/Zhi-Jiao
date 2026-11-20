@@ -1,14 +1,6 @@
 // ============================================================
-// 核心单点（v2.15 新建，由 js/01-jiao-core.js 抽出）
-// 含：弹层滚动锁、视口高度同步、ModalRegistry / ModalUI、
-// 报告捕获（QUERY_LOG_KEY / appendQueryRecord / saveReportHTML）、
-// $ 取元素、生辰档案单点读写（BIRTH_KEY / readBirth / readStorageJSON）。
-// 本文件在 index.html / tests.html 中同步加载于 00a 之后、01 之前；
-// 顶层 function 声明即 window 属性，const（ModalUI / ModalRegistry / BIRTH_KEY）
-// 进全局词法作用域，各模块以裸标识符 + typeof 守卫调用，行为与 v2.14 的 01 内联版一致。
-// ModalUI 内 window.YumiaoNav 调用保留 if 守卫（YumiaoNav 在 js/10-app-shell.js，后加载）。
-// ============================================================
-
+// 核心单点：弹层滚动锁、视口高度、ModalUI、报告捕获、$、生辰档案读写
+// 加载顺序：00a → 00b → 01。顶层 function 声明即 window 属性。
 // ============================================================
   // ---- 弹层滚动锁：打开星盘/八字/星座/MBTI/记录 等浮层时，锁住背景掷筊页面的滚动，
   // 避免在浮层内上下滑动选择年月日时时，手指误触发背景页面跟着滚动。
@@ -134,8 +126,16 @@
     } catch (_) { /* 存储失败不影响主流程 */ }
   }
 
-  /* $ 取元素（v2.15 由 01 移入；pad / yumiaoMod 仍在 01） */
+  /* $ 取元素 */
   function $(id) { return document.getElementById(id); }
+
+  /* HTML 转义：全应用唯一实现（顶层声明即 window.escapeHtml，各模块的 esc 直接调用） */
+  function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
 
   /* ── 生辰档案单点读写：全应用唯一的键与读入口（写只走 10 的 saveBirth）──
      opts：dst=夏令时回拨到标准时；validate=缺年月日返回 null；shape=重塑为 {year,month,day,hour,gender}。
