@@ -975,3 +975,24 @@ input:not([type=checkbox]):not([type=radio]), textarea, select{border-radius:11p
   #yiOverlay .book-desc{margin:8px 0 10px;line-height:1.8}
   #yiOverlay .book-foot{margin-top:12px}
 }
+
+/* v3.0 引导页·录入生辰档案：窄/矮屏不再挤压 */
+.ob-actions .btn-gold, .ob-actions .btn-ghost{white-space:nowrap}
+.ob-actions .btn-gold{min-width:112px}
+@media (max-height:560px){
+  #onboard{padding:max(8px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));align-items:stretch}
+  .ob-card{max-width:min(560px,100%);margin:0 auto;padding:0}
+  .ob-profile{padding:12px 14px}
+  .ob-profile h2{font-size:var(--fs-md);letter-spacing:3px;margin-bottom:8px}
+  .ob-profile-sub{display:none}
+  .ob-profile .form-row{margin-bottom:8px}
+  .ob-profile .form-row label{font-size:var(--fs-xs)}
+  .ob-actions{margin-top:8px;gap:8px}
+  .ob-actions .btn-gold, .ob-actions .btn-ghost{min-height:44px;padding:0 16px}
+}
+@media (max-height:560px) and (min-width:520px){
+  .ob-profile{display:grid;grid-template-columns:1fr 1fr;gap:0 16px;align-content:start}
+  .ob-profile[hidden]{display:none}
+  .ob-profile h2{grid-column:1/-1}
+  .ob-profile #obGeoRow{grid-column:1/-1}
+}
