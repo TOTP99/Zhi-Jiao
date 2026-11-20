@@ -996,3 +996,9 @@ input:not([type=checkbox]):not([type=radio]), textarea, select{border-radius:11p
   .ob-profile h2{grid-column:1/-1}
   .ob-profile #obGeoRow{grid-column:1/-1}
 }
+
+/* 竖屏：录入生辰窗口加高（原约 120px → 至少 300px），且不依赖 JS 也会收起介绍页占位 */
+#onboard:has(.ob-profile:not([hidden])) .ob-slides{display:none}
+@media (orientation:portrait){
+  .ob-profile{min-height:min(300px,62dvh)}
+}
