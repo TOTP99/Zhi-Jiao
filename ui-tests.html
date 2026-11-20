@@ -281,6 +281,28 @@
         var res = await PM.analyzeImage(im.data, im.width, im.height, { hand: 'L' });
         return (!res.ok && res.reason === 'lowcontrast') || ('reason=' + res.reason + ' ok=' + res.ok);
       });
+      await t('命运圆盘：未转动时「复制结果」隐藏，转完后出现', async function () {
+        W.openFortuneWheel();
+        var c = D.getElementById('fortuneCopy');
+        var before = c && c.style.display === 'none';
+        W.spinFortuneWheel();
+        await sleepMs(9000);
+        var after = c && c.style.display !== 'none';
+        W.closeSheetByBtn && D.getElementById('fortuneModal') && D.getElementById('fortuneModal').classList.remove('show');
+        return (before && after) || ('before=' + before + ' after=' + after);
+      });
+      await t('会员权益不再写「云端同步」', async function () {
+        return D.getElementById('memberSheet').textContent.indexOf('云端同步') < 0 || '仍含云端同步';
+      });
+      await t('108 问菜单不超出视口底缘', async function () {
+        var m = D.getElementById('casualMenu');
+        W.selectQuestionMenuItem('casual');
+        await sleepMs(600);
+        var r = m.getBoundingClientRect();
+        var ok = r.top >= 0 && r.bottom <= W.innerHeight;
+        W.closeCasualMenu();
+        return ok || ('top=' + r.top + ' bottom=' + r.bottom + ' H=' + W.innerHeight);
+      });
       /* 清理：恢复默认档案 */
       W.localStorage.setItem('yumiao_shared_birth_v1', JSON.stringify({ year: 1990, month: 6, day: 15, hour: 12, sex: 'M', tzOffset: 8, city: 'Toronto' }));
       sum();

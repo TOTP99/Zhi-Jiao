@@ -962,3 +962,16 @@ input:not([type=checkbox]):not([type=radio]), textarea, select{border-radius:11p
 }
 /* B7 星盘小字：12px 作为星盘报告定稿字号（辅助说明级，正文仍 14px）；如需提到 14px 只改此处 */
 #westernModal{--fs-xs:12px}
+
+/* 弹窗审计：108问菜单高度由 JS fitCasualMenu 按视口收缩；网格是唯一滚动区 */
+#casualMenuGrid{min-height:0}
+/* 周易浮层短屏紧凑 */
+@media (orientation:landscape) and (max-height:600px){
+  #yiOverlay .scroll-wrap{padding:10px 18px 56px}
+  #yiOverlay .book{padding:14px 22px 14px}
+  #yiOverlay .book-title{font-size:24px;letter-spacing:10px}
+  #yiOverlay .book-sub{margin-bottom:8px}
+  #yiOverlay .seal-big{display:none}
+  #yiOverlay .book-desc{margin:8px 0 10px;line-height:1.8}
+  #yiOverlay .book-foot{margin-top:12px}
+}
