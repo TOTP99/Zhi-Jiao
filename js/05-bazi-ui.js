@@ -11,7 +11,7 @@
   }
   function openBaziPanel() {
     backToBaziForm();
-    if (typeof window.renderProfileBar === 'function') window.renderProfileBar('baziProfileBar');
+    if (typeof window.renderProfileBar === 'function') { window.renderProfileBar('baziProfileBar'); window.renderProfileBar('baziResultBar'); }
     if (typeof ModalUI !== 'undefined' && ModalUI.open) ModalUI.open('bazi');
     /* 有档案则打开即排，省一次提交 tap；无档案时留表单并提示 */
     var _b = (typeof loadSharedBirth === 'function') ? loadSharedBirth() : null;
@@ -85,13 +85,12 @@
   function baziCalcNoteHTML(r) {
     if (!r || !r.input || !r.pillars) return '';
     var inp = r.input, meta = r._calcMeta || {}, items = [];
-    function pad2(n) { n = Math.floor(Number(n) || 0); return (n < 10 ? '0' : '') + n; }
     /* 出生时刻（UTC 毫秒，纯算术换算，不依赖浏览器时区；不含真太阳时经度改正，临界提醒为约数） */
     var tz = Number(inp.timezone) || 0;
     var birthMs = Date.UTC(Number(inp.year), Number(inp.month) - 1, Number(inp.day), Number(inp.hour), Number(inp.minute) || 0) - tz * 3600000;
     function fmtTz(ms) { /* 按出生时区显示「YYYY-MM-DD HH:MM」 */
       var d = new Date(ms + tz * 3600000);
-      return d.getUTCFullYear() + '-' + pad2(d.getUTCMonth() + 1) + '-' + pad2(d.getUTCDate()) + ' ' + pad2(d.getUTCHours()) + ':' + pad2(d.getUTCMinutes());
+      return d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate()) + ' ' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes());
     }
     /* 1. 真太阳时 */
     if (inp.trueSolar) items.push('已用真太阳时' + (inp.longitude != null ? '（经度 ' + inp.longitude + '°）' : ''));
@@ -100,7 +99,7 @@
     items.push(meta.dstAdjusted ? '出生时当地实行夏令时，已回拨到标准时' : '未做夏令时回拨');
     /* 3. 出生时间 */
     if (meta.hourDefaulted) items.push('出生时间未填，按午时（12:00）计算');
-    else items.push('出生时间 ' + pad2(inp.hour) + ':' + pad2(inp.minute || 0) + '（以档案为准）');
+    else items.push('出生时间 ' + pad(inp.hour) + ':' + pad(inp.minute || 0) + '（以档案为准）');
     /* 4. 节气 */
     var jie = r.pillars.jieqi, jieMs = null, inTable = (Number(inp.year) >= 1899 && Number(inp.year) <= 2101);
     if (jie && jie.name && jie.date) {
@@ -116,8 +115,7 @@
     /* 6. 神煞 */
     items.push('神煞仅供参考，非唯一体系');
     if (!items.length) return '';
-    function esc(s) { return (typeof escapeHtml === 'function') ? escapeHtml(String(s)) : String(s).replace(/[&<>\"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-    return '<details class="bazi-calc-note"><summary>计算说明</summary><ul>' + items.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ul></details>';
+    return '<details class="bazi-calc-note"><summary>计算说明</summary><ul>' + items.map(function (s) { return '<li>' + escapeHtml(s) + '</li>'; }).join('') + '</ul></details>';
   }
   if (typeof window !== 'undefined') window.YumiaoBaziCalcNote = baziCalcNoteHTML;
   function renderBaziFull() {

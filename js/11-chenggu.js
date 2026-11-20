@@ -28,12 +28,6 @@
   function fmt(q) { return Math.floor(q / 10) + '两' + (q % 10 ? (q % 10) + '钱' : ''); }
 
   /* ── 读取共用生辰 ── */
-  function esc(s) {
-    if (s == null) return '';
-    return (typeof window.escapeHtml === 'function') ? window.escapeHtml(String(s)) : String(s).replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
-  }
 
   /* ── 核心计算 ── */
   function calc(b) {
@@ -66,9 +60,9 @@
     if (!v) return '';
     var m = window.CHENGGU_MODERN && window.CHENGGU_MODERN[r.total];
     var h = '<div class="cg-verse"><span class="cg-kicker">原文</span><p class="cg-orig">' +
-      esc(v).replace(/\n/g, '<br>') + '</p>';
+      escapeHtml(v).replace(/\n/g, '<br>') + '</p>';
     if (m) {
-      h += '<span class="cg-kicker cg-sub">今用</span><p>' + esc(m) + '</p>';
+      h += '<span class="cg-kicker cg-sub">今用</span><p>' + escapeHtml(m) + '</p>';
     }
     return h + '</div>';
   }
@@ -83,7 +77,7 @@
       return;
     }
     var r = calc(b);
-    if (r.error) { box.innerHTML = '<p class="cg-hint">' + esc(r.error) + '</p>'; return; }
+    if (r.error) { box.innerHTML = '<p class="cg-hint">' + escapeHtml(r.error) + '</p>'; return; }
     var rows = [
       ['年', r.gz + '年', r.yw],
       ['月', (r.lunar.isLeap ? '闰' : '') + MONTH_N[r.lunar.month - 1] + '月', r.mw],
@@ -92,9 +86,9 @@
     ];
     box.innerHTML =
       '<div class="cg-weight"><span class="cg-kicker">骨重</span><strong>' + fmt(r.total) + '</strong></div>' +
-      '<p class="cg-lunar">农历 ' + esc(r.lunarText) + '</p>' +
+      '<p class="cg-lunar">农历 ' + escapeHtml(r.lunarText) + '</p>' +
       '<table class="cg-table"><tbody>' +
-      rows.map(function (x) { return '<tr><th>' + x[0] + '</th><td>' + esc(x[1]) + '</td><td>' + fmt(x[2]) + '</td></tr>'; }).join('') +
+      rows.map(function (x) { return '<tr><th>' + x[0] + '</th><td>' + escapeHtml(x[1]) + '</td><td>' + fmt(x[2]) + '</td></tr>'; }).join('') +
       '<tr class="cg-sum"><th>合</th><td></td><td>' + fmt(r.total) + '</td></tr></tbody></table>' +
       verseHtml(r) +
       (r.hourDefault ? '<p class="cg-note">档案里没有出生时间，时辰暂按午时计算。</p>' : '') +

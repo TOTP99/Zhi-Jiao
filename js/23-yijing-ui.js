@@ -10,13 +10,6 @@
     page: 'home' // 'home' | 'cast' | 'result'
   };
 
-  function esc(s) {
-    if (s == null) return '';
-    return (typeof escapeHtml === 'function') ? escapeHtml(String(s))
-      : String(s).replace(/[&<>"']/g, function (c) {
-          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-        });
-  }
   function $(id) {
     return (typeof window.$ === 'function') ? window.$(id) : document.getElementById(id);
   }
@@ -78,17 +71,17 @@
     h += '<button class="back" onclick="YijingUI.goCast()">‹ 再摇</button>';
     // 印章 + 卦名
     h += '<div class="seal-row"><div class="seal">' + sealChars(hex.name) + '</div></div>';
-    h += '<div class="hex-title">' + esc(sn) + ' <span class="hex-qian">' + esc(hex.qian) + '</span></div>';
+    h += '<div class="hex-title">' + escapeHtml(sn) + ' <span class="hex-qian">' + escapeHtml(hex.qian) + '</span></div>';
     h += hexDiagram(S.lines);
-    h += '<div class="rule">断法 · ' + esc(r.rule) + '</div>';
+    h += '<div class="rule">断法 · ' + escapeHtml(r.rule) + '</div>';
     // 原文：卦辞常显，爻辞折叠（主次分明）
     r.parts.forEach(function (p, idx) {
       if (idx === 0) {
-        h += '<section class="sec"><h4>' + esc(p.t) + '</h4><p class="classical">' + esc(p.classical) + '</p></section>';
+        h += '<section class="sec"><h4>' + escapeHtml(p.t) + '</h4><p class="classical">' + escapeHtml(p.classical) + '</p></section>';
       } else {
         h += '<section class="sec fold' + (idx === 1 ? ' open' : '') + '">' +
-          '<h4 onclick="YijingUI.fold(this)">' + esc(p.t) + '<span class="fold-arrow">▾</span></h4>' +
-          '<div class="fold-body"><p class="classical">' + esc(p.classical) + '</p></div></section>';
+          '<h4 onclick="YijingUI.fold(this)">' + escapeHtml(p.t) + '<span class="fold-arrow">▾</span></h4>' +
+          '<div class="fold-body"><p class="classical">' + escapeHtml(p.classical) + '</p></div></section>';
       }
     });
     if (r.moving.length) {
@@ -96,7 +89,7 @@
         r.moving.map(function (i) { return C.YAO_NAMES[i] + '（' + S.lines[i].tag + '）'; }).join('、') + '</p></section>';
     }
     if (r.chex) {
-      h += '<section class="sec"><h4>变卦</h4><p class="info">' + esc(r.chex.fullName) + '</p></section>';
+      h += '<section class="sec"><h4>变卦</h4><p class="info">' + escapeHtml(r.chex.fullName) + '</p></section>';
     }
     // 两按钮
     h += '<div class="tab2">' +
@@ -111,7 +104,7 @@
 
   function sealChars(name) {
     return String(name || '').split('').map(function (c) {
-      return '<span>' + esc(C.toTrad(c)) + '</span>';
+      return '<span>' + escapeHtml(C.toTrad(c)) + '</span>';
     }).join('');
   }
 
@@ -123,17 +116,17 @@
       h = '<div class="expand">';
       r.parts.forEach(function (p, idx) {
         if (idx === 0) {
-          h += '<section class="sec"><h4>' + esc(p.t) + ' · 译</h4><p class="modern">' + esc(p.modern || '—') + '</p></section>';
+          h += '<section class="sec"><h4>' + escapeHtml(p.t) + ' · 译</h4><p class="modern">' + escapeHtml(p.modern || '—') + '</p></section>';
         } else {
           h += '<section class="sec fold' + (idx === 1 ? ' open' : '') + '">' +
-            '<h4 onclick="YijingUI.fold(this)">' + esc(p.t) + ' · 译<span class="fold-arrow">▾</span></h4>' +
-            '<div class="fold-body"><p class="modern">' + esc(p.modern || '—') + '</p></div></section>';
+            '<h4 onclick="YijingUI.fold(this)">' + escapeHtml(p.t) + ' · 译<span class="fold-arrow">▾</span></h4>' +
+            '<div class="fold-body"><p class="modern">' + escapeHtml(p.modern || '—') + '</p></div></section>';
         }
       });
       h += '</div>';
     } else if (S.expanded === 'app') {
       h = '<div class="expand"><section class="sec"><h4>今用</h4><div class="modern">' +
-        esc(r.hex.meaning).replace(/\n/g, '<br>') + '</div></section></div>';
+        escapeHtml(r.hex.meaning).replace(/\n/g, '<br>') + '</div></section></div>';
     }
     el.innerHTML = h;
     el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -305,8 +298,8 @@
         if (area) {
           var d = document.createElement('div');
           d.className = 'cast-line' + (L.moving ? ' mv' : '');
-          d.innerHTML = '<span>' + C.YAO_NAMES[idx] + '</span><span>' + esc(L.coins) + '</span>' +
-            '<span>' + esc(L.tag) + '</span><b>' + esc(L.sym) + (L.moving ? ' 动' : '') + '</b>';
+          d.innerHTML = '<span>' + C.YAO_NAMES[idx] + '</span><span>' + escapeHtml(L.coins) + '</span>' +
+            '<span>' + escapeHtml(L.tag) + '</span><b>' + escapeHtml(L.sym) + (L.moving ? ' 动' : '') + '</b>';
           area.appendChild(d);
         }
         idx++;

@@ -129,6 +129,10 @@
   /* $ 取元素 */
   function $(id) { return document.getElementById(id); }
 
+  /* 小助手单点：补零、正余数（各模块直接用，不再各留副本） */
+  function pad(n) { n = Math.floor(Number(n) || 0); return (n < 10 ? '0' : '') + n; }
+  function yumiaoMod(n, m) { return ((n % m) + m) % m; }
+
   /* HTML 转义：全应用唯一实现（顶层声明即 window.escapeHtml，各模块的 esc 直接调用） */
   function escapeHtml(s) {
     if (s == null) return '';

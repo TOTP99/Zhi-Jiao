@@ -661,10 +661,8 @@
     }
   };
   window.YumiaoHook = YumiaoHook;
-  /* ── 小助手单点：pad 补零、yumiaoMod 正余数 ── */
+  /* ── pad 补零 / yumiaoMod 正余数 已移到 00b-core.js 单点 ── */
   const LS_SOUND = 'yumiao_sound_v1'; /* 仪式音效开关：10 与 16 共用，此处单点 */
-  const pad = n => String(n).padStart(2, '0');
-  function yumiaoMod(n, m) { return ((n % m) + m) % m; }
   function loadProfileSummaries() {
     try {
       return readStorageJSON(PROFILE_SUMMARY_KEY, {});
@@ -882,6 +880,8 @@
   }
   function onQuestionInput() {
     customEditing = true;
+    /* 用户改动输入框＝自定义问题：丢掉 108 问带来的分类，改由关键词检测，避免用旧分类判词回答新问题 */
+    clearPreferredCategory();
     // 一旦开始打字，收起菜单以免挡输入
     if (menuLayer !== 'none') closeAllMenus();
   }

@@ -9,10 +9,6 @@
   function $(id) {
     return (typeof window.$ === 'function') ? window.$(id) : document.getElementById(id);
   }
-  function pad(n) {
-    n = Math.floor(Number(n) || 0);
-    return (n < 10 ? '0' : '') + n;
-  }
 
   var LS_ONBOARDED = 'yumiao_onboarded_v1';
   var LS_DAILY = 'yumiao_daily_v1';
@@ -217,24 +213,17 @@
       try { window.history.back(); } catch (e) { console.warn('[yumiao] yi back', e); }
     }
   };
-  function yiEsc(s) {
-    if (s == null) return '';
-    return (typeof escapeHtml === 'function') ? escapeHtml(String(s))
-      : String(s).replace(/[&<>"']/g, function (c) {
-          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-        });
-  }
   /* 起卦完成时周易 ui.js 回调：把结果记入统一记录（以前外部页抓不到结果，只能记打开时间） */
   window.__yumiaoYiResult = function (r, lines, question) {
     try {
       if (typeof appendQueryRecord !== 'function' || !r || !r.hex) return;
       var C = window.YijingCore;
       var mv = (r.moving || []).map(function (i) { return (C && C.YAO_NAMES) ? C.YAO_NAMES[i] : ''; }).join('、');
-      var h = '<p>周易六爻 · ' + yiEsc(r.hex.fullName || r.hex.name) + ' ' + yiEsc(r.hex.qian || '') + '</p>' +
-        (question ? '<p>所问：' + yiEsc(question) + '</p>' : '') +
-        '<p>断法：' + yiEsc(r.rule || '') + '</p>' +
-        (mv ? '<p>动爻：' + yiEsc(mv) + '</p>' : '<p>六爻安静，无动爻</p>') +
-        (r.chex ? '<p>变卦：' + yiEsc(r.chex.fullName || r.chex.name) + '</p>' : '');
+      var h = '<p>周易六爻 · ' + escapeHtml(r.hex.fullName || r.hex.name) + ' ' + escapeHtml(r.hex.qian || '') + '</p>' +
+        (question ? '<p>所问：' + escapeHtml(question) + '</p>' : '') +
+        '<p>断法：' + escapeHtml(r.rule || '') + '</p>' +
+        (mv ? '<p>动爻：' + escapeHtml(mv) + '</p>' : '<p>六爻安静，无动爻</p>') +
+        (r.chex ? '<p>变卦：' + escapeHtml(r.chex.fullName || r.chex.name) + '</p>' : '');
       appendQueryRecord('周易占卜', h);
     } catch (e) { console.warn('[yumiao] yi result record', e); }
   };
@@ -511,6 +500,9 @@
     ob.setAttribute('aria-hidden', 'false');
     ob.classList.add('show');
     showObStep(99);
+    /* 从「我的」进来是改档案，不是首次引导：「跳过」改成语义明确的「取消」 */
+    ob.setAttribute('data-mode', 'edit');
+    var sk = $('obSkip'); if (sk) sk.textContent = '取消';
   };
   function initOnboard() {
     bindSeg('obSex'); bindSeg('obCity');

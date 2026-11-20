@@ -3,7 +3,7 @@
   'use strict';
 
   var YAO_NAMES = ['初爻', '二爻', '三爻', '四爻', '五爻', '上爻'];
-  var TRAD = {'临':'臨','为':'為','兑':'兌','剥':'剝','师':'師','恒':'恆','损':'損','晋':'晉','泽':'澤','涣':'渙','渐':'漸','节':'節','蛊':'蠱','观':'觀','讼':'訟','谦':'謙','贲':'賁','随':'隨','颐':'頤','风':'風'};
+  var TRAD = {'临':'臨','离':'離','为':'為','兑':'兌','剥':'剝','师':'師','恒':'恆','损':'損','晋':'晉','泽':'澤','涣':'渙','渐':'漸','节':'節','蛊':'蠱','观':'觀','讼':'訟','谦':'謙','贲':'賁','随':'隨','颐':'頤','风':'風'};
 
   function toTrad(s) {
     return String(s || '').split('').map(function (c) { return TRAD[c] || c; }).join('');
@@ -73,8 +73,21 @@
       out.parts.push({ t: '本卦卦辞', classical: hex.guaCi, modern: hex.guaCiModern });
       if (chex) out.parts.push({ t: '变卦卦辞', classical: chex.guaCi, modern: chex.guaCiModern });
     } else if (n === 4 || n === 5) {
-      out.rule = (n === 4 ? '四' : '五') + '爻动，变卦为主，本卦为辅';
-      if (chex) out.parts.push({ t: '变卦卦辞（为主）', classical: chex.guaCi, modern: chex.guaCiModern });
+      /* 朱熹《易学启蒙》：四爻变取之卦（变卦）两个不变爻爻辞，以下爻为主；五爻变取之卦唯一不变爻爻辞。
+         不变爻在变卦中位置不变，故直接取变卦同位爻辞。 */
+      var still = [];
+      for (var si = 0; si < 6; si++) if (mv.indexOf(si) < 0) still.push(si);
+      if (n === 4) {
+        out.rule = '四爻动，取变卦两个不变爻爻辞，以下爻为主';
+        if (chex) {
+          out.parts.push({ t: '变卦不变爻 · ' + YAO_NAMES[still[0]] + '（为主）', classical: yaoci(chex, still[0]), modern: ymod(chex, still[0]) });
+          out.parts.push({ t: '变卦不变爻 · ' + YAO_NAMES[still[1]] + '（为辅）', classical: yaoci(chex, still[1]), modern: ymod(chex, still[1]) });
+        }
+      } else {
+        out.rule = '五爻动，取变卦唯一不变爻爻辞';
+        if (chex) out.parts.push({ t: '变卦不变爻 · ' + YAO_NAMES[still[0]], classical: yaoci(chex, still[0]), modern: ymod(chex, still[0]) });
+      }
+      if (chex) out.parts.push({ t: '变卦卦辞（参考）', classical: chex.guaCi, modern: chex.guaCiModern });
       out.parts.push({ t: '本卦卦辞（参考）', classical: hex.guaCi, modern: hex.guaCiModern });
     } else {
       if (hex.id === 1 && hex.yaoCi[6]) {

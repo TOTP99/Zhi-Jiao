@@ -254,7 +254,6 @@
   }
   
   function renderWesternReport(r){
-    const esc = s => (typeof escapeHtml === 'function' ? escapeHtml(String(s)) : String(s));
     const sun = r.planets.sun, moon = r.planets.moon;
     const mercury = r.planets.mercury, venus = r.planets.venus, mars = r.planets.mars;
     const jupiter = r.planets.jupiter, saturn = r.planets.saturn;
@@ -484,8 +483,8 @@
     // 附：专业盘面 · 行星·宫位·数据
     let pro = '<div class="w-sub">出生数据</div>'+lines([
       year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0')+' '+String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0'),
-      '地点：'+(lat!=null?lat.toFixed(4)+'°, '+lng.toFixed(4)+'°':'未填')+'　时区：'+esc(tz||'默认 UTC+8'),
-      '宫位：'+esc(r.houseSystem)+' · 热带黄道'
+      '地点：'+(lat!=null?lat.toFixed(4)+'°, '+lng.toFixed(4)+'°':'未填')+'　时区：'+escapeHtml(tz||'默认 UTC+8'),
+      '宫位：'+escapeHtml(r.houseSystem)+' · 热带黄道'
     ]);
     pro += '<div class="w-sub">行星</div>';
     W_PLANETS.forEach(meta => {
@@ -696,8 +695,10 @@
     const year = +b.year, month = +b.month, day = +b.day;
     const hour = (b.hour == null || b.hour === '') ? 12 : +b.hour;
     const minute = (b.minute == null || b.minute === '') ? 0 : +b.minute;
-    const lat = (b.lat == null || b.lat === '') ? null : +b.lat;
-    const lng = (b.lng == null || b.lng === '') ? null : +b.lng;
+    /* 经纬度必须成对有效才用于宫位精算；只填一个、非数字或越界一律当作未填（否则半截坐标会让排盘抛错） */
+    let lat = (b.lat == null || b.lat === '') ? null : +b.lat;
+    let lng = (b.lng == null || b.lng === '') ? null : +b.lng;
+    if (!(isFinite(lat) && isFinite(lng) && lat !== null && lng !== null && Math.abs(lat) <= 90 && Math.abs(lng) <= 180)) { lat = null; lng = null; }
     // 时区：优先 IANA 名（夏令时准确），否则用数字偏移
     const tz = b.tzName || (b.city === 'toronto' ? 'America/Toronto'
       : (b.city === 'shenyang' ? 'Asia/Shanghai' : String(b.tzOffset != null ? b.tzOffset : 8)));

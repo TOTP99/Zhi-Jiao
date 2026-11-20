@@ -238,10 +238,14 @@
         el.textContent = `四十八问已毕，人格已现，可查看详细解读`;
       }
     } else {
-      el.textContent = `已完成 ${done}/${total}`;
+      el.textContent = `已完成 ${done}/${total}` + (baseDone < 48 ? ` · 还差 ${48 - baseDone} 题可查看详细解读` : '');
     }
     const castBtn = document.getElementById('mbtiCastBtn');
-    if (castBtn) castBtn.disabled = baseDone < 48;
+    if (castBtn) {
+      castBtn.disabled = baseDone < 48;
+      /* 禁用时直接把原因写在按钮上，不让人猜 */
+      castBtn.textContent = baseDone < 48 ? `还差 ${48 - baseDone} 题` : '查看详细解读';
+    }
     updateMbtiQuickResult(baseDone >= 48);
   }
   function startMbtiExtra() {

@@ -70,7 +70,6 @@
   window.YumiaoBackup = { build: build, parse: parse, apply: apply, KEY_PREFIX: PREFIX };
 
   function say(m) { if (typeof window.toast === 'function') window.toast(m); }
-  function pad(n) { return (n < 10 ? '0' : '') + n; }
   window.backupExport = function () {
     try {
       var text = JSON.stringify(window.YumiaoBackup.build(localStorage), null, 1);

@@ -549,7 +549,8 @@
     }
     if (typeof createImageBitmap === 'function') {
       return createImageBitmap(file, { imageOrientation: 'from-image' }).then(function (bmp) {
-        var o = fromSrc(bmp, bmp.width, bmp.height); if (bmp.close) bmp.close(); return o;
+        try { return fromSrc(bmp, bmp.width, bmp.height); }
+        finally { if (bmp.close) bmp.close(); } /* 成功/抛错都释放位图 */
       }, viaImg);
     }
     return viaImg();
@@ -893,12 +894,6 @@
   var LV_LABEL = { ok: '常见', watch: '可留意', doctor: '建议就医检查' };
 
   /* 报告生成（纯函数，便于测试） */
-  function esc(s) {
-    if (s == null) return '';
-    return (typeof window.escapeHtml === 'function') ? window.escapeHtml(String(s)) : String(s).replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
-  }
   function dateText() {
     var d = new Date();
     return d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日';
@@ -915,21 +910,21 @@
     if (!picked.length) return null;
     var tags = picked.map(function (p) { return p.o[1]; });
     var html = '<div class="mbti-type">掌纹算命</div>' +
-      '<p class="palm-meta">' + esc(hand) + '手 · ' + esc(dateText()) + '</p>' +
-      '<div class="mbti-sec"><span class="mbti-sec-label">总评</span>此掌特点：' + esc(tags.join('、')) + '。以下逐线解读，仅供参考。</div>';
+      '<p class="palm-meta">' + escapeHtml(hand) + '手 · ' + escapeHtml(dateText()) + '</p>' +
+      '<div class="mbti-sec"><span class="mbti-sec-label">总评</span>此掌特点：' + escapeHtml(tags.join('、')) + '。以下逐线解读，仅供参考。</div>';
     var text = '掌纹算命 · ' + hand + '手 · ' + dateText() + '\n\n总评：' + tags.join('、') + '\n\n';
     picked.forEach(function (p) {
-      html += '<div class="mbti-sec"><span class="mbti-sec-label">' + esc(p.l.name) + ' · ' + esc(p.o[0]) + '</span>' + esc(p.o[2]) + '</div>';
+      html += '<div class="mbti-sec"><span class="mbti-sec-label">' + escapeHtml(p.l.name) + ' · ' + escapeHtml(p.o[0]) + '</span>' + escapeHtml(p.o[2]) + '</div>';
       text += p.l.name + ' · ' + p.o[0] + '\n' + p.o[2] + '\n\n';
     });
     var tips = [];
     picked.forEach(function (p) { if (p.o[3] && tips.length < 3) tips.push(p.o[3]); });
     if (tips.length) {
-      html += '<div class="mbti-sec"><span class="mbti-sec-label">小建议</span>' + tips.map(function (t, i) { return (i + 1) + '. ' + esc(t); }).join('<br>') + '</div>';
+      html += '<div class="mbti-sec"><span class="mbti-sec-label">小建议</span>' + tips.map(function (t, i) { return (i + 1) + '. ' + escapeHtml(t); }).join('<br>') + '</div>';
       text += '小建议\n' + tips.map(function (t, i) { return (i + 1) + '. ' + t; }).join('\n') + '\n\n';
     }
     var hn = handNote(hand, sex);
-    html += '<div class="mbti-sec palm-handnote">' + esc(hn) + '</div>' +
+    html += '<div class="mbti-sec palm-handnote">' + escapeHtml(hn) + '</div>' +
       '<div class="mbti-brief-note">掌纹解读源自传统手相，仅供娱乐与自我反思，不构成任何决策建议。</div>';
     text += hn + '\n（掌纹解读源自传统手相，仅供娱乐，不构成任何决策建议。）';
     return { html: html, text: text };
@@ -944,17 +939,17 @@
       : worst === 'watch' ? '所选项目大多属于常见变化，其中几项值得留意，见下方说明。'
       : '所选项目均属常见、无需特别担心的外观。';
     var html = '<div class="mbti-type">掌诊自查</div>' +
-      '<p class="palm-meta">' + esc(hand) + '手 · ' + esc(dateText()) + '</p>' +
-      '<div class="mbti-sec"><span class="mbti-sec-label">整体</span>' + esc(sum) + '</div>';
+      '<p class="palm-meta">' + escapeHtml(hand) + '手 · ' + escapeHtml(dateText()) + '</p>' +
+      '<div class="mbti-sec"><span class="mbti-sec-label">整体</span>' + escapeHtml(sum) + '</div>';
     var text = '掌诊自查 · ' + hand + '手 · ' + dateText() + '\n\n整体：' + sum + '\n\n';
     picked.forEach(function (p) {
-      html += '<div class="mbti-sec"><span class="mbti-sec-label">' + esc(p.d.name) + ' · ' + esc(p.o[0]) + '</span>' +
-        '<span class="palm-lv ' + p.o[1] + '">' + LV_LABEL[p.o[1]] + '</span><br>' + esc(p.o[2]) +
-        (p.o[3] ? '<br><b class="palm-adv">建议：</b>' + esc(p.o[3]) : '') + '</div>';
+      html += '<div class="mbti-sec"><span class="mbti-sec-label">' + escapeHtml(p.d.name) + ' · ' + escapeHtml(p.o[0]) + '</span>' +
+        '<span class="palm-lv ' + p.o[1] + '">' + LV_LABEL[p.o[1]] + '</span><br>' + escapeHtml(p.o[2]) +
+        (p.o[3] ? '<br><b class="palm-adv">建议：</b>' + escapeHtml(p.o[3]) : '') + '</div>';
       text += p.d.name + ' · ' + p.o[0] + '（' + LV_LABEL[p.o[1]] + '）\n' + p.o[2] + (p.o[3] ? '\n建议：' + p.o[3] : '') + '\n\n';
     });
     html += '<div class="mbti-sec"><span class="mbti-sec-label">出现这些情况请看医生</span><br>' +
-      DOCTOR_IF.map(function (t) { return '· ' + esc(t); }).join('<br>') + '</div>' +
+      DOCTOR_IF.map(function (t) { return '· ' + escapeHtml(t); }).join('<br>') + '</div>' +
       '<div class="mbti-brief-note">掌诊为传统观察，仅供参考，不能替代医学诊断。如有不适，请及时就医。</div>';
     text += '出现这些情况请看医生\n' + DOCTOR_IF.map(function (t) { return '· ' + t; }).join('\n') +
       '\n\n（掌诊为传统观察，仅供参考，不能替代医学诊断。如有不适，请及时就医。）';
@@ -1149,9 +1144,9 @@
           var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
           var ctx = cv.getContext('2d', { willReadFrequently: true });
           ctx.drawImage(bmp, 0, 0, w, h);
-          if (bmp.close) bmp.close();
           return ctx.getImageData(0, 0, w, h);
         } catch (e) { return loadImageDataViaImg(file); }
+        finally { if (bmp.close) bmp.close(); } /* canvas 读取失败走回退路径时也释放位图 */
       }, function () { return loadImageDataViaImg(file); });
     }
     return loadImageDataViaImg(file);

@@ -9,19 +9,18 @@
     const STEM_ELEMENT = [0,0,1,1,2,2,3,3,4,4];
     const BRANCH_ELEMENT = [4,2,0,0,2,1,1,2,3,3,2,4];
     const POSITION_NAMES = { year: "年柱", month: "月柱", day: "日柱", hour: "时柱" };
-    function mod(n, m) { return (typeof window !== 'undefined' && typeof window.yumiaoMod === 'function') ? window.yumiaoMod(n, m) : ((n % m) + m) % m; }
     function elementName(index) { return ELEMENTS[index]; }
-    function stemName(index) { return STEMS[mod(index, 10)]; }
-    function branchName(index) { return BRANCHES[mod(index, 12)]; }
-    function stemIndex(value) { return typeof value === "number" ? mod(value, 10) : STEMS.indexOf(value); }
-    function branchIndex(value) { return typeof value === "number" ? mod(value, 12) : BRANCHES.indexOf(value); }
+    function stemName(index) { return STEMS[yumiaoMod(index, 10)]; }
+    function branchName(index) { return BRANCHES[yumiaoMod(index, 12)]; }
+    function stemIndex(value) { return typeof value === "number" ? yumiaoMod(value, 10) : STEMS.indexOf(value); }
+    function branchIndex(value) { return typeof value === "number" ? yumiaoMod(value, 12) : BRANCHES.indexOf(value); }
     // 近似均时差（分钟）：基于太阳平黄经与平近点角的简易公式，误差通常 <1 分钟量级
     function equationOfTimeMinutes(year, month, day, hour, minute, timezone) {
       const utcApprox = new Date(Date.UTC(year, month - 1, day, (hour || 0) - timezone, minute || 0, 0));
       const jd = julianDay(utcApprox);
       const T = (jd - 2451545.0) / 36525.0;
-      const L0 = mod(280.46646 + 36000.76983 * T + 0.0003032 * T * T, 360);
-      const M = mod(357.52911 + 35999.05029 * T - 0.0001537 * T * T, 360);
+      const L0 = yumiaoMod(280.46646 + 36000.76983 * T + 0.0003032 * T * T, 360);
+      const M = yumiaoMod(357.52911 + 35999.05029 * T - 0.0001537 * T * T, 360);
       const e = 0.016708634 - 0.000042037 * T;
       const Mrad = M * Math.PI / 180;
       const y = Math.tan((23.439 - 0.0000004 * T) * Math.PI / 360);
@@ -65,16 +64,16 @@
       // 否则节气时刻会比官方偏早十几分钟。
       const jd = julianDay(date) + 69 / 86400;
       const T = (jd - 2451545.0) / 36525.0;
-      const L0 = mod(280.46646 + 36000.76983 * T + 0.0003032 * T * T, 360);
-      const M = mod(357.52911 + 35999.05029 * T - 0.0001537 * T * T, 360);
+      const L0 = yumiaoMod(280.46646 + 36000.76983 * T + 0.0003032 * T * T, 360);
+      const M = yumiaoMod(357.52911 + 35999.05029 * T - 0.0001537 * T * T, 360);
       const rad = M * Math.PI / 180;
       const C = (1.914602 - 0.004817 * T - 0.000014 * T * T) * Math.sin(rad)
         + (0.019993 - 0.000101 * T) * Math.sin(2 * rad)
         + 0.000289 * Math.sin(3 * rad);
       const omega = (125.04 - 1934.136 * T) * Math.PI / 180;
-      return mod(L0 + C - 0.00569 - 0.00478 * Math.sin(omega), 360);
+      return yumiaoMod(L0 + C - 0.00569 - 0.00478 * Math.sin(omega), 360);
     }
-    function angularDiff(a, b) { return mod(a - b + 180, 360) - 180; }
+    function angularDiff(a, b) { return yumiaoMod(a - b + 180, 360) - 180; }
     const JIEQI_NAMES = ["立春","惊蛰","清明","立夏","芒种","小暑","立秋","白露","寒露","立冬","大雪","小寒"];
     const JIEQI_LONGITUDES = [315,345,15,45,75,105,135,165,195,225,255,285];
     function findSolarTerm(year, longitude, month) {
@@ -347,7 +346,7 @@
       return result;
     }
     function ganzhi(index) {
-      index = mod(index, 60);
+      index = yumiaoMod(index, 60);
       return {
         index, stemIndex: index % 10, branchIndex: index % 12,
         stem: STEMS[index % 10], branch: BRANCHES[index % 12],
@@ -372,7 +371,7 @@
       if (index < 0) index = 0;
       const branch = MONTH_BRANCHES[index];
       const startStem = firstMonthStem(yearPillar.stemIndex);
-      const stem = mod(startStem + mod(branch - 2, 12), 10);
+      const stem = yumiaoMod(startStem + yumiaoMod(branch - 2, 12), 10);
       return {
         stemIndex: stem, branchIndex: branch,
         stem: stemName(stem), branch: branchName(branch),
@@ -407,13 +406,13 @@
       const timezone = input.timezone == null ? 8 : Number(input.timezone);
       const local = toLocalWallClock(utcDate, timezone);
       const hour = local.getUTCHours();
-      const branch = mod(Math.floor((hour + 1) / 2), 12);
+      const branch = yumiaoMod(Math.floor((hour + 1) / 2), 12);
       // 五鼠遁时口诀：甲己还加甲、乙庚丙作初、丙辛从戊起、丁壬庚子居、戊癸何方发/壬子是真途
       // 即日干与其 +5 位的日干（如 甲/己、乙/庚……）共用同一个子时天干，
       // 分组依据是 stemIndex % 5，而非 floor(stemIndex / 2)（后者会把相邻天干如甲乙、戊己错误地分到同一组）。
       // dayPillar 由 calculatePillars 统一计算并传入，确保与显示出来的日柱完全一致。
       const ziStem = [0,2,4,6,8][dayPillar.stemIndex % 5];
-      const stem = mod(ziStem + branch, 10);
+      const stem = yumiaoMod(ziStem + branch, 10);
       return {
         stemIndex: stem, branchIndex: branch,
         stem: stemName(stem), branch: branchName(branch),
@@ -472,9 +471,9 @@
       const otherElement = STEM_ELEMENT[otherStem];
       const same = dayStem % 2 === otherStem % 2;
       if (otherElement === dayElement) return same ? "比肩" : "劫财";
-      if (mod(otherElement - dayElement, 5) === 1) return same ? "食神" : "伤官"; // 我生者
-      if (mod(dayElement - otherElement, 5) === 1) return same ? "偏印" : "正印"; // 生我者
-      if (mod(otherElement - dayElement, 5) === 2) return same ? "偏财" : "正财"; // 我克者
+      if (yumiaoMod(otherElement - dayElement, 5) === 1) return same ? "食神" : "伤官"; // 我生者
+      if (yumiaoMod(dayElement - otherElement, 5) === 1) return same ? "偏印" : "正印"; // 生我者
+      if (yumiaoMod(otherElement - dayElement, 5) === 2) return same ? "偏财" : "正财"; // 我克者
       return same ? "七杀" : "正官"; // 克我者
     }
     function calculateTenGods(pillars) {
@@ -648,13 +647,13 @@
       const yueDe = { 2:2,6:2,10:2, 8:8,0:8,4:8, 5:6,9:6,1:6, 11:0,3:0,7:0 };
       addShensha(list, "月德贵人", "贵人", "按月支三合取月德", hitStems(pillars, [yueDe[monthBranch]]), "传统上主和善、解厄、贵人助力。");
       // 天德合：天德为天干者取五合，天德为地支者取六合（原逻辑对地支类月份不成立，已按类型分别处理）
-      const tianDeHeIdx = tianDeEntry.type === "stem" ? mod(tianDeEntry.idx + 5, 10) : sixHeMap[tianDeEntry.idx];
+      const tianDeHeIdx = tianDeEntry.type === "stem" ? yumiaoMod(tianDeEntry.idx + 5, 10) : sixHeMap[tianDeEntry.idx];
       const tianDeHePos = tianDeEntry.type === "stem"
         ? hitStems(pillars, [tianDeHeIdx])
         : hitBranches(pillars, [tianDeHeIdx]);
       addShensha(list, "天德合", "贵人", "天德五合／六合", tianDeHePos, "天德之合神。");
       // 月德合＝月德天干五合：寅午戌见辛，申子辰见丁，巳酉丑见乙，亥卯未见己
-      const yueDeHe = mod(yueDe[monthBranch] + 5, 10);
+      const yueDeHe = yumiaoMod(yueDe[monthBranch] + 5, 10);
       addShensha(list, "月德合", "贵人", "月德天干五合", hitStems(pillars, [yueDeHe]), "月德之合神。");
       // 福星贵人口诀：甲丙相邀入虎乡，更游鼠穴最高强，戊猴己未丁宜亥，乙癸逢牛卯禄昌，庚赶马头辛到巳，壬骑龙背喜非常
       // 甲丙见寅/子，乙癸见卯/丑，戊见申，己见未，丁见亥，庚见午，辛见巳，壬见辰（原数组10干全错，已修正）
@@ -671,13 +670,13 @@
       addShensha(list, "学堂", "学业", "按日干取长生（学堂）", hitBranches(pillars, [xueTang[dayStem]]), "传统上主学习、专业能力、教育缘分。");
       // 临官／禄：与"禄神"同支，甲寅 乙卯 丙巳 丁午 戊巳 己午 庚申 辛酉 壬亥 癸子
       addShensha(list, "词馆", "文才", "按日干取临官（词馆）", hitBranches(pillars, [lu[dayStem]]), "传统上主文字、表达、学术、专业输出。");
-      const xunStart = mod(r.day.index - r.day.stemIndex, 60);
-      const xunEndBranch = mod(xunStart + 9, 12);
-      const kong1 = mod(xunEndBranch + 1, 12);
-      const kong2 = mod(xunEndBranch + 2, 12);
+      const xunStart = yumiaoMod(r.day.index - r.day.stemIndex, 60);
+      const xunEndBranch = yumiaoMod(xunStart + 9, 12);
+      const kong1 = yumiaoMod(xunEndBranch + 1, 12);
+      const kong2 = yumiaoMod(xunEndBranch + 2, 12);
       addShensha(list, "旬空", "空亡", "按日柱所在旬取空亡", hitBranches(pillars, [kong1, kong2]), "传统上常表示虚、迟、空、变化等象意，需要结合全局。");
       // 天医口诀：正月见丑，二月见寅……（月支减一位）；原 +1 方向反了
-      const tianYiBranch = mod(monthBranch + 11, 12);
+      const tianYiBranch = yumiaoMod(monthBranch + 11, 12);
       addShensha(list, "天医", "传统神煞", "按月支取天医", hitBranches(pillars, [tianYiBranch]), "传统命理神煞，不用于医学诊断。");
       // 解神口诀：寅卯见申，辰巳见戌，午未见子，申酉见寅，戌亥见辰，子丑见午（月支 0=子…11=亥）
       const jieShen = { 0:6,1:6,2:8,3:8,4:10,5:10,6:0,7:0,8:2,9:2,10:4,11:4 };
