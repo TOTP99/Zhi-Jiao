@@ -1207,6 +1207,29 @@
     });
     return bad.length === 0 || bad.slice(0, 8).join(' ');
   });
+  t('八字·大运：毛泽东命例（癸巳年男逆排，大雪，6岁起运，首运癸亥，次运壬戌）', function () {
+    var d = bz({ year: 1893, month: 12, day: 26, hour: 7, minute: 30, sex: 'M' }).dayun;
+    return eq([d.direction, d.jie.name, d.startAge.years, d.steps[0].text, d.steps[1].text, d.steps[0].startAge, d.steps.length],
+              ['逆排', '大雪', 6, '癸亥', '壬戌', 6, 10]);
+  });
+  t('八字·大运：阳男顺 / 阳女逆 / 阴男逆 / 阴女顺，且无性别时为 null', function () {
+    var m = bz({ year: 1984, month: 6, day: 15, hour: 12, sex: 'M' }).dayun, f = bz({ year: 1984, month: 6, day: 15, hour: 12, sex: 'F' }).dayun;
+    var m2 = bz({ year: 1985, month: 6, day: 15, hour: 12, sex: 'M' }).dayun, f2 = bz({ year: 1985, month: 6, day: 15, hour: 12, sex: 'F' }).dayun;
+    return eq([m.direction, f.direction, m2.direction, f2.direction, bz({ year: 1984, month: 6, day: 15, hour: 12 }).dayun],
+              ['顺排', '逆排', '逆排', '顺排', null]);
+  });
+  t('八字·大运：十步干支依六十甲子连续且十神与日干一致；顺排首运=月柱下一位', function () {
+    var r = bz({ year: 1984, month: 6, day: 15, hour: 12, sex: 'M' }), d = r.dayun, S = '甲乙丙丁戊己庚辛壬癸', Bv = '子丑寅卯辰巳午未申酉戌亥';
+    var bad = [];
+    var prev = (S.indexOf(r.pillars.month.stem) * 1), pi = null;
+    d.steps.forEach(function (x, i) {
+      var si = S.indexOf(x.stem), bi = Bv.indexOf(x.branch);
+      var wantS = (S.indexOf(r.pillars.month.stem) + i + 1) % 10, wantB = (Bv.indexOf(r.pillars.month.branch) + i + 1) % 12;
+      if (si !== wantS || bi !== wantB) bad.push(x.text);
+      if (x.startAge !== d.startAge.years + 10 * i || x.endAge !== x.startAge + 9) bad.push('age' + i);
+    });
+    return bad.length === 0 || bad.join(',');
+  });
   t('周易：五爻动 → 取变卦唯一不变爻爻辞', function () {
     var L = yjLines('000000', [0, 1, 2, 3, 5]), r = YJ().judge(L), c = YJ().getHex(YJ().changedKey(L));
     if (r.rule.indexOf('五爻动') !== 0) return '断法：' + r.rule;
