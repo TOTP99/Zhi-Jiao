@@ -118,6 +118,17 @@
     return '<details class="bazi-calc-note"><summary>计算说明</summary><ul>' + items.map(function (s) { return '<li>' + escapeHtml(s) + '</li>'; }).join('') + '</ul></details>';
   }
   if (typeof window !== 'undefined') window.YumiaoBaziCalcNote = baziCalcNoteHTML;
+  /* 大运排盘（引擎 r.dayun；缺性别时不显示）。年龄为实岁，括号内为起运的公历年。 */
+  function baziDayunHTML(r) {
+    var d = r && r.dayun;
+    if (!d || !d.steps || !d.steps.length) return '';
+    var rows = d.steps.map(function (x) {
+      return '<span style="display:inline-block;min-width:5.2em;margin:2px 10px 2px 0">' + escapeHtml(x.text) + '<small>（' + escapeHtml(x.tenGod) + '）</small> ' +
+        x.startAge + '–' + x.endAge + '岁<small>（' + x.startYear + '）</small></span>';
+    }).join('');
+    return '<div class="mbti-sec"><span class="mbti-sec-label">大运排盘</span>' + escapeHtml(d.basis + '，' + d.direction + '；' + d.startAge.text + '起运（约' + d.startDate.slice(0, 7).replace('-', '年') + '月）') +
+      '<div style="margin-top:4px;line-height:1.7">' + rows + '</div></div>';
+  }
   function renderBaziFull() {
     const reportEl = document.getElementById('baziReport');
     if (!reportEl || !baziResult) return;
@@ -138,7 +149,7 @@
       <div class="mbti-type">${escapeHtml(r.bazi)}</div><div class="mbti-summary">日主 ${escapeHtml(r.dayMaster.stem)}（${escapeHtml(r.dayMaster.element)}）· ${escapeHtml(r.dayMaster.level)}</div>
       ${trueSolarNote}
       ${calcNote}
-      <div class="mbti-sec"><span class="mbti-sec-label">四柱</span>${escapeHtml(formatBaziPillar('年', p.year))}；${escapeHtml(formatBaziPillar('月', p.month))}；${escapeHtml(formatBaziPillar('日', p.day))}；${escapeHtml(formatBaziPillar('时', p.hour))}</div><div class="mbti-sec"><span class="mbti-sec-label">五行</span>木${r.fiveElements['木']} 火${r.fiveElements['火']} 土${r.fiveElements['土']} 金${r.fiveElements['金']} 水${r.fiveElements['水']}</div><div class="mbti-sec"><span class="mbti-sec-label">十神</span>年：${escapeHtml(r.tenGods.year)}；月：${escapeHtml(r.tenGods.month)}；时：${escapeHtml(r.tenGods.hour)}</div><div class="mbti-sec"><span class="mbti-sec-label">神煞</span>${escapeHtml(shenshaText)}</div><div class="mbti-sec"><span class="mbti-sec-label">地支</span>${escapeHtml(relationsText)}</div><div class="mbti-sec"><span class="mbti-sec-label">总论</span>${escapeHtml(f.zonglun)}</div><div class="mbti-sec"><span class="mbti-sec-label">财运</span>${escapeHtml(f.wealth)}</div><div class="mbti-sec"><span class="mbti-sec-label">婚姻</span>${escapeHtml(f.marriage)}</div><div class="mbti-sec"><span class="mbti-sec-label">事业</span>${escapeHtml(f.career)}</div><div class="mbti-sec"><span class="mbti-sec-label">健康</span>${escapeHtml(f.health)}</div><div class="mbti-sec"><span class="mbti-sec-label">大运</span>${escapeHtml(f.dayun)}</div><div class="mbti-sec"><span class="mbti-sec-label">流年</span>${escapeHtml(f.liunian)}</div><div class="mbti-brief-note">${escapeHtml(r.dayMaster.note)}</div>
+      <div class="mbti-sec"><span class="mbti-sec-label">四柱</span>${escapeHtml(formatBaziPillar('年', p.year))}；${escapeHtml(formatBaziPillar('月', p.month))}；${escapeHtml(formatBaziPillar('日', p.day))}；${escapeHtml(formatBaziPillar('时', p.hour))}</div><div class="mbti-sec"><span class="mbti-sec-label">五行</span>木${r.fiveElements['木']} 火${r.fiveElements['火']} 土${r.fiveElements['土']} 金${r.fiveElements['金']} 水${r.fiveElements['水']}</div><div class="mbti-sec"><span class="mbti-sec-label">十神</span>年：${escapeHtml(r.tenGods.year)}；月：${escapeHtml(r.tenGods.month)}；时：${escapeHtml(r.tenGods.hour)}</div><div class="mbti-sec"><span class="mbti-sec-label">神煞</span>${escapeHtml(shenshaText)}</div><div class="mbti-sec"><span class="mbti-sec-label">地支</span>${escapeHtml(relationsText)}</div><div class="mbti-sec"><span class="mbti-sec-label">总论</span>${escapeHtml(f.zonglun)}</div><div class="mbti-sec"><span class="mbti-sec-label">财运</span>${escapeHtml(f.wealth)}</div><div class="mbti-sec"><span class="mbti-sec-label">婚姻</span>${escapeHtml(f.marriage)}</div><div class="mbti-sec"><span class="mbti-sec-label">事业</span>${escapeHtml(f.career)}</div><div class="mbti-sec"><span class="mbti-sec-label">健康</span>${escapeHtml(f.health)}</div><div class="mbti-sec"><span class="mbti-sec-label">大运</span>${escapeHtml(f.dayun)}</div>${baziDayunHTML(r)}<div class="mbti-sec"><span class="mbti-sec-label">流年</span>${escapeHtml(f.liunian)}</div><div class="mbti-brief-note">${escapeHtml(r.dayMaster.note)}</div>
     `;
     if (typeof saveReportHTML === 'function') saveReportHTML('yumiao_report_bazi_v1', '八字命盘', 'baziReport');
   }

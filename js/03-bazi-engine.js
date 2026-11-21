@@ -449,6 +449,59 @@
         nextJieqi: _nextJ ? { name: _nextJ.name, date: _nextJ.date.toISOString() } : null
       };
     }
+    /* 大运（新增）：阳年男、阴年女顺排，阴年男、阳年女逆排；
+       顺排取出生后的下一个「节」、逆排取出生前（含当刻）的上一个「节」，
+       相差 3 天折 1 年（即 1 天 = 4 个月），得到起运时长；大运干支从月柱起顺/逆推，每步 10 年。
+       年干阴阳取「立春换年」后的年柱。无性别时返回 null。 */
+    function calculateDayun(input, pillars, utc) {
+      const sx = input.sex;
+      const male = sx === "M" || sx === "男" || sx === "male";
+      const female = sx === "F" || sx === "女" || sx === "female";
+      if (!male && !female) return null;
+      const dayStem = pillars.raw.day.stemIndex;
+      const yang = pillars.raw.year.stemIndex % 2 === 0;
+      const forward = (yang && male) || (!yang && female);
+      const list = allJieQi(utc.getUTCFullYear());
+      let target = null;
+      if (forward) {
+        for (let i = 0; i < list.length; i++) { if (list[i].date.getTime() > utc.getTime()) { target = list[i]; break; } }
+      } else {
+        for (let i = 0; i < list.length; i++) { if (list[i].date.getTime() <= utc.getTime()) target = list[i]; }
+      }
+      if (!target) return null;
+      const diffDays = Math.abs(target.date.getTime() - utc.getTime()) / 86400000;
+      const totalMonthsF = diffDays * 4;                        // 1 天 = 4 个月
+      const totalMonths = Math.floor(totalMonthsF + 1e-9);
+      const extraDays = Math.floor((totalMonthsF - totalMonths) * 30 + 1e-9);
+      const startYears = Math.floor(totalMonths / 12), startMonths = totalMonths % 12;
+      const by = Number(input.year), bm = Number(input.month), bd = Number(input.day);
+      const lastDay = (yy, mm) => new Date(Date.UTC(yy, mm + 1, 0)).getUTCDate();   // mm 为 0 起
+      let sy = by + startYears, sm = bm - 1 + startMonths;
+      sy += Math.floor(sm / 12); sm = sm % 12;
+      const sd = new Date(Date.UTC(sy, sm, Math.min(bd, lastDay(sy, sm))) + extraDays * 86400000);
+      const startYear = sd.getUTCFullYear();
+      let base = 0;
+      for (let i = 0; i < 60; i++) { if (i % 10 === pillars.raw.month.stemIndex && i % 12 === pillars.raw.month.branchIndex) { base = i; break; } }
+      const steps = [];
+      for (let k = 1; k <= 10; k++) {
+        const g = ganzhi(base + (forward ? k : -k));
+        const a0 = startYears + 10 * (k - 1);
+        steps.push({
+          index: k, text: g.text, stem: g.stem, branch: g.branch,
+          tenGod: getTenGod(dayStem, g.stemIndex),
+          startAge: a0, endAge: a0 + 9,
+          startYear: startYear + 10 * (k - 1), endYear: startYear + 10 * k - 1
+        });
+      }
+      return {
+        direction: forward ? "顺排" : "逆排",
+        basis: (yang ? "阳" : "阴") + "年" + (male ? "男" : "女"),
+        jie: { name: target.name, date: target.date.toISOString() },
+        startAge: { years: startYears, months: startMonths, days: extraDays, text: startYears + "岁" + startMonths + "个月" + (extraDays ? extraDays + "天" : "") },
+        startDate: sd.getUTCFullYear() + "-" + String(sd.getUTCMonth() + 1).padStart(2, "0") + "-" + String(sd.getUTCDate()).padStart(2, "0"),
+        steps
+      };
+    }
     function calculateFiveElements(pillars) {
       const count = { 木:0, 火:0, 土:0, 金:0, 水:0 };
       for (const key of ["year","month","day","hour"]) {
@@ -757,6 +810,8 @@
       const shensha = calculateShensha(pillars);
       const relations = calculateRelations(pillars);
       const dayMaster = calculateDayMaster(pillars, elements);
+      let dayun = null;
+      try { dayun = calculateDayun(input, pillars, localDateToUTC(input)); } catch (e) { dayun = null; }
       return {
         version: "1.0.0",
         input: {
@@ -769,7 +824,7 @@
         /* 节气来源：1900–2100 用内置表（分钟精度）；表外年份回退太阳黄经公式，与内置表对比实测偏差可达 ±14 分钟，临界时刻可能判错月/年柱 */
         jieqiSource: (Number(input.year) >= 1900 && Number(input.year) <= 2100) ? "table" : "formula",
         pillars, bazi: pillars.text, dayMaster,
-        fiveElements: elements, tenGods, relations, shensha,
+        fiveElements: elements, tenGods, relations, shensha, dayun,
         jieqi: pillars.jieqi
       };
     }
