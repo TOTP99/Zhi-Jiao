@@ -491,10 +491,14 @@
     for (i = 0; i < n; i++) if (palmMask[i]) { pc++; if (R[i] > 0.2) dens++; }
     res.density = dens / Math.max(1, pc);
     res.ok = true; res.lines = lines; res.frame = F; res.tilt = tilt;
+    /* 审计修复：自动解读（17b）按规范空间（拇指在左）的 frame 取区域，必须配规范空间的线与响应图；
+       下面的翻回只用于展示。原先把翻回后的数据与规范 frame 混用，右手（拇指在右）照片的所罗门环区域落到小指一侧，恒为 0。 */
+    res.linesC = {}; Object.keys(lines).forEach(function (k) { res.linesC[k] = lines[k]; });
+    res.ridgeC = { R: R, w: rw, h: rh };
     /* 展示图：保持原样（拇指在右时翻回），线坐标同步翻回 */
     res.show = { data: rot.data, w: rw, h: rh };
     if (side === 'R') Object.keys(lines).forEach(function (k) {
-      if (lines[k].found) lines[k].pts = lines[k].pts.map(function (p) { return { x: rw - 1 - p.x, y: p.y }; });
+      if (lines[k].found) { lines[k] = Object.assign({}, lines[k]); lines[k].pts = lines[k].pts.map(function (p) { return { x: rw - 1 - p.x, y: p.y }; }); }
     });
     /* v2.16：把归一化响应图交给解读层做特殊纹检测；拇指在右时同步翻回，与线坐标同空间 */
     if (side === 'R') {
@@ -671,6 +675,14 @@
       box: { x0: 0, x1: W - 1, y0: y0 - fingLenRel * Wp, y1: y0 + palmLenRel * Wp, w: W, h: H },
       cropped: { thumb: false, ulnar: false, tips: false, wrist: false }
     };
+    /* 审计修复：此前 LM 路径的裁切警告写死为 false，手掌贴边/手腕出框时不提示。
+       这里只按关键点是否贴近原图边缘追加提示（不改 F.cropped，避免影响量测结果）。 */
+    try {
+      var _edge = false;
+      [0, 1, 2, 3, 4, 5, 9, 13, 17].forEach(function (k) { if (lm[k] && (lm[k].x < 0.012 || lm[k].x > 0.988)) _edge = true; });
+      if (_edge) res.notes.push('sideCut');
+      if (lm[0] && lm[0].y > 0.985) res.notes.push('wristCut');
+    } catch (_) {}
     res.mounts = measureMounts(R, W, H, F, dom);
     await tickAsync(); prog('追踪主线');
     var lines = {}, paths = {}, sigma = 0.30 * CR.wm, LAM = 0.10;
@@ -738,11 +750,14 @@
     res.density = dens / Math.max(1, cnt);
     res.ok = true; res.lines = lines; res.frame = F; res.tilt = 0; res.skinFrac = kl.area / n;
     res.thumbSide = side; res.thumbGuess = false; res.handLabel = side === 'L' ? '左' : '右';
+    /* 审计修复：保留规范空间（拇指在左）的线与响应图供自动解读使用，见 analyzeImage 同名注释 */
+    res.linesC = {}; Object.keys(lines).forEach(function (k) { res.linesC[k] = lines[k]; });
+    res.ridgeC = { R: R, w: W, h: H };
     /* 展示图与坐标：拇指原本在右时翻回原方向，线与响应图同步翻回 */
     if (side === 'R') {
       res.show = { data: flipRGBA(work, W, H), w: W, h: H };
       Object.keys(lines).forEach(function (k) {
-        if (lines[k].found) lines[k].pts = lines[k].pts.map(function (p) { return { x: W - 1 - p.x, y: p.y }; });
+        if (lines[k].found) { lines[k] = Object.assign({}, lines[k]); lines[k].pts = lines[k].pts.map(function (p) { return { x: W - 1 - p.x, y: p.y }; }); }
       });
       var Rf = new Float32Array(n), yy, xx;
       for (yy = 0; yy < H; yy++) for (xx = 0; xx < W; xx++) Rf[yy * W + xx] = R[yy * W + (W - 1 - xx)];
@@ -1192,7 +1207,7 @@
     var res = null, rectState = 'skipped';
     try {
       var im = await loadImageData(file);
-      if (token !== ST.token) return;
+      if ((!ST || token !== ST.token)) return;
       /* v2.16：先摆正（MediaPipe），任何失败都回退原图，不影响识别 */
       var useIm = im;
       try {
@@ -1200,7 +1215,7 @@
         if (RC && typeof RC.rectify === 'function') {
           showBusy(true, '摆正手掌…');
           var rc = await RC.rectify(im, { timeoutMs: 20000 });
-          if (token !== ST.token) return;
+          if ((!ST || token !== ST.token)) return;
           if (rc && rc.data) { useIm = { data: rc.data, width: rc.width, height: rc.height }; rectState = 'done'; }
           else rectState = (rc && rc.lm) ? 'lmonly' : 'failed';
         }
@@ -1211,22 +1226,22 @@
         try {
           showBusy(true, '读取高清原图…');
           var full = await loadFullCanvas(file);
-          if (token !== ST.token) return;
-          res = await analyzeLM(full, rc.lm, rc.thumbSide, { onProgress: function (t) { if (token === ST.token) showBusy(true, t + '…'); } });
+          if ((!ST || token !== ST.token)) return;
+          res = await analyzeLM(full, rc.lm, rc.thumbSide, { onProgress: function (t) { if ((ST && token === ST.token)) showBusy(true, t + '…'); } });
           if (res && !res.ok) res = null;
         } catch (e2) { res = null; console.warn('[yumiao] palm-lm', e2); }
-        if (token !== ST.token) return;
+        if ((!ST || token !== ST.token)) return;
       }
       if (!res) res = await analyzeImage(useIm.data, useIm.width, useIm.height, {
         hand: ST.hand === '右' ? 'R' : 'L',
-        onProgress: function (t) { if (token === ST.token) showBusy(true, t + '…'); }
+        onProgress: function (t) { if ((ST && token === ST.token)) showBusy(true, t + '…'); }
       });
-      if (token !== ST.token) return;
+      if ((!ST || token !== ST.token)) return;
       if (!res.ok && res.reason !== 'nohand' && res.reason !== 'palmcut' && res.reason !== 'lowcontrast') res = { ok: false, reason: 'error' };
       /* 失败时也把照片画出来，方便用户对照着手动选 */
       if (!res.ok && !res.show) res.show = { data: im.data, w: im.width, h: im.height };
     } catch (e) {
-      if (token !== ST.token) return;
+      if ((!ST || token !== ST.token)) return;
       // HEIC/HEIF 在部分浏览器（桌面 Chrome、旧安卓）解码不了：给明确提示，不静默失败
       var _isHeic = /hei[cf]/i.test(file.type || '') || /\.hei[cf]$/i.test(file.name || '');
       res = { ok: false, reason: (e && e.message === 'decode') ? (_isHeic ? 'heic' : 'decode') : 'error' };
@@ -1251,7 +1266,7 @@
       try {
         var IN = (typeof window !== 'undefined') ? window.YumiaoPalmInsight : null;
         if (IN && typeof IN.buildAutoInsight === 'function') {
-          ST.insight = IN.buildAutoInsight(res.lines, res.frame, res.mounts, res.ridge);
+          ST.insight = IN.buildAutoInsight(res.linesC || res.lines, res.frame, res.mounts, res.ridgeC || res.ridge);
         }
       } catch (e) { ST.insight = null; }
       renderInsight();

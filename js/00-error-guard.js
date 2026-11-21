@@ -107,9 +107,35 @@
     var wall = Date.UTC(+o.year, +o.month - 1, +o.day, +o.hour % 24, +o.minute, +o.second);
     return wall - Math.floor(instant / 1000) * 1000;
   }
+  /* 审计修复：「其他城市」没有 tzName，原先直接跳过夏令时。
+     这里按「时区偏移 + 经纬度」保守推断 IANA 时区名；推断不出就返回 undefined（行为与旧版一致）。
+     只覆盖中国大陆（1986–91 夏令时）与北美东/中/山/太平洋时区，并排除不实行夏令时的萨斯喀彻温、亚利桑那。 */
+  function guessTzName(b) {
+    var tz = Number(b.tzOffset), lat = Number(b.lat), lng = Number(b.lng);
+    if (b.lat == null || b.lat === '' || b.lng == null || b.lng === '') return undefined;
+    if (!isFinite(tz) || !isFinite(lat) || !isFinite(lng)) return undefined;
+    if (tz === 8 && lng >= 98 && lng <= 135 && lat >= 20 && lat <= 53 && !(lat < 25.5 && lng > 119.5)) return 'Asia/Shanghai';
+    if (lng >= -125 && lng <= -67 && lat >= 25 && lat <= 60) {
+      if (lat > 49 && lng >= -110 && lng <= -101.3 && tz === -6) return undefined;      /* 萨斯喀彻温 */
+      if (tz === -7 && lat >= 31.3 && lat <= 37 && lng >= -114.8 && lng <= -109) return undefined;   /* 亚利桑那 */
+      if (tz === -5) return 'America/New_York';
+      if (tz === -6) return 'America/Chicago';
+      if (tz === -7) return 'America/Denver';
+      if (tz === -8) return 'America/Los_Angeles';
+    }
+    return undefined;
+  }
   window.yumiaoStdBirth = function (b) {
     try {
-      if (!b || !b.tzName || b.tzOffset == null || b.tzOffset === '') return b;
+      if (!b || b.tzOffset == null || b.tzOffset === '') return b;
+      if (!b.tzName) {
+        var g = guessTzName(b);
+        if (!g) return b;
+        var b2 = {};
+        for (var kk in b) if (Object.prototype.hasOwnProperty.call(b, kk)) b2[kk] = b[kk];
+        b2.tzName = g;
+        b = b2;
+      }
       if (b.hour == null || b.hour === '') return b;
       var std = Number(b.tzOffset) * 3600000;
       if (!isFinite(std)) return b;

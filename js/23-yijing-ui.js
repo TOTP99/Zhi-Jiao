@@ -28,7 +28,7 @@
 
   /* ---------- 页：主页 ---------- */
   function showHome() {
-    S.page = 'home'; S.expanded = null;
+    S.page = 'home'; S.expanded = null; castTok++; S.casting = false;
     $('yiApp').innerHTML =
       '<div class="scroll-wrap"><div class="book">' +
       '<div class="book-title">周易六爻</div>' +
@@ -43,7 +43,7 @@
 
   /* ---------- 页：摇卦 ---------- */
   function showCast() {
-    S.page = 'cast'; S.casting = false; S.lines = null;
+    S.page = 'cast'; S.casting = false; S.lines = null; castTok++;
     // 已授权过则自动开启摇一摇
     var autoShake = false;
     try { autoShake = localStorage.getItem('yijing_shake_on') === '1'; } catch (_) {}
@@ -65,6 +65,7 @@
   /* ---------- 页：结果 ---------- */
   function showResult() {
     S.page = 'result';
+    S.casting = false; /* 审计修复：起卦成功路径从未复位 casting，导致 onMotion 在结果页恒 return，「结果页摇一摇再摇」永不触发 */
     var r = S.result, hex = r.hex;
     var sn = C.shortName(hex);
     var h = '<div class="scroll-wrap"><div class="book result-book">';
@@ -162,6 +163,8 @@
     return mg;
   }
   function coinClick(delay, vol) {
+    /* 审计修复：尊重全局「仪式音效」开关（与 10-app-shell 同一个 localStorage 键） */
+    try { if (localStorage.getItem('yumiao_sound_v1') === 'off') return; } catch (_) {}
     var ctx = ac(); if (!ctx) return;
     var dest = bus(ctx);
     var t = ctx.currentTime + delay;
@@ -184,6 +187,7 @@
   }
 
   /* ---------- 摇一摇感应 ---------- */
+  var castTok = 0;
   var shakeOn = false, lastA = null, lastT = 0, shakeCount = 0, lastSnd = 0;
   // 摇动中发声：只要有明显晃动就响一声铜钱
   function shakeSound(mag) {
@@ -285,7 +289,10 @@
       if (btn) btn.disabled = true;
       if (area) area.innerHTML = '';
       var lines = [], idx = 0;
+      /* 审计修复：给每次起卦一个令牌；中途返回/离开页面后，旧链的定时器发现令牌过期就自行终止 */
+      var myTok = ++castTok;
       (function next() {
+        if (myTok !== castTok) return;
         if (idx >= 6) {
           S.lines = lines;
           S.result = C.judge(lines);
@@ -301,7 +308,7 @@
               window.__yumiaoYiResult(S.result, S.lines, _q ? _q.value : '');
             } catch (_) {}
           }
-          setTimeout(showResult, 700);
+          setTimeout(function () { if (myTok === castTok) showResult(); }, 700);
           return;
         }
         var L = C.castOneLine();

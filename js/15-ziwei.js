@@ -516,7 +516,10 @@
   function openZwDaxian() {
     if (!zwCurrent) return;
     var c = zwCurrent;
-    var now = new Date().getFullYear() - c.input.year + 1; // 虚岁
+    /* 审计修复：虚岁按农历年计（春节换岁）。原写法用公历年差，春节前出生者、以及每年春节前打开时都会差 1 岁，
+       还可能选错当前大限。 */
+    var _t = new Date(), _lt = window.YumiaoLunar && window.YumiaoLunar.solarToLunar(_t.getFullYear(), _t.getMonth() + 1, _t.getDate());
+    var now = _lt ? (_lt.year - c.lunar.year + 1) : (_t.getFullYear() - c.lunar.year + 1); // 虚岁
     var cur = c.daxian.filter(function (x) { return now >= x.from && now <= x.to; })[0] || c.daxian[0];
     var h = '<div>大限是十年一站的运势车站，每十年走一宫。</div>';
     h += '<div class="mt-6">你今年虚岁<b>' + now + '</b>，正走<b>' + escapeHtml(cur.ganzhi) + '（' + cur.from + '–' + cur.to + '岁）</b>大限。</div>';

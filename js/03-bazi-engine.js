@@ -36,8 +36,9 @@
     }
     function localDateToUTC(input) {
       const timezone = input.timezone == null ? 8 : Number(input.timezone);
-      let hour = Number(input.hour || 0);
-      let minute = Number(input.minute || 0);
+      const hour = Number(input.hour || 0);
+      const minute = Number(input.minute || 0);
+      let totalMin = hour * 60 + minute;
       // 真太阳时：经度改正 + 均时差
       if (input.trueSolar && input.longitude != null && Number.isFinite(Number(input.longitude))) {
         const lon = Number(input.longitude);
@@ -47,16 +48,13 @@
           Number(input.year), Number(input.month), Number(input.day),
           hour, minute, timezone
         );
-        const totalAdjMin = longCorrMin + eotMin;
-        const totalMin = hour * 60 + minute + totalAdjMin;
-        hour = Math.floor(totalMin / 60);
-        minute = totalMin - hour * 60;
-        // 跨日由后续 Date 构造自然处理（负小时会回退日期）
+        totalMin += longCorrMin + eotMin;
       }
-      return new Date(Date.UTC(
-        Number(input.year), Number(input.month) - 1, Number(input.day),
-        hour - timezone, minute, Number(input.second || 0)
-      ));
+      // 审计修复：全程用毫秒算术。Date.UTC 会把小时/分钟参数截断为整数，
+      // 导致半小时/45 分钟时区（印度 +5.5、尼泊尔 +5.75）丢失 30/45 分钟，真太阳时的小数分钟也被丢弃；
+      // 跨日（负分钟或 ≥1440）由毫秒加法自然处理。
+      const dayStart = Date.UTC(Number(input.year), Number(input.month) - 1, Number(input.day));
+      return new Date(dayStart + Math.round((totalMin - timezone * 60) * 60000) + Number(input.second || 0) * 1000);
     }
     function julianDay(date) { return date.getTime() / 86400000 + 2440587.5; }
     function solarLongitude(date) {
@@ -598,7 +596,7 @@
       // 禄神口诀：甲禄寅 乙禄卯 丙禄巳 丁禄午 戊禄巳 己禄午 庚禄申 辛禄酉 壬禄亥 癸禄子
       const lu = [2,3,5,6,5,6,8,9,11,0]; // 原数组戊(index4)/己(index5)两项写反，已修正
       addShensha(list, "禄神", "福禄", "按日干取临官地支", hitBranches(pillars, [lu[dayStem]]), "传统上主俸禄、资源、稳定收入与福气。");
-      // 羊刃口诀（帝旺版，阳干各派一致，阴干取同性质"帝旺"支）：
+      // 羊刃口诀（审计更正注释：阳干取帝旺；阴干此处取「禄前一位」——乙刃辰/丁己刃未/辛刃戌/癸刃丑，并非十二长生的帝旺位，旧注释写反了；数组取值未改）：
       // 甲刃卯 乙刃辰 丙戊刃午 丁己刃未 庚刃酉 辛刃戌 壬刃子 癸刃丑
       const yangRen = [3,4,6,7,6,7,9,10,0,1];
       addShensha(list, "羊刃", "强势", "按日干取羊刃", hitBranches(pillars, [yangRen[dayStem]]), "传统上主执行力、刚烈、竞争性。");
