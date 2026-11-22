@@ -670,7 +670,20 @@
     const div = document.createElement('div');
     div.innerHTML = html;
     document.body.appendChild(div.firstChild);
-    setTimeout(function(){ window.print(); }, 60);
+    /* 必须在点击手势内同步调用：iOS/安卓 WebView 对定时器里的 print() 直接忽略（以前延迟 60ms 导致点了没反应）。
+       #print-root 平时 display:none，仅 @media print 才显示，所以无需等待布局。 */
+    try { window.print(); }
+    catch (e) {
+      console.warn('[yumiao] print failed', e);
+      try {
+        const t = document.createElement('div');
+        t.className = 'mini-toast';
+        t.textContent = '当前浏览器不支持打印，请用系统浏览器打开后再试';
+        document.body.appendChild(t);
+        setTimeout(function(){ t.classList.add('show'); }, 20);
+        setTimeout(function(){ t.classList.remove('show'); setTimeout(function(){ t.remove(); }, 300); }, 2400);
+      } catch (_) { alert('当前浏览器不支持打印，请用系统浏览器打开后再试'); }
+    }
   }
 
   function renderHistory() {

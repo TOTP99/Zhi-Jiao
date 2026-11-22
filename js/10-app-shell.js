@@ -222,6 +222,7 @@
       var h = '<p>周易六爻 · ' + escapeHtml(r.hex.fullName || r.hex.name) + ' ' + escapeHtml(r.hex.qian || '') + '</p>' +
         (question ? '<p>所问：' + escapeHtml(question) + '</p>' : '') +
         '<p>断法：' + escapeHtml(r.rule || '') + '</p>' +
+        '<p>约定：2026-11-22 起字为阴、背为阳，此前记录按字为阳</p>' +
         (mv ? '<p>动爻：' + escapeHtml(mv) + '</p>' : '<p>六爻安静，无动爻</p>') +
         (r.chex ? '<p>变卦：' + escapeHtml(r.chex.fullName || r.chex.name) + '</p>' : '');
       appendQueryRecord('周易占卜', h);
