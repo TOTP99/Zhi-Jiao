@@ -344,7 +344,11 @@
 <div class="sheet" id="ziweiModal" role="dialog" aria-label="紫微斗数">
   <div class="sheet-handle"></div>
   <div class="sheet-head"><h3>紫微斗数</h3><button type="button" class="sheet-close" onclick="closeSheetByBtn(this)" aria-label="关闭">×</button></div>
-  <div class="sheet-scroll"><div class="profile-bar" id="ziweiProfileBar" data-bar="ziwei"></div><div id="ziweiBody"></div></div>
+  <div class="sheet-scroll">
+    <div class="profile-bar" id="ziweiProfileBar" data-bar="ziwei"></div>
+    <label class="bazi-checkbox bazi-row-tight" style="margin:8px 16px"><input type="checkbox" id="ziweiTrueSolar"> 跟随八字真太阳时 <span class="bazi-optional">（按档案经度）</span></label>
+    <div id="ziweiBody"></div>
+  </div>
   <div class="mbti-reveal-actions"><button type="button" class="btn-ghost btn-sm" onclick="openZiwei()">重新排盘</button><button type="button" class="btn-gold btn-sm" onclick="copyReport('ziweiBody')">复制结果</button></div>
   <!-- 紫微子弹窗：底图模糊 -->
   <div class="zw-pop-backdrop" id="zwPopBackdrop" onclick="closeZwPop()">
