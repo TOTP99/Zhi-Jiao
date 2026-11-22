@@ -616,6 +616,11 @@
       const r = fab.getBoundingClientRect(), m = fabHost();
       _fabDrag = { sx: x, sy: y, ox: r.left - m.left, oy: r.top - m.top, moved: false };
       fab.classList.add('dragging');
+      fab.style.transition = 'none';   /* .btn-gold 对 transform 有 .15s 过渡：不关掉，改位置时会先滑一段，后续读到的矩形是错的 */
+      /* 修复：默认位置靠 left:50% + translateX(-50%) + bottom 定位。先把当前所在位置固化成像素 left/top，
+         再清掉 transform/bottom；否则按钮在 touchstart 时当场跳走，click 落空，要点第二下才生效。 */
+      fab.style.left = _fabDrag.ox + 'px';
+      fab.style.top = _fabDrag.oy + 'px';
       fab.style.transform = 'none';
       fab.style.right = 'auto'; fab.style.bottom = 'auto';
     };
@@ -641,9 +646,12 @@
         setTimeout(function(){ _fabWasDragged = false; }, 300);
       }
       fab.classList.remove('dragging');
+      fab.style.transition = '';
       _fabDrag = null;
     };
+    let lastTouch = 0;
     fab.addEventListener('touchstart', function(e){
+      lastTouch = Date.now();
       const t = e.touches[0];
       start(t.clientX, t.clientY);
     }, { passive: true });
@@ -654,6 +662,7 @@
     }, { passive: false });
     fab.addEventListener('touchend', end);
     fab.addEventListener('mousedown', function(e){
+      if (Date.now() - lastTouch < 800) return;   /* 触摸后浏览器补发的 mousedown，不再重复起始 */
       start(e.clientX, e.clientY);
       const mm = function(ev){ move(ev.clientX, ev.clientY); };
       const mu = function(){
