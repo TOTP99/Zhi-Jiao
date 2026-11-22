@@ -1029,3 +1029,16 @@ input:not([type=checkbox]):not([type=radio]), textarea, select{border-radius:11p
   #yiOverlay .yi-back{padding:4px 14px;min-height:36px;min-width:76px}
   #yiOverlay .yi-sp{min-width:76px}
 }
+
+/* ══════════ v3.0 UI 复查补丁（iPhone 14 横/竖屏） ══════════ */
+/* 竖屏问卜首页：主按钮「掷筊」原为 inline-flex 自适应宽度，缩成左边一小块；改为撑满一行（横屏网格里本来就是满列宽） */
+#castBtn{display:flex;align-items:center;justify-content:center;width:100%;box-sizing:border-box}
+/* 横屏开屏引导（介绍页）：原先内容贴顶（图标离顶边仅 8px）、下半屏空着；改为整体垂直居中，图标与留白按 340–390px 高度收紧。
+   用 auto 外边距居中（内容超高时仍从顶部起排、可滚动，不会被裁掉）；录入生辰表单页不受影响。 */
+@media (orientation:landscape) and (max-height:600px){
+  #onboard .ob-card:not(:has(.ob-profile:not([hidden]))) .ob-slides{margin-top:auto;min-height:0}
+  #onboard .ob-card:not(:has(.ob-profile:not([hidden]))) .ob-actions{margin-bottom:auto}
+  #onboard .ob-icon{width:56px;height:56px;margin-bottom:10px}
+  #onboard .ob-icon svg{width:28px;height:28px}
+  #onboard .ob-dots{margin:10px 0 14px}
+}
