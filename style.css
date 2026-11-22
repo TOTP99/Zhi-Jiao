@@ -1042,3 +1042,29 @@ input:not([type=checkbox]):not([type=radio]), textarea, select{border-radius:11p
   #onboard .ob-icon svg{width:28px;height:28px}
   #onboard .ob-dots{margin:10px 0 14px}
 }
+
+/* 未录入生辰档案时：虚线提示框撑满整行（原为 flex 子项，只占一半宽）；紫微/生肖没有东西可排可复制，收起底栏按钮和太阳时勾选 */
+.profile-bar>.profile-empty{flex:1;min-width:0;margin-bottom:0}
+#ziweiModal:has(#ziweiProfileBar .profile-empty) .mbti-reveal-actions,
+#shengxiaoModal:has(#shengxiaoProfileBar .profile-empty) .mbti-reveal-actions,
+#ziweiModal:has(#ziweiProfileBar .profile-empty) .bazi-checkbox{display:none !important}
+@media (orientation:landscape) and (max-height:600px){
+  /* 顶栏与主体、底栏同宽（原 760px 上限，横屏下比底栏窄、两侧缩进） */
+  #topbar{max-width:1040px}
+}
+@media (max-height:560px){
+  /* 横屏录入生辰：标题离卡片顶边再松一点 */
+  .ob-profile{padding-top:16px}
+}
+
+/* 横屏弹窗内容区太矮（390px 高里，标题 + 生辰档案条 + 太阳时勾选 + 底栏就吃掉一大半，紫微/称骨的结果只露出一行）：
+   生辰档案条改成单行紧凑（去掉小标题，日期与性别城市并排），勾选行和底栏按钮栏收紧。仅横屏，竖屏不变。 */
+@media (orientation:landscape) and (max-height:600px){
+  .sheet .profile-bar{padding:6px 12px;margin-bottom:6px}
+  .sheet .profile-bar .pb-info{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:14px;row-gap:0}
+  .sheet .profile-bar .pb-kicker{display:none}
+  .sheet .profile-bar .pb-text,.sheet .profile-bar .pb-sub,.sheet .profile-bar .pb-extra{margin-top:0}
+  .sheet .profile-bar .btn-sm{min-height:36px}
+  #ziweiModal .bazi-checkbox{margin:0 16px 6px !important}
+  .mbti-reveal-actions{padding-top:8px;padding-bottom:calc(8px + env(safe-area-inset-bottom))}
+}
