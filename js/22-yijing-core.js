@@ -9,18 +9,18 @@
     return String(s || '').split('').map(function (c) { return TRAD[c] || c; }).join('');
   }
 
-  /* 三钱起卦：一爻 */
+  /* 三钱起卦：一爻（主流口径：字为阴、背为阳） */
   function castOneLine() {
-    var heads = 0, coins = [];
+    var yangs = 0, coins = [];
     for (var i = 0; i < 3; i++) {
-      var h = Math.random() < 0.5;
-      if (h) heads++;
-      coins.push(h ? '正' : '反');
+      var isYang = Math.random() < 0.5; // 背=阳，字=阴
+      if (isYang) yangs++;
+      coins.push(isYang ? '背' : '字');
     }
     var r;
-    if (heads === 3) r = { v: 9, yang: true, moving: true, tag: '老阳', sym: '○' };
-    else if (heads === 2) r = { v: 7, yang: true, moving: false, tag: '少阳', sym: '▬' };
-    else if (heads === 1) r = { v: 8, yang: false, moving: false, tag: '少阴', sym: '▬▬' };
+    if (yangs === 3) r = { v: 9, yang: true, moving: true, tag: '老阳', sym: '○' };
+    else if (yangs === 2) r = { v: 7, yang: true, moving: false, tag: '少阳', sym: '▬' };
+    else if (yangs === 1) r = { v: 8, yang: false, moving: false, tag: '少阴', sym: '▬▬' };
     else r = { v: 6, yang: false, moving: true, tag: '老阴', sym: '×' };
     r.coins = coins.join('');
     return r;

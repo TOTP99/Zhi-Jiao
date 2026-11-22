@@ -203,7 +203,15 @@
   }
   function chart(opt) {
     validateOpt(opt);
-    var lunar = window.YumiaoLunar.solarToLunar(opt.year, opt.month, opt.day);
+    /* 与八字统一：晚子时（23:00–23:59）归入次日，农历日、命宫等均按次日计算 */
+    var y = opt.year, m = opt.month, d = opt.day;
+    if (opt.hour >= 23) {
+      var next = new Date(Date.UTC(y, m - 1, d + 1));
+      y = next.getUTCFullYear();
+      m = next.getUTCMonth() + 1;
+      d = next.getUTCDate();
+    }
+    var lunar = window.YumiaoLunar.solarToLunar(y, m, d);
     if (!lunar) throw inputError('日期不存在或超出范围（1900–2100）');
     var hourZhi = hourToDiZhi(opt.hour);
     var yearGan = lunar.yearGanZhi[0], yearZhi = lunar.yearGanZhi[1];
@@ -297,7 +305,9 @@
   function ziweiCalcNoteHTML(c) {
     if (!c || !c.lunar || !c.ju) return '';
     var meta = c._calcMeta, items = [], inp = c.input || {}, lu = c.lunar;
-    items.push('农历 ' + lu.year + '年' + (lu.isLeap ? '闰' : '') + lu.month + '月' + lu.day + '日（公历 ' + inp.year + '-' + inp.month + '-' + inp.day + ' 换算）');
+    var lateZi = (inp.hour >= 23);
+    items.push('农历 ' + lu.year + '年' + (lu.isLeap ? '闰' : '') + lu.month + '月' + lu.day + '日（公历 ' + inp.year + '-' + inp.month + '-' + inp.day + (lateZi ? ' 晚子时按次日' : '') + ' 换算）');
+    if (lateZi) items.push('晚子时（23:00–23:59）与八字统一，归入次日计算农历与命宫');
     if (lu.isLeap) {
       var em = effectiveMonth(lu, (c.yearGanZhi || ' ')[0]).month;
       items.push('闰月按半月制：十五日及以前并入本月，十六日起并入下月；本盘按 ' + em + ' 月起盘（与称骨一致）');
@@ -306,6 +316,7 @@
     if (meta) {
       items.push(meta.dstAdjusted ? '出生时当地实行夏令时，已回拨到标准时' : '未做夏令时回拨');
       items.push(meta.hourDefaulted ? '出生时间未填，按午时（12:00）计算' : '出生时辰 ' + c.hourZhi + '时（以档案为准）');
+      if (meta.trueSolar) items.push('已跟随八字真太阳时（经度校准）');
     }
     items.push('命宫 ' + c.mingGanzhi + '，身宫在 ' + c.shenBranch + ' 宫');
     items.push('五行局：' + c.ju.name);
@@ -324,9 +335,42 @@
       body.innerHTML = '<p class="mbti-intro">请先到「我的」录入生辰档案。</p>';
     } else {
       try {
-        var c = chart({ year: b.year, month: b.month, day: b.day, hour: b.hour, gender: b.gender });
+        var useTrueSolar = !!(document.getElementById('ziweiTrueSolar') && document.getElementById('ziweiTrueSolar').checked);
+        var chartOpt = { year: b.year, month: b.month, day: b.day, hour: b.hour, gender: b.gender };
+        var trueSolarApplied = false;
+        if (useTrueSolar) {
+          var full = (typeof readBirth === 'function') ? readBirth({ dst: true, validate: true }) : null;
+          var lon = full && full.lng != null && full.lng !== '' ? Number(full.lng) : null;
+          var tz = full && full.tzOffset != null && full.tzOffset !== '' ? Number(full.tzOffset) : 8;
+          if (lon != null && isFinite(lon)) {
+            /* 简易真太阳时：经度改正 + 均时差（与八字同一思路，紫微只需调整到时辰粒度） */
+            var minute = (full && full.minute != null && full.minute !== '') ? Number(full.minute) : 0;
+            var totalMin = chartOpt.hour * 60 + minute;
+            var standardMeridian = tz * 15;
+            var longCorrMin = (lon - standardMeridian) * 4;
+            /* 均时差近似（日级别足够，紫微时辰为 2 小时块） */
+            var dayOfYear = Math.floor((Date.UTC(chartOpt.year, chartOpt.month - 1, chartOpt.day) - Date.UTC(chartOpt.year, 0, 0)) / 86400000);
+            var B = 2 * Math.PI * (dayOfYear - 81) / 364;
+            var eotMin = 9.87 * Math.sin(2 * B) - 7.53 * Math.cos(B) - 1.5 * Math.sin(B);
+            totalMin += longCorrMin + eotMin;
+            var adjDate = new Date(Date.UTC(chartOpt.year, chartOpt.month - 1, chartOpt.day));
+            adjDate = new Date(adjDate.getTime() + Math.round(totalMin) * 60000);
+            chartOpt.year = adjDate.getUTCFullYear();
+            chartOpt.month = adjDate.getUTCMonth() + 1;
+            chartOpt.day = adjDate.getUTCDate();
+            chartOpt.hour = adjDate.getUTCHours();
+            trueSolarApplied = true;
+          }
+        }
+        var c = chart(chartOpt);
         var raw = readBirth({ validate: true }), std = readBirth({ dst: true, validate: true });
-        c._calcMeta = { hourDefaulted: !!(raw && (raw.hour == null || raw.hour === '')), dstAdjusted: !!(std && std._dstAdjusted) };
+        c._calcMeta = {
+          hourDefaulted: !!(raw && (raw.hour == null || raw.hour === '')),
+          dstAdjusted: !!(std && std._dstAdjusted),
+          trueSolar: trueSolarApplied
+        };
+        /* 保留用户原始输入日时，便于计算说明展示 */
+        c.input = { year: b.year, month: b.month, day: b.day, hour: b.hour, gender: b.gender };
         zwCurrent = c; // 供子弹窗取数
         body.innerHTML = renderChart(c);
         if (typeof saveReportHTML === 'function') {
