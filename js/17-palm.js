@@ -739,6 +739,35 @@
     /* 感情线、智慧线、事业线都不许顺着生命线走（否则几条会挤在同一道沟里） */
     paths.heart = trace('heart', near); finish('heart', paths.heart);
     paths.head = trace('head', near); finish('head', paths.head);
+    /* 调整（按真实照片）：感情线与智慧线有时会挤进同一道沟里（两条线重合成一条）。
+       重合时：先让智慧线避开感情线重追一次；仍然重合就把感情线降为「看不清」，不再给出肯定的自动解读。 */
+    function overlapFrac(a, b) {
+      if (!a || !b || !a.pts || !b.pts) return 0;
+      var hit = 0, step = Math.max(1, Math.floor(a.pts.length / 60)), tot = 0;
+      for (var ia = 0; ia < a.pts.length; ia += step) {
+        tot++;
+        for (var ib = 0; ib < b.pts.length; ib += 2) { if (Math.abs(a.pts[ia].x - b.pts[ib].x) < 7 && Math.abs(a.pts[ia].y - b.pts[ib].y) < 7) { hit++; break; } }
+      }
+      return tot ? hit / tot : 0;
+    }
+    if (lines.heart && lines.heart.found && lines.head && lines.head.found &&
+        Math.max(overlapFrac(lines.heart, lines.head), overlapFrac(lines.head, lines.heart)) > 0.5) {
+      var near2 = new Uint8Array(near);
+      (paths.heart || []).forEach(function (p) {
+        var px = p % W, py = (p / W) | 0;
+        for (var dy = -RAD; dy <= RAD; dy++) for (var dx = -RAD; dx <= RAD; dx++) {
+          var qx = px + dx, qy = py + dy;
+          if (qx >= 0 && qy >= 0 && qx < W && qy < H) near2[qy * W + qx] = 1;
+        }
+      });
+      var oldHead = lines.head, oldHeadPath = paths.head;
+      paths.head = trace('head', near2); finish('head', paths.head);
+      if (!lines.head || !lines.head.found) { lines.head = oldHead; paths.head = oldHeadPath; }
+      if (Math.max(overlapFrac(lines.heart, lines.head), overlapFrac(lines.head, lines.heart)) > 0.5) {
+        lines.heart = Object.assign({}, lines.heart, { conf: Math.min(lines.heart.conf, 1), overlap: true });
+        res.notes.push('heartHeadMerged');
+      }
+    }
     paths.fate = trace('fate', near);
     if (paths.fate) {
       var shared = 0; paths.fate.forEach(function (p) { if (near[p]) shared++; });
@@ -980,7 +1009,9 @@
     var b = (typeof readBirth === 'function') ? readBirth() : null; sex = b && b.sex || null;
     return {
       mode: 'fortune', hand: sex === 'F' ? '右' : '左', sex: sex,
-      ana: null, auto: {}, conf: {}, selF: {}, selD: {}, overlay: true, token: 0, lastText: '', insight: null
+      ana: null, auto: {}, conf: {}, selF: {}, selD: {}, overlay: true, token: 0, lastText: '', insight: null,
+      /* 多张照片：shots=每张的识别结果；src/score=每条线当前采用哪张、得分；manual=用户手动改过的线（不被补拍覆盖） */
+      shots: [], src: {}, score: {}, manual: {}, cur: -1
     };
   }
 
@@ -997,20 +1028,22 @@
     '<div class="palm-busy" id="palmBusy" hidden><span class="palm-spin" aria-hidden="true"></span><span id="palmBusyTxt">分析中…</span></div>' +
     '</div>' +
     '<div class="palm-status" id="palmStatus" role="status" aria-live="polite"></div>' +
+    '<div class="palm-shots" id="palmShots" hidden></div>' +
     '<div class="palm-actions">' +
     '<button type="button" class="btn-gold btn-sm" id="palmShoot">拍照</button>' +
     '<button type="button" class="btn-ghost btn-sm" id="palmPick">相册</button>' +
     '<button type="button" class="btn-ghost btn-sm" id="palmOverlayBtn" hidden>标注</button>' +
     '<button type="button" class="btn-ghost btn-sm" id="palmGuideBtn">对照图</button>' +
+    '<button type="button" class="btn-ghost btn-sm" id="palmResetAll" hidden>重新开始</button>' +
     '</div>' +
     '<input type="file" id="palmFileShoot" accept="image/*" capture="environment" hidden>' +
     '<input type="file" id="palmFilePick" accept="image/*" hidden>' +
     '<div class="palm-guide-set" id="palmGuideSet" hidden>' +
     '<div class="palm-guide-card" id="palmGuideCard">' +
     '<strong>拍不清楚？这样拍更容易识别</strong>' +
-    '<ul><li>手掌完全张开，拇指在画面内</li><li>光线均匀，避免强反光</li><li>手腕尽量拍入</li><li>推荐用后置摄像头，保持 20–30cm</li></ul>' +
+    '<ul><li>手掌完全张开，拇指在画面内</li><li>光线均匀，避免强反光</li><li>手腕尽量拍入</li><li>推荐用后置摄像头，保持 20–30cm</li><li>某条线看不清？再补拍一张：之前识别清楚的会保留，只更新更清楚的</li></ul>' +
     '<div class="palm-guide-card-actions">' +
-    '<button type="button" class="btn-gold btn-sm" id="palmGuideRetake">重新拍一张</button>' +
+    '<button type="button" class="btn-gold btn-sm" id="palmGuideRetake">补拍一张</button>' +
     '<button type="button" class="btn-ghost btn-sm" id="palmGuideManual">对照照片手动选择</button>' +
     '</div></div>' +
     '<div class="palm-guide" id="palmGuide">' +
@@ -1061,8 +1094,9 @@
       if (fortune && it.manual && !moreOpen) { html += '<div class="palm-more">更多纹路（选填）</div>'; moreOpen = true; }
       var conf = fortune && ST.conf[it.id], note = '';
       if (fortune && ST.ana && CORE_IDS.indexOf(it.id) >= 0) {
-        if (conf && ST.ana.engine === 'lm' && conf < 2) note = '<span class="palm-conf c0">看不清，请自选</span>';
-        else note = conf ? '<span class="palm-conf c' + conf + '">识别' + CONF_LABEL[conf] + '</span>' : '<span class="palm-conf c0">未识别，请自选</span>';
+        var _se = (ST.shots.length && ST.src[it.id] != null && ST.shots[ST.src[it.id]]) ? ST.shots[ST.src[it.id]].ana.engine : ST.ana.engine;
+        if (conf && _se === 'lm' && conf < 2) note = '<span class="palm-conf c0">看不清，请自选或补拍</span>';
+        else note = conf ? '<span class="palm-conf c' + conf + '">识别' + CONF_LABEL[conf] + (ST.shots.length > 1 && ST.src[it.id] != null ? ' · 照片' + ST.shots[ST.src[it.id]].no : '') + '</span>' : '<span class="palm-conf c0">未识别，请自选或补拍</span>';
       }
       html += '<div class="palm-pk" data-id="' + it.id + '"><div class="palm-pk-head"><strong>' + it.name + '</strong>' + note + '</div>' +
         '<div class="palm-pk-desc">' + it.desc + '</div><div class="palm-chips">';
@@ -1102,6 +1136,7 @@
     hideReport();
     renderPickers();
     renderInsight();
+    renderShots();
     if (!fortune) renderGuide(false);
     drawCanvas();
   }
@@ -1123,6 +1158,7 @@
     var k = Math.max(1, s.w / 360);
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     CORE_IDS.forEach(function (id) {
+      if (ST.shots.length > 1 && ST.src[id] !== ST.cur) return;   /* 多张照片：只画当前这张负责的线 */
       var m = ST.ana.lines[id];
       var st = palmLineStyle(ST.ana.engine, m);
       if (!st.draw) return;
@@ -1185,6 +1221,44 @@
     });
   }
 
+  function renderShots() {
+    var el = $('palmShots'); if (!el) return;
+    if (!ST.shots.length) { el.hidden = true; el.innerHTML = ''; }
+    else {
+      var html = '<span class="palm-shots-lab">已拍 ' + ST.shots.length + ' 张，点击查看：</span>';
+      ST.shots.forEach(function (sh, i) {
+        var own = CORE_IDS.filter(function (id) { return ST.src[id] === i && ST.auto[id] >= 0; }).map(function (id) { return LINE_BY_ID[id].name.replace('线', ''); });
+        html += '<button type="button" class="palm-shot' + (i === ST.cur ? ' on' : '') + '" data-i="' + i + '">照片' + sh.no + (own.length ? ' · ' + own.join('/') : '') + '</button>';
+      });
+      el.innerHTML = html; el.hidden = false;
+    }
+    var rb = $('palmResetAll'); if (rb) rb.hidden = !ST.shots.length;
+  }
+  /* 多张照片的合并解读：每条线取其「负责的那张」；框架、丘位、响应图取负责线条最多的那张。
+     所有照片都被摆正到同一标准框，线条坐标可比；不同识别引擎的线不混用。 */
+  function mergedInsight() {
+    var IN = (typeof window !== 'undefined') ? window.YumiaoPalmInsight : null;
+    if (!IN || typeof IN.buildAutoInsight !== 'function' || !ST.shots.length) return null;
+    var own = {}, prim = 0, bestN = -1;
+    CORE_IDS.forEach(function (id) { var si = ST.src[id]; if (si != null && ST.auto[id] >= 0) own[si] = (own[si] || 0) + 1; });
+    Object.keys(own).forEach(function (k) { if (own[k] > bestN) { bestN = own[k]; prim = +k; } });
+    if (bestN < 0) prim = ST.cur >= 0 ? ST.cur : 0;
+    var pa = ST.shots[prim].ana, lines = {};
+    CORE_IDS.forEach(function (id) {
+      var si = ST.src[id]; if (si == null) return;
+      var a = ST.shots[si].ana; if (a.engine !== pa.engine) return;
+      var m = (a.linesC || a.lines)[id]; if (m) lines[id] = m;
+    });
+    return IN.buildAutoInsight(lines, pa.frame, pa.mounts, pa.ridgeC || pa.ridge);
+  }
+  function resetAllShots() {
+    if (!ST) return;
+    ST.token++; showBusy(false);
+    ST.shots = []; ST.src = {}; ST.score = {}; ST.manual = {}; ST.auto = {}; ST.conf = {}; ST.selF = {};
+    ST.ana = null; ST.cur = -1; ST.insight = null; ST.overlay = true;
+    setStatus(''); renderGuide(false); applyMode();
+  }
+
   var FAIL_TEXT = {
     nohand: '没有找到手掌。请把手掌放满画面、背景尽量简单后重拍；也可以直接在下方手动选择。',
     palmcut: '手掌不完整或光线不足，无法定位掌纹。请把手指和手腕都拍进去、光线均匀后重拍；也可以手动选择。',
@@ -1200,9 +1274,8 @@
     if (file.type && !/^image\//.test(file.type)) { setStatus('请选一张照片（JPG 或 PNG）', 'warn'); return; }
     if (file.size && file.size > 10 * 1024 * 1024) { setStatus('照片太大了（超过 10MB），请换一张小一点的', 'warn'); return; }
     var token = ++ST.token;
-    ST.ana = null; ST.auto = {}; ST.conf = {}; ST.selF = {}; ST.overlay = true; ST.insight = null;
-    /* selD 不清：掌诊是手动对照，与照片无关，换照片也保留 */
-    hideReport(); drawCanvas(); renderPickers(); renderInsight(); setStatus(''); renderGuide(false);
+    /* 多张照片：不再清空之前的识别结果；新照片只更新比之前更清楚的纹路。selD（掌诊）与照片无关，也保留 */
+    hideReport(); setStatus(''); renderGuide(false);
     showBusy(true, '读取照片…');
     var res = null, rectState = 'skipped';
     try {
@@ -1238,7 +1311,7 @@
       });
       if ((!ST || token !== ST.token)) return;
       if (!res.ok && res.reason !== 'nohand' && res.reason !== 'palmcut' && res.reason !== 'lowcontrast') res = { ok: false, reason: 'error' };
-      /* 失败时也把照片画出来，方便用户对照着手动选 */
+      /* 失败时也把照片画出来，方便用户对照着手动选（已有识别结果时不覆盖） */
       if (!res.ok && !res.show) res.show = { data: im.data, w: im.width, h: im.height };
     } catch (e) {
       if ((!ST || token !== ST.token)) return;
@@ -1248,41 +1321,60 @@
       console.warn('[yumiao] palm', e);
     }
     showBusy(false);
-    ST.ana = res;
+    if (!ST || token !== ST.token) return;
+    var hadShots = ST.shots.length > 0;
     if (res.ok) {
-      var good = [], weak = [];
+      var firstA = hadShots ? ST.shots[0].ana : null;
+      if (firstA && !res.thumbGuess && !firstA.thumbGuess && res.handLabel !== firstA.handLabel) {
+        setStatus('这张看起来是' + res.handLabel + '手，和前面的' + firstA.handLabel + '手不是同一只，没有合并。要换另一只手，请点「重新开始」。', 'warn');
+        applyMode(); return;
+      }
+      var shot = { ana: res, no: ST.shots.length + 1 };
+      ST.shots.push(shot);
+      var si = ST.shots.length - 1, improved = [];
       CORE_IDS.forEach(function (id) {
         var m = res.lines[id], idx = autoPick(id, m);
-        if (m && m.found) ST.conf[id] = m.conf;
-        if (idx >= 0) { ST.auto[id] = idx; ST.selF[id] = idx; good.push(LINE_BY_ID[id].name); }
-        else weak.push(LINE_BY_ID[id].name);
+        var sc = (idx >= 0 ? 10 : 0) + (m && m.found ? (m.conf || 0) : 0);
+        if (ST.src[id] == null || sc > ST.score[id]) {      /* 只有更清楚才替换；打平保留以前的 */
+          ST.score[id] = sc; ST.src[id] = si;
+          if (m && m.found) ST.conf[id] = m.conf; else delete ST.conf[id];
+          if (idx >= 0) { ST.auto[id] = idx; if (!ST.manual[id]) ST.selF[id] = idx; improved.push(LINE_BY_ID[id].name); }
+          else { delete ST.auto[id]; if (!ST.manual[id]) delete ST.selF[id]; }
+        }
       });
-      if (!res.thumbGuess) {
+      if (!hadShots || improved.length) ST.cur = si;
+      if (ST.cur < 0) ST.cur = si;
+      ST.ana = ST.shots[ST.cur].ana;
+      ST.overlay = true;
+      var good = [], weak = [];
+      CORE_IDS.forEach(function (id) { (ST.auto[id] >= 0 ? good : weak).push(LINE_BY_ID[id].name); });
+      if (!hadShots && !res.thumbGuess) {
         ST.hand = res.handLabel;
         document.querySelectorAll('#palmHand button').forEach(function (b) { b.classList.toggle('on', b.dataset.v === ST.hand); });
       }
-      /* v2.16：自动解读（只在算命模式展示；诊断模式不展示） */
+      /* v2.16：自动解读（只在算命模式展示；诊断模式不展示）。多张照片时按每条线的最佳来源合并 */
       ST.insight = null;
-      try {
-        var IN = (typeof window !== 'undefined') ? window.YumiaoPalmInsight : null;
-        if (IN && typeof IN.buildAutoInsight === 'function') {
-          ST.insight = IN.buildAutoInsight(res.linesC || res.lines, res.frame, res.mounts, res.ridgeC || res.ridge);
-        }
-      } catch (e) { ST.insight = null; }
-      renderInsight();
-      var msg = good.length ? '已识别' + good.join('、') + (weak.length ? '；' + weak.join('、') + '不够清晰，请自行选择' : '') + '。' : '纹路都不够清晰，请对照照片自行选择。';
-      if (!res.thumbGuess) msg += '看起来是' + res.handLabel + '手，如不符请在下方切换。';
+      try { ST.insight = mergedInsight(); } catch (e) { ST.insight = null; }
+      var msg = '';
+      if (hadShots) msg += improved.length ? '补拍有效：' + improved.join('、') + '已更新，之前清楚的纹路已保留。' : '这张没有比之前更清楚的纹路，之前的结果已保留。';
+      msg += good.length ? '目前已识别' + good.join('、') + (weak.length ? '；' + weak.join('、') + '不够清晰，' + (hadShots ? '可再补拍或' : '') + '请自行选择' : '') + '。' : '纹路都不够清晰，请对照照片自行选择。';
+      if (!hadShots && !res.thumbGuess) msg += '看起来是' + res.handLabel + '手，如不符请在下方切换。';
       var warns = [];
       if (res.notes.indexOf('sideCut') >= 0) warns.push('手掌边缘被裁掉，生命线、感情线可能不准');
       if (res.notes.indexOf('wristCut') >= 0) warns.push('手腕被裁掉，生命线、事业线可能不准');
       if (res.notes.indexOf('fingersClosed') >= 0) warns.push('手指并拢，定位可能有偏差');
+      if (res.notes.indexOf('heartHeadMerged') >= 0) warns.push('感情线与智慧线挤在同一道沟里，感情线请自行选择');
       if (res.sharp < 13) warns.push('照片偏暗或偏糊');
       if (warns.length) msg += '注意：' + warns.join('，') + '，请核对。';
       if (rectState === 'done') msg += '已按标准位置摆正。';
       else if (rectState === 'failed') msg += '未摆正，沿用原识别。';
       setStatus(msg, warns.length || !good.length ? 'warn' : 'ok');
       renderGuide(palmGuideNeeded(true, good.length, warns.length));
+    } else if (hadShots) {
+      setStatus((FAIL_TEXT[res.reason] || FAIL_TEXT.error) + ' 之前识别的结果已保留。', 'warn');
+      renderGuide(true);
     } else {
+      ST.ana = res; ST.cur = -1;
       setStatus(FAIL_TEXT[res.reason] || FAIL_TEXT.error, 'warn');
       renderGuide(palmGuideNeeded(false, 0, 0));
     }
@@ -1332,9 +1424,16 @@
       var c = e.target.closest('.palm-chip'); if (!c) return;
       var pk = c.closest('.palm-pk'), id = pk.dataset.id, i = +c.dataset.i, sel = ST.mode === 'fortune' ? ST.selF : ST.selD;
       sel[id] = sel[id] === i ? -1 : i;
+      if (ST.mode === 'fortune') ST.manual[id] = true;   /* 手动改过的线，补拍不再覆盖 */
       pk.querySelectorAll('.palm-chip').forEach(function (x) { var on = +x.dataset.i === sel[id]; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); });
       hideReport();
     };
+    $('palmShots').onclick = function (e) {
+      var b = e.target.closest('.palm-shot'); if (!b || !ST) return;
+      var i = +b.dataset.i; if (!ST.shots[i]) return;
+      ST.cur = i; ST.ana = ST.shots[i].ana; renderShots(); drawCanvas();
+    };
+    $('palmResetAll').onclick = resetAllShots;
     $('palmGo').onclick = genReport;
     $('palmRetake').onclick = function () { $('palmFileShoot').click(); };
     $('palmBack').onclick = function () {
