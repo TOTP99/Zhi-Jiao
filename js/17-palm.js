@@ -321,7 +321,7 @@
     var tl = topOf(bx0, cx[0]), tr = topOf(cx[cx.length - 1], bx1);
     if (tl <= 2 && tr <= 2) return null;
     if (Math.abs(tl - tr) < 0.03 * F.box.h) return null;
-    return tr > tl ? 'L' : 'R';              /* 指尖更低的一端是小指，拇指在另一端 */
+    return tr > tl ? 'R' : 'L';              /* 指尖更低的一端是小指，拇指在另一端；返回的是手：掌心朝镜头时拇指在画面左 = 右手 */
   }
   function zoneRect(x0, x1, y0, y1) { return { x0: Math.round(x0), x1: Math.round(x1), y0: Math.round(y0), y1: Math.round(y1) }; }
   function zonesFor(F, h) {
@@ -387,7 +387,7 @@
   }
 
   /* —— 总流程（异步分段，便于界面显示进度） ——
-     rgba: 缩放后的像素；opts.hand: 'L'|'R'（认不出拇指方向时的兜底：左手掌心朝镜头 = 拇指在左） */
+     rgba: 缩放后的像素；opts.hand: 'L'|'R'（认不出拇指方向时的兜底：左手掌心朝镜头 = 拇指在右） */
   async function analyzeImage(rgba, w, h, opts) {
     opts = opts || {}; var prog = opts.onProgress || function () {};
     var res = { ok: false, reason: '', notes: [] }, i;
@@ -416,13 +416,13 @@
     var side = thumbSideOf(rmask, rw, rh, F0), sideGuess = false;
     if (!side) { side = opts.hand === 'R' ? 'R' : 'L'; sideGuess = true; res.notes.push('thumbGuess'); }
     var work = rot.data, F = F0;
-    if (side === 'R') {                                       /* 拇指在右：整幅镜像，统一成"拇指在左"再分析 */
+    if (side === 'L') {                                       /* 左手（拇指在画面右）：整幅镜像，统一成"拇指在左"再分析 */
       work = flipRGBA(rot.data, rw, rh);
       rmask = flipMask(rmask, rw, rh);
       F = palmFrame(rmask, rw, rh);
     }
     res.thumbSide = side; res.thumbGuess = sideGuess;
-    res.handLabel = side === 'L' ? '左' : '右';              /* 掌心朝向镜头，拇指在画面左侧 = 左手 */
+    res.handLabel = side === 'L' ? '左' : '右';              /* 掌心朝向镜头，拇指在画面右侧 = 左手 */
     if (F.Wp < 0.5 * F.box.w || F.Wp < 0.12 * rw || (F.box.y1 - F.y0) < 0.5 * F.Wp) { res.reason = 'palmcut'; return res; }
     if (F.nGaps < 2) res.notes.push('fingersClosed');
     if (F.cropped.thumb || F.cropped.ulnar) res.notes.push('sideCut');
@@ -497,11 +497,11 @@
     res.ridgeC = { R: R, w: rw, h: rh };
     /* 展示图：保持原样（拇指在右时翻回），线坐标同步翻回 */
     res.show = { data: rot.data, w: rw, h: rh };
-    if (side === 'R') Object.keys(lines).forEach(function (k) {
+    if (side === 'L') Object.keys(lines).forEach(function (k) {
       if (lines[k].found) { lines[k] = Object.assign({}, lines[k]); lines[k].pts = lines[k].pts.map(function (p) { return { x: rw - 1 - p.x, y: p.y }; }); }
     });
     /* v2.16：把归一化响应图交给解读层做特殊纹检测；拇指在右时同步翻回，与线坐标同空间 */
-    if (side === 'R') {
+    if (side === 'L') {
       var Rf = new Float32Array(n), yy, xx;
       for (yy = 0; yy < rh; yy++) for (xx = 0; xx < rw; xx++) Rf[yy * rw + xx] = R[yy * rw + (rw - 1 - xx)];
       res.ridge = { R: Rf, w: rw, h: rh };
@@ -783,7 +783,7 @@
     res.linesC = {}; Object.keys(lines).forEach(function (k) { res.linesC[k] = lines[k]; });
     res.ridgeC = { R: R, w: W, h: H };
     /* 展示图与坐标：拇指原本在右时翻回原方向，线与响应图同步翻回 */
-    if (side === 'R') {
+    if (side === 'L') {
       res.show = { data: flipRGBA(work, W, H), w: W, h: H };
       Object.keys(lines).forEach(function (k) {
         if (lines[k].found) { lines[k] = Object.assign({}, lines[k]); lines[k].pts = lines[k].pts.map(function (p) { return { x: W - 1 - p.x, y: p.y }; }); }

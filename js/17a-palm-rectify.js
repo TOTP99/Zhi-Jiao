@@ -66,11 +66,11 @@
     return { ok: true };
   }
 
-  /* 以腕→中指掌指关节为轴，拇指尖在轴的哪一侧。图坐标下 cross < 0 为左手。纯函数，供测试。 */
+  /* 以腕→中指掌指关节为轴，拇指尖在轴的哪一侧。图坐标下 cross < 0 为右手。纯函数，供测试。 */
   function thumbSide(lm) {
     var ax = lm[9].x - lm[0].x, ay = lm[9].y - lm[0].y;
     var tx = lm[4].x - lm[0].x, ty = lm[4].y - lm[0].y;
-    return (ax * ty - ay * tx) > 0 ? 'R' : 'L';
+    return (ax * ty - ay * tx) > 0 ? 'L' : 'R';
   }
 
   /* 由 3 组对应点解仿射：x' = a*x + c*y + e，y' = b*x + d*y + f。退化返回 null。纯函数，供测试。 */
@@ -118,7 +118,7 @@
         /* 标准位置：整只手放得进框——腕 y≈0.92、指关节线 y≈0.42、掌指间距 0.30W，拇指统一在左。
            （草稿写的 y≈0.20–0.28 是 AstroVani 的掌心裁切框；本管线需要完整手指做 palmFrame，
            故改用能容下整只手的缩放，仿射本身不变。） */
-        var dst = side === 'L'
+        var dst = side === 'R'
           ? [[0.50 * w, 0.92 * h], [0.35 * w, 0.42 * h], [0.65 * w, 0.42 * h]]
           : [[0.50 * w, 0.92 * h], [0.65 * w, 0.42 * h], [0.35 * w, 0.42 * h]];
         var m = solveAffine(src, dst);
