@@ -847,9 +847,9 @@
     }
     var open = lm({ 0: { x: 0.5, y: 0.9 }, 4: { x: 0.3, y: 0.65 }, 5: { x: 0.38, y: 0.55 }, 8: { x: 0.32, y: 0.25 }, 9: { x: 0.5, y: 0.55 }, 12: { x: 0.5, y: 0.2 }, 17: { x: 0.62, y: 0.55 }, 20: { x: 0.68, y: 0.3 } });
     if (!PR.validateLandmarks(open).ok) return '张开正位应通过';
-    if (PR.thumbSide(open) !== 'L') return '拇指在左应判左手';
+    if (PR.thumbSide(open) !== 'R') return '拇指在左（掌心朝镜头）应判右手';
     var openR = lm({ 0: { x: 0.5, y: 0.9 }, 4: { x: 0.7, y: 0.65 }, 5: { x: 0.62, y: 0.55 }, 8: { x: 0.68, y: 0.25 }, 9: { x: 0.5, y: 0.55 }, 12: { x: 0.5, y: 0.2 }, 17: { x: 0.38, y: 0.55 }, 20: { x: 0.32, y: 0.3 } });
-    if (PR.thumbSide(openR) !== 'R') return '拇指在右应判右手';
+    if (PR.thumbSide(openR) !== 'L') return '拇指在右（掌心朝镜头）应判左手';
     var closed = lm({ 0: { x: 0.5, y: 0.9 }, 4: { x: 0.45, y: 0.7 }, 5: { x: 0.38, y: 0.55 }, 8: { x: 0.4, y: 0.45 }, 9: { x: 0.5, y: 0.55 }, 12: { x: 0.5, y: 0.5 }, 17: { x: 0.62, y: 0.55 }, 20: { x: 0.6, y: 0.5 } });
     if (PR.validateLandmarks(closed).reason !== 'closed') return '并拢应判 closed';
     var off = lm({ 0: { x: 0.02, y: 0.9 }, 4: { x: -0.18, y: 0.65 }, 5: { x: -0.1, y: 0.55 }, 8: { x: -0.16, y: 0.25 }, 9: { x: 0.02, y: 0.55 }, 12: { x: 0.02, y: 0.2 }, 17: { x: 0.14, y: 0.55 }, 20: { x: 0.2, y: 0.3 } });
@@ -1117,6 +1117,42 @@
     var st = memStore({ yumiao_old: 'v', other: 'x' });
     if (!window.YumiaoBackup.apply(st, parsedOf({ yumiao_a: '1' }))) return '应成功';
     return eq([st.getItem('yumiao_old'), st.getItem('yumiao_a'), st.getItem('other')], [null, '1', 'x']);
+  });
+  /* 备份签名（SHA-256 完整性校验） */
+  t('备份签名：SHA-256 对标准向量（空串 / abc / 中文 UTF-8）', function () {
+    var H = window.YumiaoBackup.sha256;
+    if (H('') !== 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855') return '空串向量不对';
+    if (H('abc') !== 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad') return 'abc 向量不对';
+    if (H('a'.repeat(1000)) !== '41edece42d63e8d9bf515a9ba6932e1c20cbc9f5a5d134645adb5db1b9737ea3') return '1000×a（跨块）向量不对';
+    return H('御猫灵局').length === 64 || '中文长度不对';
+  });
+  t('备份签名：导出带 sig，往返验证通过且 unsigned 为 false', function () {
+    var st = memStore({ yumiao_shared_birth_v1: '{"year":1990}', yumiao_history_v1: '[1,2]' });
+    var b = window.YumiaoBackup.build(st);
+    if (!/^sha256:[0-9a-f]{64}$/.test(b.sig)) return 'sig 格式不对 ' + b.sig;
+    var p = window.YumiaoBackup.parse(JSON.stringify(b));
+    return (p.ok && p.unsigned === false) || '应通过 ' + JSON.stringify(p);
+  });
+  t('备份签名：改动内容 / 删键 / 改 sig → 拒绝；与键序无关', function () {
+    var P = window.YumiaoBackup.parse, st = memStore({ yumiao_a: '1', yumiao_b: '2' });
+    var b = window.YumiaoBackup.build(st), x;
+    x = JSON.parse(JSON.stringify(b)); x.data.yumiao_a = '999'; if (P(JSON.stringify(x)).ok) return '改值应拒绝';
+    x = JSON.parse(JSON.stringify(b)); delete x.data.yumiao_b; if (P(JSON.stringify(x)).ok) return '删键应拒绝';
+    x = JSON.parse(JSON.stringify(b)); x.sig = 'sha256:' + '0'.repeat(64); if (P(JSON.stringify(x)).ok) return '假 sig 应拒绝';
+    x = JSON.parse(JSON.stringify(b)); x.sig = 123; if (P(JSON.stringify(x)).ok) return '非字符串 sig 应拒绝';
+    x = JSON.parse(JSON.stringify(b)); x.data = { yumiao_b: '2', yumiao_a: '1' }; return P(JSON.stringify(x)).ok || '仅键序不同应通过';
+  });
+  t('备份签名：验不过时旧数据一概不动（parse 失败，不会走到 apply）', function () {
+    var st = memStore({ yumiao_old: 'keep-me' });
+    var b = window.YumiaoBackup.build(memStore({ yumiao_a: '1' })); b.data.yumiao_a = 'tampered';
+    var p = window.YumiaoBackup.parse(JSON.stringify(b));
+    if (p.ok) return '应拒绝';
+    if (window.YumiaoBackup.apply(st, p) !== false) return 'apply 对失败结果应返回 false';
+    return eq(st.getItem('yumiao_old'), 'keep-me');
+  });
+  t('备份签名：无 sig 的旧备份仍可恢复，并标记 unsigned', function () {
+    var p = window.YumiaoBackup.parse('{"app":"yumiao","schema":1,"data":{"yumiao_a":"1"}}');
+    return (p.ok && p.unsigned === true) || '旧备份应放行 ' + JSON.stringify(p);
   });
   /* ────────── 周易 ────────── */
   section('周易');
