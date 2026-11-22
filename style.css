@@ -1005,3 +1005,27 @@ input:not([type=checkbox]):not([type=radio]), textarea, select{border-radius:11p
 .palm-shots{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0 2px;font-size:var(--fs-xs);color:var(--faint)}
 .palm-shot{min-height:32px;padding:0 10px;font-size:var(--fs-xs);color:var(--cream-dim);border:1px solid var(--line);border-radius:999px;background:transparent}
 .palm-shot.on{color:var(--on-gold);font-weight:700;background:linear-gradient(180deg,var(--gold-bright),var(--gold));border-color:var(--gold-deep)}
+/* ══════════ 横屏体验修正（仅 orientation:landscape 且 max-height:600px；竖屏不受影响） ══════════ */
+@media (orientation:landscape) and (max-height:600px){
+  /* 问卜首页：左列＝瑞兽/木盒（整列），右列＝输入 → 掷筊 → 结果，自上而下，全部在可视区内，不再被底栏压住 */
+  #view-divine.on{grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:6px 24px;align-items:start}
+  #view-divine .hero{grid-column:1;grid-row:1 / span 4;margin:0}
+  #view-divine .question-wrap{grid-column:2;grid-row:1;margin:0}
+  #view-divine .btn-gold.btn-lg{grid-column:2;grid-row:2;margin-top:0;min-height:42px;padding-top:0;padding-bottom:0}
+  #view-divine .question-box{min-height:42px;padding-top:0;padding-bottom:0}
+  #view-divine .result-desc{font-size:var(--fs-sm);line-height:1.5}
+  #view-divine .result-area{min-height:0}
+  #view-divine .ritual-area{margin-top:0}
+  #view-divine .ritual-area{grid-column:2;grid-row:3 / span 2}
+  #view-divine .box-wrap{max-width:clamp(70px,calc(100dvh - 250px),170px)}
+  /* 掷出结果：筊杯 + 判词并排，重置/记录/分享/复制 另起一行横排（原先被挤成竖排的窄条，判词也被挤成一列） */
+  #view-divine .ritual-area{flex-wrap:wrap;gap:6px 14px;align-items:center}
+  #view-divine .jiao-display{flex:0 0 auto;gap:10px;margin:0;min-height:56px}
+  #view-divine .result-area{flex:1 1 150px;min-width:150px;text-align:left}
+  #view-divine .cast-subrow{flex:1 1 100%;display:flex;gap:8px;margin:0}
+  #view-divine .cast-subrow .btn-sub{flex:1 1 0;min-width:0;white-space:nowrap;writing-mode:horizontal-tb}
+  /* 周易浮层：#yiOverlay * 的 padding/margin 归零把顶栏与返回键内边距清掉了，返回键贴边、顶到屏幕边缘 */
+  #yiOverlay .yi-bar{padding:calc(4px + env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) 4px max(14px,env(safe-area-inset-left))}
+  #yiOverlay .yi-back{padding:4px 14px;min-height:36px;min-width:76px}
+  #yiOverlay .yi-sp{min-width:76px}
+}
