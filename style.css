@@ -1002,3 +1002,6 @@ input:not([type=checkbox]):not([type=radio]), textarea, select{border-radius:11p
 @media (orientation:portrait){
   .ob-profile{min-height:min(300px,62dvh)}
 }
+.palm-shots{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0 2px;font-size:var(--fs-xs);color:var(--faint)}
+.palm-shot{min-height:32px;padding:0 10px;font-size:var(--fs-xs);color:var(--cream-dim);border:1px solid var(--line);border-radius:999px;background:transparent}
+.palm-shot.on{color:var(--on-gold);font-weight:700;background:linear-gradient(180deg,var(--gold-bright),var(--gold));border-color:var(--gold-deep)}
