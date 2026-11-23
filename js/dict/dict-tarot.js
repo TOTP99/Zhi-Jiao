@@ -1,0 +1,91 @@
+/**
+ * 御猫灵局 · 离线英文字典 · tarot
+ * 塔罗大阿卡纳牌义
+ * 
+ * 结构：中文原文 → 英文（目前为空字符串，等待翻译填充）
+ * 使用：由 yumiao-i18n.js 的 t() / tContent() 查询
+ * 兜底：查不到或英文为空时，原样返回中文
+ * 
+ * 条款尽量细粒度（句子 / 【小节】），便于高质量翻译与复用
+ * 共 75 条
+ */
+(function () {
+  'use strict';
+  window.YUMIAO_DICT = window.YUMIAO_DICT || {};
+  window.YUMIAO_DICT['tarot'] = {
+    "新的开始 · 赤子之心 · 勇敢一跃": "New beginnings · Beginner's mind · A courageous leap",
+    "鲁莽冒进 · 犹豫不决 · 原地踏步": "Reckless rush · Indecision · Stuck in place",
+    "愚者立于崖边，一步即是新程。正位宜放手一搏，天地会接住真诚的勇气；逆位则提醒：看清脚下再迈步，勿把冲动当作天命。": "The Fool stands at the cliff's edge—one step begins a new journey. Upright: take the leap; heaven and earth catch sincere courage. Reversed: watch your footing before you step; don't mistake impulse for destiny.",
+    "魔术师": "The Magician",
+    "创造 · 意志 · 万事俱备": "Creation · Will · Everything ready",
+    "才具空耗 · 言过其实 · 时机未至": "Talent wasted · Overpromise · Timing not yet ripe",
+    "魔术师手握四元素，象征资源俱足。正位是\"动手之时\"，心想即可事成；逆位警示：莫被花言巧语所惑，也别高估了眼前的牌面。": "The Magician holds the four elements—resources are complete. Upright: time to act; intention can become reality. Reversed: don't be swayed by smooth talk, and don't overrate the hand you hold.",
+    "女祭司": "The High Priestess",
+    "直觉 · 静观 · 内在智慧": "Intuition · Quiet observation · Inner wisdom",
+    "压抑直觉 · 被表象迷惑": "Suppressing intuition · Misled by appearances",
+    "女祭司端坐黑白柱间，答案不在喧哗处。正位请倾听心底那个微小的声音；逆位则说：你明明知道答案，只是假装没听见。": "The High Priestess sits between black and white pillars; answers are not found in noise. Upright: listen to the quiet voice within. Reversed: you already know the answer—you're only pretending not to hear.",
+    "丰盛 · 滋养 · 创造": "Abundance · Nurture · Creation",
+    "过度操劳 · 创造力阻塞": "Overwork · Creativity blocked",
+    "女皇是大地的母亲，万物因她丰盛。正位主收获与孕育，所问之事如春苗得雨；逆位提醒：先照顾好自己，枯井打不出水来。": "The Empress is Mother Earth; all things thrive through her. Upright: harvest and gestation—what you ask is like seedlings receiving rain. Reversed: care for yourself first; a dry well yields no water.",
+    "秩序 · 权威 · 稳固": "Order · Authority · Stability",
+    "专断僵化 · 失控": "Rigidity · Loss of control",
+    "皇帝以秩序立国。正位宜建立规则、稳扎稳打，权威即是护城河；逆位则戒：控制欲太强会压垮身边人，铁腕之下易生裂痕。": "The Emperor builds a realm through order. Upright: set rules and advance steadily; authority is your moat. Reversed: excessive control crushes those around you; an iron grip breeds cracks.",
+    "信仰 · 传统 · 指引": "Faith · Tradition · Guidance",
+    "教条束缚 · 盲从 · 另辟蹊径": "Dogma · Blind obedience · Forging your own path",
+    "教皇是传统的守门人。正位宜寻师问道、遵循正道，前人走过的路最稳；逆位却说：规矩是死的，人是活的，该立自己的法了。": "The Hierophant is the guardian of tradition. Upright: seek teachers and walk the established path—the road others have taken is surest. Reversed: rules are fixed, people are not; it may be time to write your own.",
+    "结合 · 抉择 · 和谐": "Union · Choice · Harmony",
+    "失衡 · 错误抉择 · 关系考验": "Imbalance · Wrong choice · Relationship under test",
+    "恋人牌关乎\"选择\"更甚于爱情。正位是心意相通的结合，选其所爱；逆位警示：看似两全的选项里藏着代价，莫被表象迷了眼。": "The Lovers is more about choice than romance. Upright: a meeting of hearts—choose what you love. Reversed: options that seem to please everyone hide a cost; don't be blinded by appearances.",
+    "意志 · 胜利 · 勇往直前": "Will · Victory · Moving straight ahead",
+    "失控 · 方向迷失 · 空转": "Loss of control · Lost direction · Spinning in place",
+    "战车以意志驾驭两匹背道之马。正位主一往无前，目标既定便无可阻挡；逆位则说：缰绳松了，先找回方向，蛮力只会原地打转。": "The Chariot steers two opposing horses by sheer will. Upright: press forward; once the goal is set, nothing stops you. Reversed: the reins are loose—find direction first; brute force only spins the wheels.",
+    "以柔克刚 · 耐心 · 内在力量": "Softness overcomes hardness · Patience · Inner strength",
+    "自我怀疑 · 强压反噬": "Self-doubt · Force backfiring",
+    "少女轻合狮口，柔能克刚。正位宜以耐心与温柔化解难题，真正的力量不动声色；逆位提醒：别硬撑，承认疲惫不是认输。": "A maiden gently closes the lion's mouth—softness conquers strength. Upright: resolve difficulties with patience and gentleness; true power needs no display. Reversed: stop forcing it; admitting fatigue is not surrender.",
+    "内省 · 寻道 · 沉淀": "Introspection · Seeking the way · Settling",
+    "孤立 · 迷失 · 闭门造车": "Isolation · Being lost · Working in isolation",
+    "隐者提灯独行，答案在独处中显现。正位宜静下来，向内寻找；逆位则戒：离群太久会迷路，灯也要拿出来照照路。": "The Hermit walks alone with a lantern; answers appear in solitude. Upright: quiet down and look within. Reversed: too long apart and you lose the way—bring the light out to the path.",
+    "命运之轮": "Wheel of Fortune",
+    "转机 · 时运流转": "Turning point · The turning of fortune",
+    "逆运 · 抗拒变化": "Adverse luck · Resisting change",
+    "轮盘转动，否极泰来。正位是时来运转的信号，顺势而为；逆位则说：逆水行舟莫强求，先收帆，等风来。": "The wheel turns; extremes reverse. Upright: a sign that fortune is shifting—go with the current. Reversed: don't force against the stream; reef the sails and wait for wind.",
+    "公正 · 因果 · 诚实面对": "Justice · Cause and effect · Facing truth honestly",
+    "偏颇 · 逃避责任": "Bias · Dodging responsibility",
+    "正义手持天平与利剑，种何因得何果。正位宜坦荡行事，是非自有公论；逆位警示：别为自己开脱，该认的账迟早要还。": "Justice holds scales and sword—you reap what you sow. Upright: act openly; right and wrong will find their measure. Reversed: stop making excuses; accounts due will be settled.",
+    "倒吊人": "The Hanged Man",
+    "换位 · 牺牲 · 等待": "Shift of perspective · Sacrifice · Waiting",
+    "无谓牺牲 · 拖延": "Pointless sacrifice · Procrastination",
+    "倒吊人以悬置换取洞见。正位宜换个角度看问题，暂时的停顿是积蓄；逆位则说：别再自我感动式的付出了，及时止损也是智慧。": "The Hanged Man gains insight through suspension. Upright: look from another angle; a pause can be accumulation. Reversed: stop self-sacrificing for the feeling of it—cutting losses is also wisdom.",
+    "结束 · 蜕变 · 新生": "Ending · Transformation · Renewal",
+    "死神非关死亡，而是\"旧的不去，新的不来\"。正位主果断告别，蜕变在即；逆位提醒：拖着不放手的，正在悄悄耗干你。": "Death is not about dying, but \"the old must go for the new to come.\" Upright: bid a clean farewell; transformation is near. Reversed: what you refuse to release is quietly draining you.",
+    "调和 · 节制 · 水到渠成": "Balance · Temperance · Things falling into place",
+    "失衡 · 急躁 · 过犹不及": "Imbalance · Impatience · Too much of a good thing",
+    "天使将水在两杯间来回倾注，恰是分寸之道。正位宜耐心调和，好事多磨终成；逆位则戒：用力过猛，满则溢，紧绷的弦易断。": "An angel pours water between two cups—the art of measure. Upright: blend with patience; good things take time. Reversed: force too hard and the cup overflows; a taut string snaps easily.",
+    "执念 · 束缚 · 欲望": "Obsession · Bondage · Desire",
+    "挣脱 · 看清枷锁": "Breaking free · Seeing the chains clearly",
+    "恶魔的锁链其实松得很，囚徒是自己不愿走。正位直指执念与沉溺；逆位是好消息：你已经看清了枷锁，挣脱只在转念之间。": "The Devil's chains are loose; the prisoner simply won't leave. Upright: names the grip of obsession and addiction. Reversed: good news—you already see the chains; freedom is a change of mind away.",
+    "剧变 · 旧构倾塌": "Upheaval · Collapse of the old structure",
+    "劫后余生 · 勉强维持": "Aftermath · Barely holding on",
+    "雷击高塔，旧世界轰然倒塌。正位是突变预警，也是重建的起点——塌的是危楼；逆位则说：最坏的已过，别再回头修补废墟。": "Lightning strikes the Tower; the old world falls. Upright: warning of sudden change, and the starting point of rebuilding—what falls was already unsafe. Reversed: the worst has passed; don't go back to patch ruins.",
+    "希望 · 宁静 · 远景": "Hope · Serenity · Distant vision",
+    "信心动摇 · 迷惘": "Shaken faith · Bewilderment",
+    "高塔之后，星星升起。正位是黑夜后的第一颗星：希望真实不虚，静水流深；逆位提醒：别弄丢了信念，雾再浓，星还在。": "After the Tower, the Star rises. Upright: the first star after night—hope is real, still water runs deep. Reversed: don't lose faith; however thick the fog, the star remains.",
+    "不安 · 幻象 · 潜意识": "Unease · Illusion · The subconscious",
+    "拨云见日 · 走出迷雾": "Clouds parting · Emerging from the fog",
+    "月夜之下，真假难辨。正位主迷惘与不安，宜缓行、宜观望，不做重大决定；逆位是转机：雾散了，你担心的事并没有发生。": "Under the Moon, truth and falsehood blur. Upright: confusion and unease—go slowly, watch, make no major decisions. Reversed: a turn—the fog lifts; what you feared did not come to pass.",
+    "光明 · 成功 · 喜悦": "Light · Success · Joy",
+    "暂时的阴霾 · 小成": "Temporary shadow · Modest success",
+    "太阳是牌中最吉之兆。正位主光明磊落、心想事成，阴霾尽散；逆位也无大碍：只是云暂时遮了光，好事略迟，但一定会到。": "The Sun is among the most auspicious cards. Upright: clarity, success, shadows gone. Reversed: no great harm—clouds only briefly hide the light; good news is delayed but will arrive.",
+    "觉醒 · 召唤 · 新生": "Awakening · Calling · Renewal",
+    "自我审判 · 错过召唤": "Self-judgment · Missing the call",
+    "号角响起，逝者复苏。正位是觉醒与召唤：过去的努力将被看见，新生之门已开；逆位则说：别再用旧账审判自己，接起那通电话。": "The trumpet sounds; the past rises. Upright: awakening and calling—past effort will be seen, a door of renewal is open. Reversed: stop judging yourself by old accounts; answer the call.",
+    "圆满 · 完成 · 新的循环": "Completion · Fulfillment · A new cycle",
+    "未竟之业 · 画地自限": "Unfinished work · Self-imposed limits",
+    "世界牌是旅程的终点，也是起点。正位主圆满成就，一段功课修完；逆位提醒：还差最后一小步，别在终点前自己画地为牢。": "The World is the journey's end and its beginning. Upright: fulfillment; one lesson complete. Reversed: one small step remains—don't fence yourself in just before the finish.",
+    "<p class=\"mbti-intro\">二十二张大阿卡纳，心诚则显。默念所问，选定牌阵。</p>": "<p class=\"mbti-intro\">Twenty-two Major Arcana—sincerity reveals. Hold your question and choose a spread.</p>",
+    "<p class=\"mbti-intro\">牌已洗匀。凝神静气，点选": "<p class=\"mbti-intro\">The cards are shuffled. Still your mind and choose",
+    "<div class=\"tarot-step\"><p class=\"mbti-intro\">牌面已定，牌义如下。": "<div class=\"tarot-step\"><p class=\"mbti-intro\">The cards are set. Meanings follow.",
+    "<div class=\"mbti-brief-note\">牌示方向，行止仍在人为。</div></div>": "<div class=\"mbti-brief-note\">The cards show a direction; action remains yours.</div></div>",
+    "塔罗牌阵": "Tarot spread",
+  };
+})();
