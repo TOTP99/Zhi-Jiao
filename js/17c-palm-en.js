@@ -1,34 +1,21 @@
 /* ============================================================================
-   Yumiao (Yumao Lingju) - Palm module English dictionary, en-CA
-   File: js/17c-palm-en.js  (new file - original files untouched)
-   Source translations: ~/workspace/palm-en-translation.md (2026-11-23,
-   standard Canadian English, ~250-300 strings, palm module only)
-   Source code base: wip11 / wip13 (identical package, 77 files, v3.0.0)
-   Keys mirror the original Chinese tables in js/17-palm.js and
-   js/17b-palm-insight.js exactly, by id and option index, so the wiring
-   step is a lookup swap, not a re-translation:
-     LINES  17-palm.js:852-893  (6 lines, 25 options, [name,trait,reading,tip])
-     DIAG   17-palm.js:895-929  (6 groups, 21 options, [name,level,saying,advice])
-     DOCTOR_IF 17-palm.js:930-937, LV_LABEL :938, CONF_LABEL :364,
-     FAIL_TEXT :1262-1268, HINTS :1081-1084, FOOT :1085-1088
-   This file contains ONLY strings - no logic, no DOM, no behaviour change.
-   It does NOT switch the app to English by itself. Wiring (user's step):
-     1. Copy this file into the package as js/17c-palm-en.js
-     2. index.html:653 - add 'js/17c-palm-en.js' to the lazy() list for
-        openPalmPanel, after js/17b-palm-insight.js, so it loads with palm
-     3. In 17-palm.js / 17b-palm-insight.js, when English is on, read from
-        window.PALM_EN instead of LINES / DIAG / DOCTOR_IF / LV_LABEL /
-        CONF_LABEL / FAIL_TEXT / HINTS / FOOT and the HTML_BODY literals.
-        Date: dateText() must switch to en-CA month names (PALM_EN.months).
-        Tests: tests.html Chinese palm assertions (e.g. :850/:852) must be
-        synced or they go red when English strings are live - see the
-        translation draft section G.
-   One fill-in, marked below: DIAG temp desc 'Palm temperature' - the
-   translation draft table omitted that one desc; it is a direct rendering
-   of the original desc, not a new translation choice.
-   Placeholders: {good} {weak} {lines} {hand} {new} {old} {tags} {names}
-   {dense} {sparse} {governs} {palmLen} {fingerLen} - substitute at the
-   call site the same way the Chinese code joins the lists.
+   御猫灵局 · 掌纹模块英文数据源（en-CA）
+   File: js/17c-palm-en.js
+
+   用途：只是「数据源」，运行时不加载（index.html 不引用本文件）。
+   js/dict/tools/gen-palm-dict.js 读取 window.PALM_EN，按 id / 选项序号对应
+   js/17-palm.js、js/17b-palm-insight.js 里的中文表，生成 js/dict/dict-palm.js；
+   应用里掌纹页的英文由 dict-palm.js 经 js/yumiao-i18n.js 的国旗开关提供。
+   重新生成：项目根目录运行  node js/dict/tools/gen-palm-dict.js [输出路径]
+   改英文文案：改本文件后重新生成 dict-palm.js；只改本文件不会影响页面。
+
+   内容：只有字符串，无逻辑、无 DOM。键与中文表一一对应（按 id 和选项序号）：
+     LINES（6 条线、25 个选项，[name, trait, reading, tip]）
+     DIAG（6 组、21 个选项，[name, level, saying, advice]）
+     DOCTOR_IF、LV_LABEL、CONF_LABEL、FAIL_TEXT、HINTS、FOOT，以及页面外壳文字。
+   占位符：{good} {weak} {lines} {hand} {new} {old} {tags} {names}
+     {dense} {sparse} {governs} {palmLen} {fingerLen}，由生成脚本按中文代码的拼接方式处理。
+   说明：DIAG 掌温项 'Palm temperature' 的 desc 为对原中文 desc 的直译补充。
    ========================================================================== */
 (function () {
   'use strict';
