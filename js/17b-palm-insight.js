@@ -166,7 +166,7 @@
     var shape = handShape(frame);
     if (!anyLine && !hasMounts && !markings.length && !shape) return null;
 
-    var html = '<div class="mbti-type">自动解读</div>';
+    var html = '<div class="mbti-type" data-no-i18n>自动解读</div>';
     var text = '自动解读（由识别结果生成，仅供参考）\n';
     if (anyLine) {
       var lineHtml = '', lineText = '';

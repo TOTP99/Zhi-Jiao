@@ -953,7 +953,7 @@
     LINES.forEach(function (l) { var i = sel[l.id]; if (i != null && i >= 0 && l.opts[i]) picked.push({ l: l, o: l.opts[i] }); });
     if (!picked.length) return null;
     var tags = picked.map(function (p) { return p.o[1]; });
-    var html = '<div class="mbti-type">掌纹算命</div>' +
+    var html = '<div class="mbti-type" data-no-i18n>掌纹算命</div>' +
       '<p class="palm-meta">' + escapeHtml(hand) + '手 · ' + escapeHtml(dateText()) + '</p>' +
       '<div class="mbti-sec"><span class="mbti-sec-label">总评</span>此掌特点：' + escapeHtml(tags.join('、')) + '。以下逐线解读，仅供参考。</div>';
     var text = '掌纹算命 · ' + hand + '手 · ' + dateText() + '\n\n总评：' + tags.join('、') + '\n\n';
@@ -982,7 +982,7 @@
     var sum = worst === 'doctor' ? '所选项目中有需要请医生确认的外观，请优先看下方"建议就医检查"的条目。'
       : worst === 'watch' ? '所选项目大多属于常见变化，其中几项值得留意，见下方说明。'
       : '所选项目均属常见、无需特别担心的外观。';
-    var html = '<div class="mbti-type">掌诊自查</div>' +
+    var html = '<div class="mbti-type" data-no-i18n>掌诊自查</div>' +
       '<p class="palm-meta">' + escapeHtml(hand) + '手 · ' + escapeHtml(dateText()) + '</p>' +
       '<div class="mbti-sec"><span class="mbti-sec-label">整体</span>' + escapeHtml(sum) + '</div>';
     var text = '掌诊自查 · ' + hand + '手 · ' + dateText() + '\n\n整体：' + sum + '\n\n';
@@ -1091,7 +1091,7 @@
     var box = $('palmPickers'); if (!box) return;
     var fortune = ST.mode === 'fortune', data = fortune ? LINES : DIAG, sel = fortune ? ST.selF : ST.selD, html = '', moreOpen = false;
     data.forEach(function (it) {
-      if (fortune && it.manual && !moreOpen) { html += '<div class="palm-more">更多纹路（选填）</div>'; moreOpen = true; }
+      if (fortune && it.manual && !moreOpen) { html += '<div class="palm-more" data-no-i18n>更多纹路（选填）</div>'; moreOpen = true; }
       var conf = fortune && ST.conf[it.id], note = '';
       if (fortune && ST.ana && CORE_IDS.indexOf(it.id) >= 0) {
         var _se = (ST.shots.length && ST.src[it.id] != null && ST.shots[ST.src[it.id]]) ? ST.shots[ST.src[it.id]].ana.engine : ST.ana.engine;
