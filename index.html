@@ -547,16 +547,6 @@
 
 <div id="toast" role="status"></div>
 
-<script src="js/dict/dict-jiao.js"></script>
-<script src="js/dict/dict-bazi.js"></script>
-<script src="js/dict/dict-mbti.js"></script>
-<script src="js/dict/dict-zodiac.js"></script>
-<script src="js/dict/dict-tarot.js"></script>
-<script src="js/dict/dict-wuge.js"></script>
-<script src="js/dict/dict-ziwei.js"></script>
-<script src="js/dict/dict-yijing.js"></script>
-<script src="js/dict/dict-misc.js"></script>
-<script src="js/yumiao-i18n.js"></script>
 <script src="js/00-error-guard.js"></script>
 <script src="js/00a-lunar.js"></script>
 <script src="js/00c-version.js"></script>
@@ -705,5 +695,23 @@
 })();
 </script>
 <script defer src="js/10-app-shell.js"></script>
+<script defer src="js/yumiao-i18n.js"></script>
+<script>
+/* 中英切换字典：页面空闲时依次加载（不挡首屏）；加载完通知开关重新判断当前页能否转换 */
+(function () {
+  var DICTS = ['jiao', 'bazi', 'mbti', 'misc', 'tarot', 'wuge', 'zodiac', 'ziwei', 'extra', 'verses', 'yijing'];
+  function next(i) {
+    if (i >= DICTS.length) { try { document.dispatchEvent(new CustomEvent('yumiao:dict-loaded')); } catch (e) {} return; }
+    var s = document.createElement('script');
+    s.src = 'js/dict/dict-' + DICTS[i] + '.js';
+    s.onload = s.onerror = function () { if (i % 3 === 2) { try { document.dispatchEvent(new CustomEvent('yumiao:dict-loaded')); } catch (e) {} } next(i + 1); };
+    document.head.appendChild(s);
+  }
+  function start() { next(0); }
+  window.addEventListener('load', function () {
+    if (window.requestIdleCallback) requestIdleCallback(start, { timeout: 3000 }); else setTimeout(start, 1200);
+  });
+})();
+</script>
 </body>
 </html>
