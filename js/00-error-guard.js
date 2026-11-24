@@ -50,8 +50,6 @@
         if (mbtiCast && mbtiCast.disabled) {
           // 不强制打开：仅在有完整答案时由业务逻辑启用
         }
-        const baziRecast = document.getElementById('baziRecast');
-        if (baziRecast) baziRecast.disabled = false;
       } catch (_) { /* 边界自身失败则放弃，避免递归 */ }
     }
     window.onerror = function (message, source, lineno, colno, error) {
