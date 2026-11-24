@@ -1,56 +1,35 @@
-# 御猫灵局 离线英文字典
+# 中英文内容切换（v3.0）
 
-## 翻译进度（2026-11-23）
+## 规则
+- 只翻**内容**（结果正文、说明、批语）。标题、按钮、图标、小节名永远保持中文。
+- 能转换的页面右侧出现**悬浮国旗开关**（🇨🇳 / 🇨🇦，可拖动），点一下转英文，再点还原。
+  转换不了的页面不出现开关。没有长按、没有「点任意处还原」。
+- 换页（开/关面板、切底栏）自动回中文；不保存语言偏好。
 
-| 文件 | 条数 | 已译 | 状态 |
-|------|------|------|------|
-| `dict-tarot.js` | 74 | 74 | ✅ 完成 |
-| `dict-ziwei.js` | 112 | 112 | ✅ 完成 |
-| `dict-wuge.js` | 271 | 271 | ✅ 完成 |
-| `dict-zodiac.js` | 241 | 241 | ✅ 完成 |
-| `dict-jiao.js` | 610 | 198 | 🔄 部分（约 32%） |
-| `dict-yijing.js` | 2866 | 0 | ⏳ 待译 |
-| `dict-bazi.js` | 259 | 0 | ⏳ 待译 |
-| `dict-palm.js` | 314 | 0 | ⏳ 待译 |
-| `dict-mbti.js` | 288 | 0 | ⏳ 待译 |
-| `dict-misc.js` | 799 | 0 | ⏳ 待译 |
-
-**已译约 896 条 · 待译约 4938 条**
-
-未填英文的条目 value 为 `""`。`t()` 会自动回中文，可直接接入使用。
+## 怎么判断一页「能转换」
+`js/yumiao-i18n.js` 对当前最上层页面做干跑：把页面里的内容文字节点逐个试译，
+只要还有译不出的中文（≥4 字的成段内容），这一页就不显示开关。
+字典补全后，开关会自动出现，不用改代码。
 
 ## 文件
+| 文件 | 作用 |
+|---|---|
+| `yumiao-i18n.js` | 引擎 + 国旗开关。整段精确匹配 → 规则 → 最长子串匹配（把句子碎片拼回英文） |
+| `dict-*.js` | 「中文原文 → 英文」词条（jiao/bazi/mbti/misc/tarot/wuge/zodiac/ziwei/yijing） |
+| `dict-extra.js` | 补缺词条 + `YUMIAO_RULES`（带数字的模板：日期、农历、节气、干支、紫微/八字句子……） |
+| `dict-verses.js` | 由多行词条按行拆出的逐行词条（称骨批语、周易「今用」等按行渲染） |
 
-```
-js/dict/dict-*.js × 10
-js/dict/i18n-hook-example.js
-js/dict/README-dict.md
-js/yumiao-i18n.js
-```
+加载：`index.html` 末尾在页面空闲时依次加载词典，完成后通知开关重新判断。
 
-## 引入
+## 补一个新页面 / 补缺
+1. 在页面里跑一遍，控制台执行：
+   `yumiaoI18n.contentNodes(yumiaoI18n.currentScope()).map(n=>n.nodeValue).filter(v=>yumiaoI18n.translate(v).left>0)`
+   得到译不出的文字。
+2. 整句缺 → 往 `dict-extra.js` 的 `extra` 里加 `"中文": "English"`。
+3. 句子里夹了变量（数字、干支、星座名）→ 在 `YUMIAO_RULES` 里加一条正则规则；
+   变量被程序塞进句中间（如「日主」→「日主辛(金)」）→ 用带 `strip` / `post` 的规则。
+4. 不需要翻的标题/按钮：给元素加 `data-no-i18n`，或把选择器加进 `yumiao-i18n.js` 的 `SKIP_SEL`。
 
-```html
-<script src="js/dict/dict-jiao.js"></script>
-<script src="js/dict/dict-yijing.js"></script>
-<script src="js/dict/dict-bazi.js"></script>
-<script src="js/dict/dict-palm.js"></script>
-<script src="js/dict/dict-zodiac.js"></script>
-<script src="js/dict/dict-tarot.js"></script>
-<script src="js/dict/dict-ziwei.js"></script>
-<script src="js/dict/dict-wuge.js"></script>
-<script src="js/dict/dict-mbti.js"></script>
-<script src="js/dict/dict-misc.js"></script>
-<script src="js/yumiao-i18n.js"></script>
-```
-
-## 约定
-
-1. 只翻正文：`t(中文)` / `tContent(中文)`
-2. 标题/按钮保持中文，不包 t()
-3. 临时英文视图：`enterEnglishView()` / `bindClickAnywhereToRestore()`
-4. 结果重绘：见 `i18n-hook-example.js`
-
-## 兜底
-
-字典缺失 / 英文为空 / 异常 → 一律回中文，不空白、不抛错。
+## 当前状态
+可转换：掷筊结果、八字、星座、西方星盘、紫微（含各宫/大限/四化弹层）、MBTI、称骨、五格、塔罗、每日签、圆盘、生肖、周易、「关于」。
+不可转换（不显示开关）：掌纹（`17c-palm-en.js` 是另一套结构化英文，尚未接入）、「我的」「命盘」菜单页（只有标题和按钮）。
