@@ -699,7 +699,7 @@
 <script>
 /* 中英切换字典：页面空闲时依次加载（不挡首屏）；加载完通知开关重新判断当前页能否转换 */
 (function () {
-  var DICTS = ['jiao', 'bazi', 'mbti', 'misc', 'tarot', 'wuge', 'zodiac', 'ziwei', 'extra', 'verses', 'yijing'];
+  var DICTS = ['jiao', 'bazi', 'mbti', 'misc', 'tarot', 'wuge', 'zodiac', 'ziwei', 'extra', 'verses', 'yijing', 'palm'];
   function next(i) {
     if (i >= DICTS.length) { try { document.dispatchEvent(new CustomEvent('yumiao:dict-loaded')); } catch (e) {} return; }
     var s = document.createElement('script');
